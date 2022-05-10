@@ -33,5 +33,10 @@ classdef mapServer
             message = rosWriteBinaryOccupancyGrid(message, obj.map.contents);
             send(obj.publisher, message);
         end
+
+        function delete(obj)
+            stop(obj.timer)
+            delete(obj.timer)
+        end
     end
 end

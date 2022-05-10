@@ -2,7 +2,7 @@
 
 % Clear workspace
 clear
-delete(timerfindall)
+% delete(timerfindall)
 
 % Set python version to 3.9
 pyenv('Version','/usr/bin/python3.9');
@@ -20,6 +20,9 @@ r = rateControl(1/sampleTime);
 map_server = mapServer;
 % show(map.map.contents)
 
-%% run forever
-while true
-end
+%% Run until button click
+mydlg = msgbox('Click the button to properly end the program.', 'Multi Robot Navigation');
+waitfor(mydlg);
+
+%% Delete ROS objects and timers
+delete(map_server)
