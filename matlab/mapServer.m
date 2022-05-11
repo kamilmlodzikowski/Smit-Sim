@@ -13,7 +13,9 @@ classdef mapServer
             obj.node = ros.Node('matlab/map');
             obj.map = randomMap([50 50], 10, 78, 5, 100, {'Box','Plus','Circle'});
 
-            obj.publisher = rospublisher('/map', 'nav_msgs/OccupancyGrid','DataFormat','struct');
+            obj.server = ros.ServiceServer(obj.node,"/static_map","nav_msgs/GetMap",@(~,~,~)obj.getMapCallback,"DataFormat","struct");
+
+            obj.publisher = ros.Publisher(obj.node,'/map', 'nav_msgs/OccupancyGrid','DataFormat','struct');
 
             obj.timer = timer;
             set(obj.timer,'executionMode','fixedRate');
@@ -30,8 +32,18 @@ classdef mapServer
 %             disp('test');
             message = rosmessage(obj.publisher);
             message.Header.FrameId = 'map';
+            message.Header.Stamp = rostime('now','DataFormat','struct');
             message = rosWriteBinaryOccupancyGrid(message, obj.map.contents);
             send(obj.publisher, message);
+        end
+
+        function resp = getMapCallback(obj,~,~,resp)
+            message = rosmessage("nav_msgs/OccupancyGrid","DataFormat","struct");
+            message.Header.FrameId = 'map';
+            message.Header.Stamp = rostime('now','DataFormat','struct');
+            message = rosWriteBinaryOccupancyGrid(message, obj.map.contents);
+            resp.Map = message;
+            disp("Map Server: Sending map through service...");
         end
 
         function delete(obj)
