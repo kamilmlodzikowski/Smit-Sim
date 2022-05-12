@@ -54,14 +54,18 @@ classdef vehicle < handle
             set(obj.timer,'executionMode','fixedRate');
             set(obj.timer,'TimerFcn',@(~,~)obj.drive);
             set(obj.timer,'Period',sampleTime);
-            start(obj.timer);
+%             start(obj.timer);
+        end
+
+        function start(obj)
+            startat(obj.timer, datetime + seconds(5));
         end
 
         function obj = findRandomStartingPosition(obj, map)
             s = map.mapSize;
             res = map.resolution;
             while(true)
-                obj.pose = [rand*s(1) rand*s(2) 0];
+                obj.pose = [rand*s(1);rand*s(2);0];
                 for x=obj.pose(1)*res-res/2:obj.pose(1)*res+res/2
                     for y=obj.pose(2)*res-res/2:obj.pose(2)*res+res/2
                         if checkOccupancy(map.contents,[x y])
@@ -78,6 +82,9 @@ classdef vehicle < handle
         end
 
         function drive(obj)
+            obj.pose = obj.pose + derivative(obj.diffDrive, obj.pose, obj.velocity)*obj.sampleTime;
+            [ranges, ~] = obj.lidar(obj.pose', obj.map.contents);
+
             lidarMsg = rosmessage(obj.lidarPublisher);
             lidarMsg.Header.FrameId = [char(obj.namespace) '/laser_scan'];
             lidarMsg.Header.Stamp = rostime('now','DataFormat','struct');
@@ -87,7 +94,7 @@ classdef vehicle < handle
             lidarMsg.AngleIncrement = single(obj.lidar.HorizontalAngleResolution);
             lidarMsg.RangeMin = single(0);
             lidarMsg.RangeMax = single(obj.lidar.Range(2));
-% %             lidarMsg.Ranges = single(ranges);
+            lidarMsg.Ranges = single(ranges);
             send(obj.lidarPublisher, lidarMsg);
 
             odomMsg = rosmessage(obj.odomPublisher);
@@ -111,6 +118,15 @@ classdef vehicle < handle
             tfStampedMsg.Transform.Translation.Y = obj.pose(2);
             tfStampedMsg.Transform.Rotation.W = plotRot(1);
             tfStampedMsg.Transform.Rotation.Z = plotRot(4);
+            sendTransform(obj.tftree, tfStampedMsg);
+
+            tfStampedMsg.ChildFrameId = [char(obj.namespace) '/laser_scan'];
+            tfStampedMsg.Header.FrameId = [char(obj.namespace) '/base_link'];
+            tfStampedMsg.Header.Stamp = rostime('now');
+            tfStampedMsg.Transform.Translation.X = 0;
+            tfStampedMsg.Transform.Translation.Y = 0;
+            tfStampedMsg.Transform.Rotation.Z = 0;
+            tfStampedMsg.Transform.Rotation.W = 1;
             sendTransform(obj.tftree, tfStampedMsg);
         end
 

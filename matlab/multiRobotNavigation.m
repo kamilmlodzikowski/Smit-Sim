@@ -1,7 +1,19 @@
 %% Navigating on a map with multiple robots
 
 % Clear workspace
+try
+    delete(vehicles)
+catch
+end
+try
+    delete(map_server)
+catch
+end
 clear
+clear vehicle
+for t = timerfindall
+    t.stop
+end
 delete(timerfindall)
 
 % Set python version to 3.9
@@ -12,11 +24,12 @@ rosshutdown;
 pause(1);
 rosinit('NodeName','matlab/multiRobotNavigation');
 
+%% Runtime variables
 % Set time variables
-sampleTime = 0.05;
+sampleTime = 1;
 
 % Vehicle amount
-n = 2;
+n = 10;
 
 %% Create and publish map
 map_server = mapServer;
@@ -28,6 +41,9 @@ for i=1:n
 %     v = vehicle(sampleTime, map_server.map);
 %     v.subscriber = ros.Subscriber(v.node, '/' + v.namespace + '/cmd_vel','geometry_msgs/Twist', @v.velocityCallback, 'DataFormat','struct');
     vehicles = [vehicles vehicle(sampleTime, map_server.map)];
+end
+for i=1:n
+    vehicles(i).start;
 end
 
 % vehicles(1).drive;
