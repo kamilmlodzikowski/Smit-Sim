@@ -3,10 +3,13 @@ classdef mapServer
     properties
         node
         timer
-        publisher
+        mapPublisher
+        mapMsg
+        tfPublisher
+        tfMsg
         server
+        respMap
         map
-        tftree
     end
 
     methods
@@ -15,11 +18,34 @@ classdef mapServer
 
             obj.node = ros.Node('matlab/map');
 
-            obj.tftree = ros.TransformationTree(obj.node);
-
             obj.server = ros.ServiceServer(obj.node,"/static_map","nav_msgs/GetMap",@(~,~,~)obj.getMapCallback,"DataFormat","struct");
 
-            obj.publisher = ros.Publisher(obj.node,'/map', 'nav_msgs/OccupancyGrid','DataFormat','struct');
+            obj.respMap = rosmessage("nav_msgs/OccupancyGrid","DataFormat","struct");
+            obj.respMap.Header.FrameId = 'map';
+            obj.respMap.Header.Stamp = rostime('now','DataFormat','struct');
+            obj.respMap = rosWriteBinaryOccupancyGrid(obj.respMap, obj.map.contents);
+
+            obj.mapPublisher = ros.Publisher(obj.node,'/map', 'nav_msgs/OccupancyGrid','DataFormat','struct');
+
+            obj.mapMsg = rosmessage(obj.mapPublisher);
+            obj.mapMsg.Header.FrameId = 'map';
+            obj.mapMsg.Header.Stamp = rostime('now','DataFormat','struct');
+            obj.mapMsg = rosWriteBinaryOccupancyGrid(obj.mapMsg, obj.map.contents);
+            send(obj.mapPublisher, obj.mapMsg);
+
+            obj.tfPublisher = ros.Publisher(obj.node, '/tf', 'tf2_msgs/TFMessage', 'DataFormat','struct');
+
+            obj.tfMsg = rosmessage(obj.tfPublisher, 'DataFormat','struct');
+            tfStampedMsg = rosmessage('geometry_msgs/TransformStamped', 'DataFormat','struct');
+            tfStampedMsg.ChildFrameId = 'odom';
+            tfStampedMsg.Header.FrameId = 'map';
+            tfStampedMsg.Header.Stamp = rostime('now', 'DataFormat','struct');
+            tfStampedMsg.Transform.Translation.X = 0;
+            tfStampedMsg.Transform.Translation.Y = 0;
+            tfStampedMsg.Transform.Rotation.Z = 0;
+            tfStampedMsg.Transform.Rotation.W = 1;
+            obj.tfMsg.Transforms = tfStampedMsg;
+            send(obj.tfPublisher, obj.tfMsg);
 
             obj.timer = timer('Name','MapPublisher');
             set(obj.timer,'executionMode','fixedRate');
@@ -30,37 +56,25 @@ classdef mapServer
 
         function obj = regenerateMap(obj,mapSize, resolution, passageWidth, wallThickness, numOfClutter, clutterShapes)
             obj.map = randomMap(mapSize, resolution, passageWidth, wallThickness, numOfClutter, clutterShapes);
+            obj.mapMsg = rosWriteBinaryOccupancyGrid(obj.mapMsg, obj.map.contents);
+            obj.respMap = rosWriteBinaryOccupancyGrid(obj.respMap, obj.map.contents);
         end
 
         function sendMessage(obj)
-            %             disp('test');
-            message = rosmessage(obj.publisher);
-            message.Header.FrameId = 'map';
-            message.Header.Stamp = rostime('now','DataFormat','struct');
-            message = rosWriteBinaryOccupancyGrid(message, obj.map.contents);
-            send(obj.publisher, message);
-
-            tfStampedMsg = rosmessage('geometry_msgs/TransformStamped');
-            tfStampedMsg.ChildFrameId = 'odom';
-            tfStampedMsg.Header.FrameId = 'map';
-            tfStampedMsg.Header.Stamp = rostime('now');
-            tfStampedMsg.Transform.Rotation.W = 1;
-            sendTransform(obj.tftree, tfStampedMsg);
+            obj.mapMsg.Header.Stamp = rostime('now','DataFormat','struct');
+            send(obj.mapPublisher, obj.mapMsg);
         end
 
         function resp = getMapCallback(obj,~,~,resp)
-            message = rosmessage("nav_msgs/OccupancyGrid","DataFormat","struct");
-            message.Header.FrameId = 'map';
-            message.Header.Stamp = rostime('now','DataFormat','struct');
-            message = rosWriteBinaryOccupancyGrid(message, obj.map.contents);
-            resp.Map = message;
+            obj.respMap.Header.Stamp = rostime('now','DataFormat','struct');
+            resp.Map = obj.respMap;
             disp("Map Server: Sending map through service...");
         end
 
         function delete(obj)
             stop(obj.timer)
             delete(obj.timer)
-            delete(obj.publisher)
+            delete(obj.mapPublisher)
             delete(obj.server)
             delete(obj.node)
         end

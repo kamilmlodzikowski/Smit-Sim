@@ -1,6 +1,6 @@
 %% Navigating on a map with multiple robots
 
-% Clear workspace
+% Clear workspace properly
 try
     delete(vehicles)
 catch
@@ -14,6 +14,7 @@ clear vehicle
 for t = timerfindall
     t.stop
 end
+clear t
 delete(timerfindall)
 
 % Set python version to 3.9
@@ -25,8 +26,8 @@ pause(1);
 rosinit('NodeName','matlab/multiRobotNavigation');
 
 %% Runtime variables
-% Set time variables
-sampleTime = 1;
+% Set time variable
+sampleTime = 0.1;
 
 % Vehicle amount
 n = 10;
@@ -38,8 +39,6 @@ map_server = mapServer;
 %% Create and run vehicles
 vehicles = [];
 for i=1:n
-%     v = vehicle(sampleTime, map_server.map);
-%     v.subscriber = ros.Subscriber(v.node, '/' + v.namespace + '/cmd_vel','geometry_msgs/Twist', @v.velocityCallback, 'DataFormat','struct');
     vehicles = [vehicles vehicle(sampleTime, map_server.map)];
 end
 for i=1:n
@@ -53,8 +52,6 @@ mydlg = msgbox('Click the button to properly end the program.', 'Multi Robot Nav
 waitfor(mydlg);
 
 %% Delete ROS objects and timers, clean classes
-% delete(map_server)
-% delete(vehicles)
 stop(timerfindall)
 clear vehicle
 rosshutdown
