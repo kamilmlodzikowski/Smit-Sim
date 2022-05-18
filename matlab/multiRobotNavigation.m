@@ -27,10 +27,10 @@ rosinit('NodeName','matlab/multiRobotNavigation');
 
 %% Runtime variables
 % Set time variable
-sampleTime = 0.1;
+sampleTime = 0.05;
 
 % Vehicle amount
-n = 10;
+n = 1;
 
 %% Create and publish map
 map_server = mapServer;

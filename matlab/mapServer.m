@@ -61,8 +61,11 @@ classdef mapServer
         end
 
         function sendMessage(obj)
-            obj.mapMsg.Header.Stamp = rostime('now','DataFormat','struct');
+            t = rostime('now','DataFormat','struct');
+            obj.mapMsg.Header.Stamp = t;
             send(obj.mapPublisher, obj.mapMsg);
+            obj.tfMsg.Transforms.Header.Stamp = t;
+            send(obj.tfPublisher, obj.tfMsg);
         end
 
         function resp = getMapCallback(obj,~,~,resp)

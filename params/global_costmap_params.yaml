@@ -5,3 +5,4 @@ global_costmap:
   static_map: true
   inflation_radius: 0.25
   cost_scaling_factor: 10.0
+  transform_tolerance: 1.1

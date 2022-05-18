@@ -96,7 +96,7 @@ classdef vehicle < handle
             tfStampedMsg.Transform.Translation.Y = obj.pose(2);
             tfStampedMsg.Transform.Rotation.W = plotRot(1);
             tfStampedMsg.Transform.Rotation.Z = plotRot(4);
-            obj.tfMsg.Transforms = tfStampedMsg;
+            obj.tfMsg.Transforms = [obj.tfMsg.Transforms tfStampedMsg];
             send(obj.tfPublisher, obj.tfMsg);
 
             obj.sampleTime = sampleTime;
@@ -150,11 +150,12 @@ classdef vehicle < handle
             obj.odomMsg.Twist.Twist.Angular.Z = obj.velocity(2);
             send(obj.odomPublisher,obj.odomMsg);
 
-            obj.tfMsg.Transforms.Header.Stamp = obj.lidarMsg.Header.Stamp;
-            obj.tfMsg.Transforms.Transform.Translation.X = obj.pose(1);
-            obj.tfMsg.Transforms.Transform.Translation.Y = obj.pose(2);
-            obj.tfMsg.Transforms.Transform.Rotation.W = plotRot(1);
-            obj.tfMsg.Transforms.Transform.Rotation.Z = plotRot(4);
+            obj.tfMsg.Transforms(1).Header.Stamp = obj.lidarMsg.Header.Stamp;
+            obj.tfMsg.Transforms(2).Header.Stamp = obj.lidarMsg.Header.Stamp;
+            obj.tfMsg.Transforms(2).Transform.Translation.X = obj.pose(1);
+            obj.tfMsg.Transforms(2).Transform.Translation.Y = obj.pose(2);
+            obj.tfMsg.Transforms(2).Transform.Rotation.W = plotRot(1);
+            obj.tfMsg.Transforms(2).Transform.Rotation.Z = plotRot(4);
             send(obj.tfPublisher, obj.tfMsg);
         end
 
