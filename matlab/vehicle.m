@@ -58,7 +58,7 @@ classdef vehicle < handle
             plotRot = axang2quat([0 0 1 obj.pose(3)]);
             obj.odomMsg.Pose.Pose.Orientation.W = plotRot(1);
             obj.odomMsg.Pose.Pose.Orientation.Z = plotRot(4);
-            send(obj.odomPublisher,obj.odomMsg);
+%             send(obj.odomPublisher,obj.odomMsg);
 
             obj.lidarPublisher = ros.Publisher(obj.node,'/' + obj.namespace + '/scan','sensor_msgs/LaserScan',"DataFormat","struct");
 
@@ -73,7 +73,7 @@ classdef vehicle < handle
             obj.lidarMsg.RangeMin = single(0);
             obj.lidarMsg.RangeMax = single(obj.lidar.Range(2));
             obj.lidarMsg.Ranges = single(ranges);
-            send(obj.lidarPublisher, obj.lidarMsg);
+%             send(obj.lidarPublisher, obj.lidarMsg);
 
             obj.tfPublisher = ros.Publisher(obj.node, '/tf', 'tf2_msgs/TFMessage', 'DataFormat','struct');
 
@@ -109,7 +109,7 @@ classdef vehicle < handle
         end
 
         function start(obj)
-            startat(obj.timer, datetime + seconds(5));
+            startat(obj.timer, datetime + seconds(1));
         end
 
         function obj = findRandomStartingPosition(obj, map)

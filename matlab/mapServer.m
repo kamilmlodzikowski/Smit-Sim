@@ -50,7 +50,7 @@ classdef mapServer
             obj.timer = timer('Name','MapPublisher');
             set(obj.timer,'executionMode','fixedRate');
             set(obj.timer,'TimerFcn',@(~,~)obj.sendMessage);
-            set(obj.timer,'Period',1);
+            set(obj.timer,'Period',0.05);
             start(obj.timer);
         end
 
