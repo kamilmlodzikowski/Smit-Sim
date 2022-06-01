@@ -25,6 +25,11 @@ rosshutdown;
 pause(1);
 rosinit('NodeName','matlab/multiRobotServer');
 
+% Enable multithreading
+try
+    parpool
+catch
+end
 %% Runtime variables
 % Set time variable
 sampleTime = 0.05;
@@ -33,13 +38,14 @@ sampleTime = 0.05;
 n = 1;
 
 % Pedestrian amount
-p = 5;
+p = 10;
 
 %% Create and publish map
 map_server = mapServer;
 for i=1:p
     map_server.addPedestrian()
 end
+pedestrians = map_server.pedestrians;
 show(map_server.map.contents)
 
 %% Create and run vehicles
@@ -56,16 +62,18 @@ show(map_server.map.contents)
 %% Run for set cycles
 step = 0;
 rate = rateControl(1/sampleTime);
+tic
 while (step < 200)
     map_server.walk(sampleTime);
     show(map_server.pedMap)
     step = step + 1;
     waitfor(rate);
 end
+toc
 
 %% Run until button click
-mydlg = msgbox('Click the button to properly end the program.', 'Multi Robot Navigation');
-waitfor(mydlg);
+% mydlg = msgbox('Click the button to properly end the program.', 'Multi Robot Navigation');
+% waitfor(mydlg);
 
 %% Delete ROS objects and timers, clean classes
 try
