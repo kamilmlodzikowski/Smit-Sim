@@ -23,16 +23,19 @@ classdef pedestrian < handle
             prm.ConnectionDistance = 10;
             obj.goalPoseRadius = 0.3;
             obj.robot = differentialDriveKinematics("TrackWidth", 0.5, "VehicleInputs", "VehicleSpeedHeadingRate");
-            obj.initPose = [mapSize(1)*rand() mapSize(2)*rand()];
-            while(getOccupancy(mapInflated, obj.initPose))
+            path = [];
+            while(isempty(path))
                 obj.initPose = [mapSize(1)*rand() mapSize(2)*rand()];
-            end
-            obj.goalPose = [mapSize(1)*rand() mapSize(2)*rand()];
-            while (getOccupancy(mapInflated, obj.goalPose))
+                while(getOccupancy(mapInflated, obj.initPose))
+                    obj.initPose = [mapSize(1)*rand() mapSize(2)*rand()];
+                end
                 obj.goalPose = [mapSize(1)*rand() mapSize(2)*rand()];
+                while (getOccupancy(mapInflated, obj.goalPose))
+                    obj.goalPose = [mapSize(1)*rand() mapSize(2)*rand()];
+                end
+                obj.currPose = [obj.initPose 0]';
+                path = findpath(prm, obj.initPose, obj.goalPose);
             end
-            obj.currPose = [obj.initPose 0]';
-            path = findpath(prm, obj.initPose, obj.goalPose);
             obj.controller = controllerPurePursuit;
             obj.controller.Waypoints = path;
             obj.controller.DesiredLinearVelocity = 1.4;

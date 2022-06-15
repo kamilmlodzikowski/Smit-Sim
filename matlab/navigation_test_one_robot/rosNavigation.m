@@ -14,7 +14,7 @@ r = rateControl(1/sampleTime);
 
 %% Initialize map
 global map
-map = createRandomMap([50 50], 10, 78, 5, 100, {'Box','Plus','Circle'});
+map = createRandomMap([50 30], 10, 78, 5, 10, {'Box','Plus','Circle'});
 if matlab_visualization
     globalFig = figure('Name','Global');
     show(map);
