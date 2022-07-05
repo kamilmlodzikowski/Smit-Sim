@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import numpy as np
 import random
 from tensorflow.keras.layers import Dense, Flatten
@@ -7,7 +7,8 @@ import tensorflow as tf
 from rl.agents.dqn import DQNAgent
 from rl.policy import EpsGreedyQPolicy, LinearAnnealedPolicy
 from rl.memory import SequentialMemory
-from tasks import TransportGenerator, FallGenerator, Tasks
+from task import TransportGenerator, FallGenerator, DriveGenerator
+from tasks_env import Tasks
 
 def build_model(states, actions):
     model = tf.keras.Sequential()
@@ -21,20 +22,22 @@ def buildAgent(model, actions):
     policy = LinearAnnealedPolicy(EpsGreedyQPolicy(), 'eps', 1.0, 0.1, 0.1, 30000)
     memory = SequentialMemory(limit=5000, window_length=1)
     dqn = DQNAgent(model, memory=memory, policy=policy, nb_actions=actions, nb_steps_warmup=5000,
-                   target_model_update=1e-3)
+                   target_model_update=1e-2)
     return dqn
 
 if __name__ == '__main__':
 	task_desc = [
-	    TransportGenerator,
+	    DriveGenerator,
 	    FallGenerator
 	]
 
-	penalty = 0
-	hesitance = 0.5
+	# penalty = 2
 	N = 5
+	substeps = 1
 
-	system = Tasks(task_desc, N, penalty)
+	seed = 144
+	random.seed(seed)
+	system = Tasks(task_desc, N, substeps, False)
 
 	states = system.state_space.shape
 	actions = system.action_space.n
@@ -49,12 +52,12 @@ if __name__ == '__main__':
 	DQN.fit(system, nb_steps=30000, visualize=False, verbose=2)
 
     # test
-	system = Tasks(task_desc, N, penalty)
+	system = Tasks(task_desc, N, substeps)
 	scores = DQN.test(system, nb_episodes=100, visualize=False)
 	print(np.mean(scores.history['episode_reward']))
 
     # run
-	system = Tasks([TransportGenerator, FallGenerator], N, penalty)
+	system = Tasks(task_desc, N, substeps)
 	seed = random.randint(0, 10000)
 	random.seed(seed)
 	system.reset()
@@ -97,5 +100,5 @@ if __name__ == '__main__':
 	# plt.plot(tasks, "o")
 	ax = plt.subplot(3,1,3)
 	plt.plot(rewards, "o")
-	plt.suptitle('seed: ' + str(seed) + ' | dt: ' + str(15) +' | penalty: ' + str(penalty) + ' | hesitance: ' + str(hesitance), fontsize=16)
+	plt.suptitle('seed: ' + str(seed) + ' | dt: ' + str(system.dt), fontsize=16)
 	plt.show()

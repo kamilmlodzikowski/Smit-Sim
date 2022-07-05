@@ -1,0 +1,706 @@
+2022-07-05 13:18:47.584176: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /opt/ros/melodic/lib:/home/dangield/aruco/install/lib:/home/dangield/opencv3/install/lib
+2022-07-05 13:18:47.584214: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+Reset
+Model: "sequential"
+_________________________________________________________________
+Layer (type)                 Output Shape              Param #   
+=================================================================
+flatten (Flatten)            (None, 20)                0         
+_________________________________________________________________
+dense (Dense)                (None, 50)                1050      
+_________________________________________________________________
+dense_1 (Dense)              (None, 10)                510       
+_________________________________________________________________
+flatten_1 (Flatten)          (None, 10)                0         
+=================================================================
+Total params: 1,560
+Trainable params: 1,560
+Non-trainable params: 0
+_________________________________________________________________
+2022-07-05 13:18:50.586388: E tensorflow/stream_executor/cuda/cuda_driver.cc:271] failed call to cuInit: CUDA_ERROR_NO_DEVICE: no CUDA-capable device is detected
+2022-07-05 13:18:50.586431: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (dgieldow): /proc/driver/nvidia/version does not exist
+2022-07-05 13:18:50.587064: I tensorflow/core/platform/cpu_feature_guard.cc:142] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+Training for 30000 steps ...
+Reset
+/home/dangield/.local/lib/python3.6/site-packages/keras/engine/training.py:2470: UserWarning: `Model.state_updates` will be removed in a future version. This property should not be used in TensorFlow 2.0, as `updates` are applied automatically.
+  warnings.warn('`Model.state_updates` will be removed in a future version. '
+   111/30000: episode: 1, duration: 0.806s, episode steps: 111, steps per second: 138, episode reward: -474.461, mean reward: -4.274 [-20.000, 80.111], mean action: 3.937 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+   241/30000: episode: 2, duration: 0.599s, episode steps: 130, steps per second: 217, episode reward: -686.176, mean reward: -5.278 [-20.000, 52.646], mean action: 4.554 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+   417/30000: episode: 3, duration: 1.630s, episode steps: 176, steps per second: 108, episode reward: -91.906, mean reward: -0.522 [-20.000, 99.084], mean action: 4.528 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+   505/30000: episode: 4, duration: 0.687s, episode steps:  88, steps per second: 128, episode reward: -358.558, mean reward: -4.075 [-20.000,  9.461], mean action: 4.557 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+   719/30000: episode: 5, duration: 0.724s, episode steps: 214, steps per second: 295, episode reward: -1541.298, mean reward: -7.202 [-20.000, 36.909], mean action: 4.393 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+   861/30000: episode: 6, duration: 0.597s, episode steps: 142, steps per second: 238, episode reward: -992.573, mean reward: -6.990 [-20.000, 16.778], mean action: 4.204 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  1056/30000: episode: 7, duration: 1.648s, episode steps: 195, steps per second: 118, episode reward: -998.594, mean reward: -5.121 [-20.000, 37.016], mean action: 4.933 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  1297/30000: episode: 8, duration: 0.507s, episode steps: 241, steps per second: 475, episode reward: -2012.734, mean reward: -8.352 [-20.000, 12.505], mean action: 4.697 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  1393/30000: episode: 9, duration: 0.537s, episode steps:  96, steps per second: 179, episode reward: -506.030, mean reward: -5.271 [-20.000, 40.393], mean action: 5.042 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  1490/30000: episode: 10, duration: 0.632s, episode steps:  97, steps per second: 154, episode reward: -516.203, mean reward: -5.322 [-20.000, 76.272], mean action: 4.330 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  1610/30000: episode: 11, duration: 1.221s, episode steps: 120, steps per second:  98, episode reward: -384.966, mean reward: -3.208 [-20.000, 53.532], mean action: 4.192 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  1648/30000: episode: 12, duration: 0.236s, episode steps:  38, steps per second: 161, episode reward: -108.612, mean reward: -2.858 [-20.000, 21.379], mean action: 3.789 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  1866/30000: episode: 13, duration: 0.652s, episode steps: 218, steps per second: 334, episode reward: -1529.491, mean reward: -7.016 [-30.868, 15.457], mean action: 4.739 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  2060/30000: episode: 14, duration: 1.836s, episode steps: 194, steps per second: 106, episode reward: -656.534, mean reward: -3.384 [-20.000, 15.112], mean action: 4.526 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  2145/30000: episode: 15, duration: 1.019s, episode steps:  85, steps per second:  83, episode reward: -16.125, mean reward: -0.190 [-20.000, 73.035], mean action: 4.682 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  2222/30000: episode: 16, duration: 0.842s, episode steps:  77, steps per second:  91, episode reward: -261.441, mean reward: -3.395 [-20.000, 23.192], mean action: 4.338 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  2302/30000: episode: 17, duration: 0.359s, episode steps:  80, steps per second: 223, episode reward: -374.410, mean reward: -4.680 [-20.000, 71.228], mean action: 4.725 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  2381/30000: episode: 18, duration: 0.379s, episode steps:  79, steps per second: 208, episode reward: -344.737, mean reward: -4.364 [-20.000, 85.747], mean action: 4.304 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  2423/30000: episode: 19, duration: 0.249s, episode steps:  42, steps per second: 169, episode reward: -236.885, mean reward: -5.640 [-20.000, 29.370], mean action: 4.643 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  2637/30000: episode: 20, duration: 1.520s, episode steps: 214, steps per second: 141, episode reward: -712.638, mean reward: -3.330 [-21.475, 26.140], mean action: 4.757 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  2713/30000: episode: 21, duration: 0.507s, episode steps:  76, steps per second: 150, episode reward: -242.967, mean reward: -3.197 [-20.000, 38.489], mean action: 4.474 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  2903/30000: episode: 22, duration: 1.016s, episode steps: 190, steps per second: 187, episode reward: -1045.446, mean reward: -5.502 [-20.000, 62.495], mean action: 4.374 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  3144/30000: episode: 23, duration: 1.230s, episode steps: 241, steps per second: 196, episode reward: -1610.505, mean reward: -6.683 [-28.262, 15.713], mean action: 4.851 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  3169/30000: episode: 24, duration: 0.269s, episode steps:  25, steps per second:  93, episode reward: 19.292, mean reward:  0.772 [-20.000, 94.685], mean action: 4.760 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  3279/30000: episode: 25, duration: 0.392s, episode steps: 110, steps per second: 280, episode reward: -651.884, mean reward: -5.926 [-20.000, 89.621], mean action: 3.973 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  3396/30000: episode: 26, duration: 0.578s, episode steps: 117, steps per second: 202, episode reward: -628.584, mean reward: -5.373 [-20.000, 10.211], mean action: 4.060 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  3637/30000: episode: 27, duration: 0.968s, episode steps: 241, steps per second: 249, episode reward: -1755.235, mean reward: -7.283 [-20.857, 17.232], mean action: 4.651 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  3705/30000: episode: 28, duration: 0.399s, episode steps:  68, steps per second: 170, episode reward: -373.098, mean reward: -5.487 [-20.000, 32.866], mean action: 4.324 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  3773/30000: episode: 29, duration: 0.548s, episode steps:  68, steps per second: 124, episode reward: -257.167, mean reward: -3.782 [-20.000,  9.633], mean action: 4.265 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  3880/30000: episode: 30, duration: 0.284s, episode steps: 107, steps per second: 377, episode reward: -690.116, mean reward: -6.450 [-20.000, 74.795], mean action: 4.383 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  3982/30000: episode: 31, duration: 0.786s, episode steps: 102, steps per second: 130, episode reward: -422.626, mean reward: -4.143 [-20.000, 52.460], mean action: 4.324 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  4075/30000: episode: 32, duration: 0.475s, episode steps:  93, steps per second: 196, episode reward: -459.285, mean reward: -4.939 [-20.000, 95.083], mean action: 4.215 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  4130/30000: episode: 33, duration: 0.438s, episode steps:  55, steps per second: 125, episode reward: -231.463, mean reward: -4.208 [-20.000, 53.103], mean action: 5.018 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  4238/30000: episode: 34, duration: 0.399s, episode steps: 108, steps per second: 270, episode reward: -538.316, mean reward: -4.984 [-20.000, 48.525], mean action: 4.380 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  4362/30000: episode: 35, duration: 0.943s, episode steps: 124, steps per second: 131, episode reward: -536.961, mean reward: -4.330 [-20.000, 15.218], mean action: 4.355 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  4509/30000: episode: 36, duration: 0.771s, episode steps: 147, steps per second: 191, episode reward: -1038.785, mean reward: -7.067 [-20.000, 27.425], mean action: 4.850 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  4637/30000: episode: 37, duration: 0.776s, episode steps: 128, steps per second: 165, episode reward: -756.792, mean reward: -5.912 [-20.000, 21.510], mean action: 4.320 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  4755/30000: episode: 38, duration: 0.875s, episode steps: 118, steps per second: 135, episode reward: -545.430, mean reward: -4.622 [-20.000, 21.623], mean action: 4.483 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  4885/30000: episode: 39, duration: 0.770s, episode steps: 130, steps per second: 169, episode reward: -628.291, mean reward: -4.833 [-20.000, 26.882], mean action: 4.631 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+  4959/30000: episode: 40, duration: 0.344s, episode steps:  74, steps per second: 215, episode reward: -440.170, mean reward: -5.948 [-20.000, 79.652], mean action: 4.622 [0.000, 9.000],  loss: --, mae: --, mean_q: --, mean_eps: --
+Reset
+/home/dangield/.local/lib/python3.6/site-packages/keras/engine/training.py:2470: UserWarning: `Model.state_updates` will be removed in a future version. This property should not be used in TensorFlow 2.0, as `updates` are applied automatically.
+  warnings.warn('`Model.state_updates` will be removed in a future version. '
+  5151/30000: episode: 41, duration: 2.835s, episode steps: 192, steps per second:  68, episode reward: -483.255, mean reward: -2.517 [-20.000, 28.833], mean action: 4.458 [0.000, 9.000],  loss: 46.155052, mae: 0.827228, mean_q: 0.829633, mean_eps: 0.847735
+Reset
+  5186/30000: episode: 42, duration: 0.647s, episode steps:  35, steps per second:  54, episode reward:  8.269, mean reward:  0.236 [-20.000, 78.597], mean action: 4.257 [0.000, 9.000],  loss: 41.139568, mae: 0.784619, mean_q: 0.876288, mean_eps: 0.844960
+Reset
+  5349/30000: episode: 43, duration: 1.390s, episode steps: 163, steps per second: 117, episode reward: -1093.760, mean reward: -6.710 [-20.000, 18.070], mean action: 4.540 [0.000, 9.000],  loss: 39.328612, mae: 0.793883, mean_q: 0.877282, mean_eps: 0.841990
+Reset
+  5376/30000: episode: 44, duration: 0.333s, episode steps:  27, steps per second:  81, episode reward: -45.152, mean reward: -1.672 [-20.000, 72.376], mean action: 4.259 [0.000, 9.000],  loss: 48.746860, mae: 0.824973, mean_q: 0.892918, mean_eps: 0.839140
+Reset
+  5468/30000: episode: 45, duration: 1.474s, episode steps:  92, steps per second:  62, episode reward: 99.220, mean reward:  1.078 [-20.000, 152.902], mean action: 4.293 [0.000, 9.000],  loss: 44.344734, mae: 0.827117, mean_q: 0.902173, mean_eps: 0.837355
+Reset
+  5500/30000: episode: 46, duration: 0.517s, episode steps:  32, steps per second:  62, episode reward: -84.434, mean reward: -2.639 [-20.000, 20.009], mean action: 4.469 [0.000, 9.000],  loss: 39.682157, mae: 0.809253, mean_q: 0.902690, mean_eps: 0.835495
+Reset
+  5541/30000: episode: 47, duration: 0.419s, episode steps:  41, steps per second:  98, episode reward: -150.888, mean reward: -3.680 [-20.000, 20.965], mean action: 4.976 [0.000, 9.000],  loss: 44.130310, mae: 0.821727, mean_q: 0.917263, mean_eps: 0.834400
+Reset
+  5652/30000: episode: 48, duration: 1.483s, episode steps: 111, steps per second:  75, episode reward: -421.758, mean reward: -3.800 [-20.000, 26.641], mean action: 3.775 [0.000, 9.000],  loss: 49.936078, mae: 0.810608, mean_q: 0.932324, mean_eps: 0.832120
+Reset
+  5818/30000: episode: 49, duration: 2.204s, episode steps: 166, steps per second:  75, episode reward: -518.112, mean reward: -3.121 [-20.000, 25.795], mean action: 4.120 [0.000, 9.000],  loss: 39.534801, mae: 0.787928, mean_q: 0.943088, mean_eps: 0.827965
+Reset
+  5878/30000: episode: 50, duration: 0.941s, episode steps:  60, steps per second:  64, episode reward: -180.132, mean reward: -3.002 [-20.000, 16.235], mean action: 3.800 [0.000, 9.000],  loss: 40.049899, mae: 0.785185, mean_q: 0.947887, mean_eps: 0.824575
+Reset
+  6014/30000: episode: 51, duration: 0.930s, episode steps: 136, steps per second: 146, episode reward: -1113.029, mean reward: -8.184 [-20.000, 15.484], mean action: 4.610 [0.000, 9.000],  loss: 41.467940, mae: 0.795493, mean_q: 0.943844, mean_eps: 0.821635
+Reset
+  6255/30000: episode: 52, duration: 3.076s, episode steps: 241, steps per second:  78, episode reward: -1028.352, mean reward: -4.267 [-20.000, 100.111], mean action: 4.311 [0.000, 9.000],  loss: 44.746110, mae: 0.793740, mean_q: 0.933081, mean_eps: 0.815980
+Reset
+  6380/30000: episode: 53, duration: 1.136s, episode steps: 125, steps per second: 110, episode reward: -704.696, mean reward: -5.638 [-20.000, 51.692], mean action: 4.672 [0.000, 9.000],  loss: 41.747771, mae: 0.785051, mean_q: 0.931941, mean_eps: 0.810490
+Reset
+  6475/30000: episode: 54, duration: 1.394s, episode steps:  95, steps per second:  68, episode reward: -269.993, mean reward: -2.842 [-20.000, 136.216], mean action: 3.821 [0.000, 9.000],  loss: 48.361441, mae: 0.797388, mean_q: 0.943381, mean_eps: 0.807190
+Reset
+  6510/30000: episode: 55, duration: 0.521s, episode steps:  35, steps per second:  67, episode reward: 13.130, mean reward:  0.375 [-20.000, 71.124], mean action: 4.314 [0.000, 9.000],  loss: 51.654189, mae: 0.791657, mean_q: 0.951747, mean_eps: 0.805240
+Reset
+  6547/30000: episode: 56, duration: 0.423s, episode steps:  37, steps per second:  87, episode reward: -73.228, mean reward: -1.979 [-20.000, 99.576], mean action: 4.568 [0.000, 9.000],  loss: 49.170031, mae: 0.803069, mean_q: 0.946768, mean_eps: 0.804160
+Reset
+  6585/30000: episode: 57, duration: 0.693s, episode steps:  38, steps per second:  55, episode reward: -16.860, mean reward: -0.444 [-20.000, 57.465], mean action: 4.421 [0.000, 9.000],  loss: 45.149744, mae: 0.771607, mean_q: 0.947165, mean_eps: 0.803035
+Reset
+  6673/30000: episode: 58, duration: 1.401s, episode steps:  88, steps per second:  63, episode reward: -97.419, mean reward: -1.107 [-20.000, 40.115], mean action: 4.398 [0.000, 9.000],  loss: 47.354615, mae: 0.785249, mean_q: 0.955296, mean_eps: 0.801145
+Reset
+  6771/30000: episode: 59, duration: 1.006s, episode steps:  98, steps per second:  97, episode reward: -590.788, mean reward: -6.028 [-20.000, 18.216], mean action: 4.245 [0.000, 9.000],  loss: 41.387031, mae: 0.769812, mean_q: 0.946434, mean_eps: 0.798355
+Reset
+  6856/30000: episode: 60, duration: 1.231s, episode steps:  85, steps per second:  69, episode reward: -313.072, mean reward: -3.683 [-20.000, 22.916], mean action: 3.929 [0.000, 9.000],  loss: 46.300589, mae: 0.775137, mean_q: 0.949812, mean_eps: 0.795610
+Reset
+  7037/30000: episode: 61, duration: 2.598s, episode steps: 181, steps per second:  70, episode reward: -717.093, mean reward: -3.962 [-20.000, 101.541], mean action: 4.519 [0.000, 9.000],  loss: 46.945032, mae: 0.779996, mean_q: 0.942040, mean_eps: 0.791620
+Reset
+  7078/30000: episode: 62, duration: 0.584s, episode steps:  41, steps per second:  70, episode reward: -23.905, mean reward: -0.583 [-20.000, 111.354], mean action: 4.659 [0.000, 9.000],  loss: 40.844145, mae: 0.767225, mean_q: 0.933035, mean_eps: 0.788290
+Reset
+  7103/30000: episode: 63, duration: 0.294s, episode steps:  25, steps per second:  85, episode reward: -92.411, mean reward: -3.696 [-20.000, 50.918], mean action: 4.320 [0.000, 8.000],  loss: 35.521128, mae: 0.739395, mean_q: 0.932536, mean_eps: 0.787300
+Reset
+  7138/30000: episode: 64, duration: 0.477s, episode steps:  35, steps per second:  73, episode reward: -20.430, mean reward: -0.584 [-20.000, 64.182], mean action: 3.457 [0.000, 9.000],  loss: 41.117087, mae: 0.788834, mean_q: 0.940239, mean_eps: 0.786400
+Reset
+  7230/30000: episode: 65, duration: 1.058s, episode steps:  92, steps per second:  87, episode reward: -240.093, mean reward: -2.610 [-20.000, 58.249], mean action: 4.152 [0.000, 9.000],  loss: 39.736300, mae: 0.792857, mean_q: 0.939861, mean_eps: 0.784495
+Reset
+  7283/30000: episode: 66, duration: 0.708s, episode steps:  53, steps per second:  75, episode reward: -190.307, mean reward: -3.591 [-20.000, 18.720], mean action: 4.340 [0.000, 9.000],  loss: 52.797319, mae: 0.797037, mean_q: 0.921563, mean_eps: 0.782320
+Reset
+  7335/30000: episode: 67, duration: 0.605s, episode steps:  52, steps per second:  86, episode reward: -231.266, mean reward: -4.447 [-20.000, 16.443], mean action: 4.404 [0.000, 9.000],  loss: 44.849892, mae: 0.777627, mean_q: 0.927597, mean_eps: 0.780745
+Reset
+  7370/30000: episode: 68, duration: 0.436s, episode steps:  35, steps per second:  80, episode reward: -64.449, mean reward: -1.841 [-20.000, 90.771], mean action: 4.314 [0.000, 9.000],  loss: 40.119224, mae: 0.764428, mean_q: 0.931023, mean_eps: 0.779440
+Reset
+  7397/30000: episode: 69, duration: 0.342s, episode steps:  27, steps per second:  79, episode reward: -69.575, mean reward: -2.577 [-20.000, 15.629], mean action: 3.778 [0.000, 9.000],  loss: 54.173387, mae: 0.797316, mean_q: 0.924943, mean_eps: 0.778510
+Reset
+  7480/30000: episode: 70, duration: 1.293s, episode steps:  83, steps per second:  64, episode reward: -233.552, mean reward: -2.814 [-20.000, 25.887], mean action: 3.904 [0.000, 9.000],  loss: 48.101217, mae: 0.780619, mean_q: 0.929920, mean_eps: 0.776860
+Reset
+  7521/30000: episode: 71, duration: 0.573s, episode steps:  41, steps per second:  72, episode reward: -102.408, mean reward: -2.498 [-20.000, 23.139], mean action: 4.366 [0.000, 9.000],  loss: 42.479632, mae: 0.794881, mean_q: 0.940585, mean_eps: 0.775000
+Reset
+  7632/30000: episode: 72, duration: 1.402s, episode steps: 111, steps per second:  79, episode reward: -474.713, mean reward: -4.277 [-20.000, 51.445], mean action: 3.928 [0.000, 9.000],  loss: 45.552752, mae: 0.768023, mean_q: 0.937755, mean_eps: 0.772720
+Reset
+  7873/30000: episode: 73, duration: 2.949s, episode steps: 241, steps per second:  82, episode reward: -1481.505, mean reward: -6.147 [-20.000, 25.733], mean action: 5.071 [0.000, 9.000],  loss: 49.338589, mae: 0.787294, mean_q: 0.929079, mean_eps: 0.767440
+Reset
+  7925/30000: episode: 74, duration: 1.050s, episode steps:  52, steps per second:  50, episode reward: 57.412, mean reward:  1.104 [-20.000, 23.850], mean action: 4.538 [0.000, 9.000],  loss: 58.066107, mae: 0.802875, mean_q: 0.923217, mean_eps: 0.763045
+Reset
+  8166/30000: episode: 75, duration: 2.506s, episode steps: 241, steps per second:  96, episode reward: -1120.093, mean reward: -4.648 [-20.000, 48.978], mean action: 5.564 [0.000, 9.000],  loss: 52.256592, mae: 0.785535, mean_q: 0.922175, mean_eps: 0.758650
+Reset
+  8317/30000: episode: 76, duration: 2.239s, episode steps: 151, steps per second:  67, episode reward: -240.089, mean reward: -1.590 [-20.000, 65.766], mean action: 3.974 [0.000, 9.000],  loss: 54.936565, mae: 0.774629, mean_q: 0.918807, mean_eps: 0.752770
+Reset
+  8359/30000: episode: 77, duration: 0.565s, episode steps:  42, steps per second:  74, episode reward: -24.615, mean reward: -0.586 [-20.000, 49.340], mean action: 3.952 [0.000, 9.000],  loss: 34.247804, mae: 0.725160, mean_q: 0.922446, mean_eps: 0.749875
+Reset
+  8458/30000: episode: 78, duration: 1.689s, episode steps:  99, steps per second:  59, episode reward:  6.202, mean reward:  0.063 [-20.000, 89.023], mean action: 3.879 [0.000, 9.000],  loss: 44.950459, mae: 0.755187, mean_q: 0.927338, mean_eps: 0.747760
+Reset
+  8699/30000: episode: 79, duration: 2.986s, episode steps: 241, steps per second:  81, episode reward: -1028.659, mean reward: -4.268 [-20.000, 22.165], mean action: 5.079 [0.000, 9.000],  loss: 50.827688, mae: 0.765566, mean_q: 0.915905, mean_eps: 0.742660
+Reset
+  8722/30000: episode: 80, duration: 0.257s, episode steps:  23, steps per second:  89, episode reward: -73.785, mean reward: -3.208 [-20.000, 59.768], mean action: 3.783 [0.000, 7.000],  loss: 59.619894, mae: 0.762110, mean_q: 0.920070, mean_eps: 0.738700
+Reset
+  8739/30000: episode: 81, duration: 0.141s, episode steps:  17, steps per second: 120, episode reward: -97.328, mean reward: -5.725 [-10.000, 11.632], mean action: 5.176 [1.000, 9.000],  loss: 63.184743, mae: 0.818030, mean_q: 0.922218, mean_eps: 0.738100
+Reset
+  8798/30000: episode: 82, duration: 0.748s, episode steps:  59, steps per second:  79, episode reward: -141.531, mean reward: -2.399 [-20.000, 32.495], mean action: 3.983 [0.000, 9.000],  loss: 53.702253, mae: 0.766926, mean_q: 0.910527, mean_eps: 0.736960
+Reset
+  8834/30000: episode: 83, duration: 0.485s, episode steps:  36, steps per second:  74, episode reward: -76.307, mean reward: -2.120 [-20.000, 20.746], mean action: 4.722 [0.000, 9.000],  loss: 50.053112, mae: 0.761048, mean_q: 0.927838, mean_eps: 0.735535
+Reset
+  8861/30000: episode: 84, duration: 0.290s, episode steps:  27, steps per second:  93, episode reward: -44.997, mean reward: -1.667 [-20.000, 40.437], mean action: 3.037 [0.000, 9.000],  loss: 43.645369, mae: 0.751416, mean_q: 0.925342, mean_eps: 0.734590
+Reset
+  8892/30000: episode: 85, duration: 0.334s, episode steps:  31, steps per second:  93, episode reward: -102.941, mean reward: -3.321 [-20.000, 49.613], mean action: 3.677 [0.000, 9.000],  loss: 34.059437, mae: 0.730825, mean_q: 0.928638, mean_eps: 0.733720
+Reset
+  8969/30000: episode: 86, duration: 1.443s, episode steps:  77, steps per second:  53, episode reward: -52.750, mean reward: -0.685 [-20.000, 74.574], mean action: 4.494 [0.000, 9.000],  loss: 41.630363, mae: 0.748603, mean_q: 0.912303, mean_eps: 0.732100
+Reset
+  9029/30000: episode: 87, duration: 0.756s, episode steps:  60, steps per second:  79, episode reward: -178.153, mean reward: -2.969 [-20.000, 56.935], mean action: 4.883 [0.000, 9.000],  loss: 39.331323, mae: 0.735906, mean_q: 0.910620, mean_eps: 0.730045
+Reset
+  9270/30000: episode: 88, duration: 2.467s, episode steps: 241, steps per second:  98, episode reward: -1094.103, mean reward: -4.540 [-20.000, 18.578], mean action: 4.851 [0.000, 9.000],  loss: 46.766339, mae: 0.749852, mean_q: 0.916707, mean_eps: 0.725530
+Reset
+  9511/30000: episode: 89, duration: 3.257s, episode steps: 241, steps per second:  74, episode reward: -1256.027, mean reward: -5.212 [-20.000, 17.875], mean action: 4.660 [0.000, 9.000],  loss: 43.108638, mae: 0.745021, mean_q: 0.892589, mean_eps: 0.718300
+Reset
+  9542/30000: episode: 90, duration: 0.479s, episode steps:  31, steps per second:  65, episode reward: 33.875, mean reward:  1.093 [-20.000, 20.566], mean action: 3.968 [0.000, 9.000],  loss: 53.289815, mae: 0.774646, mean_q: 0.886078, mean_eps: 0.714220
+Reset
+  9715/30000: episode: 91, duration: 3.091s, episode steps: 173, steps per second:  56, episode reward: 85.871, mean reward:  0.496 [-20.000, 91.857], mean action: 3.688 [0.000, 9.000],  loss: 49.294670, mae: 0.740728, mean_q: 0.891603, mean_eps: 0.711160
+Reset
+  9765/30000: episode: 92, duration: 0.594s, episode steps:  50, steps per second:  84, episode reward: -75.163, mean reward: -1.503 [-20.000, 22.007], mean action: 4.900 [0.000, 9.000],  loss: 37.631599, mae: 0.707243, mean_q: 0.901956, mean_eps: 0.707815
+Reset
+ 10006/30000: episode: 93, duration: 2.864s, episode steps: 241, steps per second:  84, episode reward: -793.179, mean reward: -3.291 [-20.000, 45.090], mean action: 5.539 [0.000, 9.000],  loss: 50.870276, mae: 0.737262, mean_q: 0.910413, mean_eps: 0.703450
+Reset
+ 10162/30000: episode: 94, duration: 2.627s, episode steps: 156, steps per second:  59, episode reward: -60.123, mean reward: -0.385 [-20.000, 156.864], mean action: 4.436 [0.000, 9.000],  loss: 53.193247, mae: 0.736572, mean_q: 0.902017, mean_eps: 0.697495
+Reset
+ 10294/30000: episode: 95, duration: 1.837s, episode steps: 132, steps per second:  72, episode reward: -363.740, mean reward: -2.756 [-20.000, 13.365], mean action: 5.152 [0.000, 9.000],  loss: 48.182678, mae: 0.716004, mean_q: 0.897084, mean_eps: 0.693175
+Reset
+ 10351/30000: episode: 96, duration: 0.790s, episode steps:  57, steps per second:  72, episode reward: -135.481, mean reward: -2.377 [-20.000, 27.127], mean action: 3.018 [0.000, 9.000],  loss: 58.152640, mae: 0.742818, mean_q: 0.891723, mean_eps: 0.690340
+Reset
+ 10538/30000: episode: 97, duration: 3.305s, episode steps: 187, steps per second:  57, episode reward: -338.863, mean reward: -1.812 [-20.000, 80.411], mean action: 4.797 [0.000, 9.000],  loss: 48.216445, mae: 0.716838, mean_q: 0.890600, mean_eps: 0.686680
+Reset
+ 10779/30000: episode: 98, duration: 3.041s, episode steps: 241, steps per second:  79, episode reward: -777.431, mean reward: -3.226 [-20.000, 29.524], mean action: 4.353 [0.000, 9.000],  loss: 50.685535, mae: 0.711927, mean_q: 0.895019, mean_eps: 0.680260
+Reset
+ 11020/30000: episode: 99, duration: 3.272s, episode steps: 241, steps per second:  74, episode reward: -1078.187, mean reward: -4.474 [-20.000, 22.216], mean action: 4.967 [0.000, 9.000],  loss: 49.078031, mae: 0.709591, mean_q: 0.896423, mean_eps: 0.673030
+Reset
+ 11261/30000: episode: 100, duration: 3.040s, episode steps: 241, steps per second:  79, episode reward: -844.666, mean reward: -3.505 [-20.000, 28.398], mean action: 5.129 [0.000, 9.000],  loss: 41.708903, mae: 0.691471, mean_q: 0.889548, mean_eps: 0.665800
+Reset
+ 11502/30000: episode: 101, duration: 2.872s, episode steps: 241, steps per second:  84, episode reward: -823.612, mean reward: -3.417 [-20.000, 19.991], mean action: 4.714 [0.000, 9.000],  loss: 40.648723, mae: 0.684469, mean_q: 0.885068, mean_eps: 0.658570
+Reset
+ 11743/30000: episode: 102, duration: 2.432s, episode steps: 241, steps per second:  99, episode reward: -924.755, mean reward: -3.837 [-20.000, 108.266], mean action: 5.656 [0.000, 9.000],  loss: 41.100103, mae: 0.679274, mean_q: 0.880539, mean_eps: 0.651340
+Reset
+ 11805/30000: episode: 103, duration: 1.020s, episode steps:  62, steps per second:  61, episode reward: -55.421, mean reward: -0.894 [-20.000, 119.495], mean action: 5.774 [0.000, 9.000],  loss: 49.298170, mae: 0.696646, mean_q: 0.877738, mean_eps: 0.646795
+Reset
+ 12004/30000: episode: 104, duration: 2.645s, episode steps: 199, steps per second:  75, episode reward: -464.328, mean reward: -2.333 [-20.000, 41.705], mean action: 4.106 [0.000, 9.000],  loss: 37.184298, mae: 0.666516, mean_q: 0.873864, mean_eps: 0.642880
+Reset
+ 12113/30000: episode: 105, duration: 1.473s, episode steps: 109, steps per second:  74, episode reward: -78.098, mean reward: -0.716 [-20.000, 49.367], mean action: 4.459 [0.000, 9.000],  loss: 39.577327, mae: 0.672205, mean_q: 0.884962, mean_eps: 0.638260
+Reset
+ 12354/30000: episode: 106, duration: 3.542s, episode steps: 241, steps per second:  68, episode reward: -753.085, mean reward: -3.125 [-20.000, 24.186], mean action: 4.788 [0.000, 9.000],  loss: 38.237889, mae: 0.656134, mean_q: 0.862111, mean_eps: 0.633010
+Reset
+ 12461/30000: episode: 107, duration: 1.631s, episode steps: 107, steps per second:  66, episode reward: -156.825, mean reward: -1.466 [-20.000, 50.694], mean action: 4.439 [0.000, 9.000],  loss: 40.059707, mae: 0.658601, mean_q: 0.866384, mean_eps: 0.627790
+Reset
+ 12491/30000: episode: 108, duration: 0.526s, episode steps:  30, steps per second:  57, episode reward: 90.883, mean reward:  3.029 [-20.000, 125.369], mean action: 3.400 [0.000, 9.000],  loss: 33.753056, mae: 0.639112, mean_q: 0.849885, mean_eps: 0.625735
+Reset
+ 12524/30000: episode: 109, duration: 0.527s, episode steps:  33, steps per second:  63, episode reward: 75.548, mean reward:  2.289 [-20.000, 59.936], mean action: 2.606 [0.000, 9.000],  loss: 35.428609, mae: 0.660160, mean_q: 0.850424, mean_eps: 0.624790
+Reset
+ 12765/30000: episode: 110, duration: 3.244s, episode steps: 241, steps per second:  74, episode reward: -914.590, mean reward: -3.795 [-20.000, 30.103], mean action: 4.900 [0.000, 9.000],  loss: 39.176626, mae: 0.650542, mean_q: 0.858098, mean_eps: 0.620680
+Reset
+ 12815/30000: episode: 111, duration: 0.917s, episode steps:  50, steps per second:  55, episode reward: 127.011, mean reward:  2.540 [-20.000, 59.640], mean action: 3.880 [0.000, 9.000],  loss: 28.912563, mae: 0.614967, mean_q: 0.845069, mean_eps: 0.616315
+Reset
+ 12862/30000: episode: 112, duration: 0.732s, episode steps:  47, steps per second:  64, episode reward: -52.563, mean reward: -1.118 [-20.000, 60.314], mean action: 5.128 [0.000, 9.000],  loss: 34.691268, mae: 0.626090, mean_q: 0.863618, mean_eps: 0.614860
+Reset
+ 13052/30000: episode: 113, duration: 2.836s, episode steps: 190, steps per second:  67, episode reward: -608.922, mean reward: -3.205 [-20.000, 79.683], mean action: 5.253 [0.000, 9.000],  loss: 43.324166, mae: 0.652427, mean_q: 0.860562, mean_eps: 0.611305
+Reset
+ 13122/30000: episode: 114, duration: 1.205s, episode steps:  70, steps per second:  58, episode reward: 95.717, mean reward:  1.367 [-20.000, 41.938], mean action: 3.743 [0.000, 9.000],  loss: 45.404376, mae: 0.660414, mean_q: 0.850908, mean_eps: 0.607405
+Reset
+ 13168/30000: episode: 115, duration: 0.535s, episode steps:  46, steps per second:  86, episode reward: 99.003, mean reward:  2.152 [-20.000, 164.771], mean action: 4.000 [0.000, 9.000],  loss: 42.016711, mae: 0.642293, mean_q: 0.865559, mean_eps: 0.605665
+Reset
+ 13409/30000: episode: 116, duration: 3.521s, episode steps: 241, steps per second:  68, episode reward: -797.369, mean reward: -3.309 [-20.000, 46.148], mean action: 5.871 [0.000, 9.000],  loss: 49.245210, mae: 0.651062, mean_q: 0.860354, mean_eps: 0.601360
+Reset
+ 13553/30000: episode: 117, duration: 2.169s, episode steps: 144, steps per second:  66, episode reward: -375.034, mean reward: -2.604 [-20.000, 51.515], mean action: 5.181 [0.000, 9.000],  loss: 40.908175, mae: 0.643184, mean_q: 0.863960, mean_eps: 0.595585
+Reset
+ 13741/30000: episode: 118, duration: 2.536s, episode steps: 188, steps per second:  74, episode reward: -623.011, mean reward: -3.314 [-20.000, 53.242], mean action: 4.755 [0.000, 9.000],  loss: 42.768998, mae: 0.642962, mean_q: 0.848560, mean_eps: 0.590605
+Reset
+ 13794/30000: episode: 119, duration: 0.501s, episode steps:  53, steps per second: 106, episode reward: -175.319, mean reward: -3.308 [-20.000, 22.469], mean action: 4.208 [0.000, 9.000],  loss: 39.532084, mae: 0.615170, mean_q: 0.841193, mean_eps: 0.586990
+Reset
+ 13869/30000: episode: 120, duration: 0.793s, episode steps:  75, steps per second:  95, episode reward: -224.908, mean reward: -2.999 [-10.030, 20.102], mean action: 4.387 [0.000, 9.000],  loss: 47.110834, mae: 0.636606, mean_q: 0.837501, mean_eps: 0.585070
+Reset
+ 13927/30000: episode: 121, duration: 0.909s, episode steps:  58, steps per second:  64, episode reward: 142.774, mean reward:  2.462 [-20.000, 86.845], mean action: 4.414 [0.000, 9.000],  loss: 51.287579, mae: 0.639909, mean_q: 0.851052, mean_eps: 0.583075
+Reset
+ 14168/30000: episode: 122, duration: 3.627s, episode steps: 241, steps per second:  66, episode reward: -879.654, mean reward: -3.650 [-20.000, 51.541], mean action: 5.419 [0.000, 9.000],  loss: 36.247140, mae: 0.630626, mean_q: 0.837370, mean_eps: 0.578590
+Reset
+ 14293/30000: episode: 123, duration: 1.141s, episode steps: 125, steps per second: 110, episode reward: -450.667, mean reward: -3.605 [-10.030, 15.775], mean action: 4.208 [0.000, 9.000],  loss: 39.195539, mae: 0.619302, mean_q: 0.834536, mean_eps: 0.573100
+Reset
+ 14398/30000: episode: 124, duration: 1.663s, episode steps: 105, steps per second:  63, episode reward: -13.564, mean reward: -0.129 [-20.000, 41.792], mean action: 4.219 [0.000, 9.000],  loss: 35.555315, mae: 0.619937, mean_q: 0.836594, mean_eps: 0.569650
+Reset
+ 14461/30000: episode: 125, duration: 1.043s, episode steps:  63, steps per second:  60, episode reward: 51.022, mean reward:  0.810 [-20.000, 59.113], mean action: 3.524 [0.000, 9.000],  loss: 36.326110, mae: 0.615338, mean_q: 0.827513, mean_eps: 0.567130
+Reset
+ 14702/30000: episode: 126, duration: 4.339s, episode steps: 241, steps per second:  56, episode reward: -240.535, mean reward: -0.998 [-20.000, 78.544], mean action: 4.286 [0.000, 9.000],  loss: 43.250654, mae: 0.616651, mean_q: 0.829692, mean_eps: 0.562570
+Reset
+ 14866/30000: episode: 127, duration: 2.129s, episode steps: 164, steps per second:  77, episode reward: -726.460, mean reward: -4.430 [-10.030, 27.352], mean action: 5.439 [0.000, 9.000],  loss: 41.716727, mae: 0.624063, mean_q: 0.824621, mean_eps: 0.556495
+Reset
+ 15107/30000: episode: 128, duration: 3.232s, episode steps: 241, steps per second:  75, episode reward: -745.002, mean reward: -3.091 [-20.000, 27.241], mean action: 5.456 [0.000, 9.000],  loss: 38.276465, mae: 0.610360, mean_q: 0.823831, mean_eps: 0.550420
+Reset
+ 15348/30000: episode: 129, duration: 3.027s, episode steps: 241, steps per second:  80, episode reward: -676.497, mean reward: -2.807 [-20.000, 36.150], mean action: 5.079 [0.000, 9.000],  loss: 36.484270, mae: 0.610020, mean_q: 0.813156, mean_eps: 0.543190
+Reset
+ 15388/30000: episode: 130, duration: 0.707s, episode steps:  40, steps per second:  57, episode reward: 22.682, mean reward:  0.567 [-20.000, 98.337], mean action: 4.350 [0.000, 9.000],  loss: 26.007616, mae: 0.593246, mean_q: 0.808098, mean_eps: 0.538975
+Reset
+ 15469/30000: episode: 131, duration: 0.954s, episode steps:  81, steps per second:  85, episode reward: -240.461, mean reward: -2.969 [-20.000, 27.866], mean action: 2.815 [0.000, 9.000],  loss: 30.810636, mae: 0.586857, mean_q: 0.830988, mean_eps: 0.537160
+Reset
+ 15643/30000: episode: 132, duration: 2.599s, episode steps: 174, steps per second:  67, episode reward: -495.265, mean reward: -2.846 [-20.000, 42.501], mean action: 5.144 [0.000, 9.000],  loss: 33.897901, mae: 0.610969, mean_q: 0.814294, mean_eps: 0.533335
+Reset
+ 15795/30000: episode: 133, duration: 2.066s, episode steps: 152, steps per second:  74, episode reward: -158.540, mean reward: -1.043 [-20.000, 35.878], mean action: 4.908 [0.000, 9.000],  loss: 33.518642, mae: 0.598440, mean_q: 0.807700, mean_eps: 0.528445
+Reset
+ 15821/30000: episode: 134, duration: 0.271s, episode steps:  26, steps per second:  96, episode reward: -30.778, mean reward: -1.184 [-20.000,  5.460], mean action: 3.962 [0.000, 8.000],  loss: 45.494107, mae: 0.589585, mean_q: 0.804149, mean_eps: 0.525775
+Reset
+ 15945/30000: episode: 135, duration: 1.561s, episode steps: 124, steps per second:  79, episode reward: -393.980, mean reward: -3.177 [-20.000, 49.376], mean action: 4.944 [0.000, 9.000],  loss: 44.275191, mae: 0.615181, mean_q: 0.807520, mean_eps: 0.523525
+Reset
+ 15975/30000: episode: 136, duration: 0.493s, episode steps:  30, steps per second:  61, episode reward: 94.434, mean reward:  3.148 [-20.000, 29.939], mean action: 2.900 [0.000, 9.000],  loss: 40.595360, mae: 0.612188, mean_q: 0.814624, mean_eps: 0.521215
+Reset
+ 16216/30000: episode: 137, duration: 3.712s, episode steps: 241, steps per second:  65, episode reward: -592.969, mean reward: -2.460 [-20.000, 28.539], mean action: 6.158 [0.000, 9.000],  loss: 37.659583, mae: 0.601965, mean_q: 0.816070, mean_eps: 0.517150
+Reset
+ 16264/30000: episode: 138, duration: 0.839s, episode steps:  48, steps per second:  57, episode reward: 151.872, mean reward:  3.164 [-20.000, 154.483], mean action: 4.792 [0.000, 9.000],  loss: 38.057858, mae: 0.600178, mean_q: 0.821287, mean_eps: 0.512815
+Reset
+ 16310/30000: episode: 139, duration: 0.759s, episode steps:  46, steps per second:  61, episode reward: 186.645, mean reward:  4.058 [-20.000, 118.494], mean action: 2.957 [0.000, 9.000],  loss: 43.094942, mae: 0.604852, mean_q: 0.825675, mean_eps: 0.511405
+Reset
+ 16551/30000: episode: 140, duration: 3.624s, episode steps: 241, steps per second:  67, episode reward: -650.079, mean reward: -2.697 [-20.000, 39.087], mean action: 5.544 [0.000, 9.000],  loss: 42.436202, mae: 0.604282, mean_q: 0.829442, mean_eps: 0.507100
+Reset
+ 16586/30000: episode: 141, duration: 0.224s, episode steps:  35, steps per second: 157, episode reward: -179.441, mean reward: -5.127 [-10.030, 10.521], mean action: 5.314 [0.000, 9.000],  loss: 73.625185, mae: 0.675808, mean_q: 0.810739, mean_eps: 0.502960
+Reset
+ 16699/30000: episode: 142, duration: 1.838s, episode steps: 113, steps per second:  61, episode reward: -28.524, mean reward: -0.252 [-20.000, 106.174], mean action: 4.177 [0.000, 9.000],  loss: 38.246647, mae: 0.599033, mean_q: 0.834080, mean_eps: 0.500740
+Reset
+ 16779/30000: episode: 143, duration: 1.232s, episode steps:  80, steps per second:  65, episode reward: 38.295, mean reward:  0.479 [-20.000, 38.660], mean action: 3.138 [0.000, 9.000],  loss: 34.101533, mae: 0.590845, mean_q: 0.821725, mean_eps: 0.497845
+Reset
+ 16841/30000: episode: 144, duration: 1.004s, episode steps:  62, steps per second:  62, episode reward: 256.957, mean reward:  4.144 [-20.000, 108.559], mean action: 2.677 [0.000, 9.000],  loss: 43.014921, mae: 0.620132, mean_q: 0.830714, mean_eps: 0.495715
+Reset
+ 16963/30000: episode: 145, duration: 1.854s, episode steps: 122, steps per second:  66, episode reward: -44.307, mean reward: -0.363 [-20.000, 47.704], mean action: 4.787 [0.000, 9.000],  loss: 39.714230, mae: 0.609932, mean_q: 0.826176, mean_eps: 0.492955
+Reset
+ 16999/30000: episode: 146, duration: 0.547s, episode steps:  36, steps per second:  66, episode reward: 134.607, mean reward:  3.739 [-20.000, 85.857], mean action: 4.111 [1.000, 8.000],  loss: 43.325081, mae: 0.628156, mean_q: 0.816781, mean_eps: 0.490585
+Reset
+ 17011/30000: episode: 147, duration: 0.125s, episode steps:  12, steps per second:  96, episode reward: 31.276, mean reward:  2.606 [-14.392, 23.281], mean action: 2.667 [1.000, 8.000],  loss: 108.226371, mae: 0.752748, mean_q: 0.825817, mean_eps: 0.489865
+Reset
+ 17252/30000: episode: 148, duration: 3.744s, episode steps: 241, steps per second:  64, episode reward: -560.022, mean reward: -2.324 [-20.000, 51.902], mean action: 5.315 [0.000, 9.000],  loss: 37.712554, mae: 0.601245, mean_q: 0.820196, mean_eps: 0.486070
+Reset
+ 17493/30000: episode: 149, duration: 3.353s, episode steps: 241, steps per second:  72, episode reward: -550.587, mean reward: -2.285 [-20.000, 22.747], mean action: 5.232 [0.000, 9.000],  loss: 43.893425, mae: 0.607360, mean_q: 0.820775, mean_eps: 0.478840
+Reset
+ 17734/30000: episode: 150, duration: 2.724s, episode steps: 241, steps per second:  88, episode reward: -595.349, mean reward: -2.470 [-20.000, 36.467], mean action: 5.120 [0.000, 9.000],  loss: 36.223220, mae: 0.584989, mean_q: 0.822765, mean_eps: 0.471610
+Reset
+ 17776/30000: episode: 151, duration: 0.591s, episode steps:  42, steps per second:  71, episode reward: -33.082, mean reward: -0.788 [-20.000, 15.078], mean action: 3.405 [0.000, 9.000],  loss: 55.230756, mae: 0.643089, mean_q: 0.805724, mean_eps: 0.467365
+Reset
+ 17839/30000: episode: 152, duration: 1.100s, episode steps:  63, steps per second:  57, episode reward:  8.635, mean reward:  0.137 [-20.000, 47.954], mean action: 4.317 [0.000, 9.000],  loss: 51.574606, mae: 0.609671, mean_q: 0.807088, mean_eps: 0.465790
+Reset
+ 18080/30000: episode: 153, duration: 3.857s, episode steps: 241, steps per second:  62, episode reward: -349.579, mean reward: -1.451 [-20.000, 72.857], mean action: 5.046 [0.000, 9.000],  loss: 36.894344, mae: 0.579870, mean_q: 0.811922, mean_eps: 0.461230
+Reset
+ 18247/30000: episode: 154, duration: 2.904s, episode steps: 167, steps per second:  58, episode reward:  3.775, mean reward:  0.023 [-20.000, 140.871], mean action: 5.144 [0.000, 9.000],  loss: 45.577040, mae: 0.583594, mean_q: 0.817491, mean_eps: 0.455110
+Reset
+ 18488/30000: episode: 155, duration: 3.371s, episode steps: 241, steps per second:  71, episode reward: -461.036, mean reward: -1.913 [-20.000, 19.295], mean action: 4.311 [0.000, 9.000],  loss: 46.961311, mae: 0.582293, mean_q: 0.815527, mean_eps: 0.448990
+Reset
+ 18543/30000: episode: 156, duration: 0.854s, episode steps:  55, steps per second:  64, episode reward: 38.426, mean reward:  0.699 [-20.000, 85.485], mean action: 5.600 [0.000, 9.000],  loss: 34.213240, mae: 0.578877, mean_q: 0.815640, mean_eps: 0.444550
+Reset
+ 18566/30000: episode: 157, duration: 0.267s, episode steps:  23, steps per second:  86, episode reward: 73.298, mean reward:  3.187 [-20.000, 59.379], mean action: 4.304 [1.000, 9.000],  loss: 54.125966, mae: 0.590145, mean_q: 0.816494, mean_eps: 0.443380
+Reset
+ 18620/30000: episode: 158, duration: 0.872s, episode steps:  54, steps per second:  62, episode reward: 38.616, mean reward:  0.715 [-20.000, 16.988], mean action: 2.870 [0.000, 9.000],  loss: 37.838450, mae: 0.560670, mean_q: 0.810159, mean_eps: 0.442225
+Reset
+ 18655/30000: episode: 159, duration: 0.484s, episode steps:  35, steps per second:  72, episode reward: 174.492, mean reward:  4.985 [-20.000, 96.307], mean action: 4.486 [0.000, 9.000],  loss: 36.793599, mae: 0.550470, mean_q: 0.824613, mean_eps: 0.440890
+Reset
+ 18698/30000: episode: 160, duration: 0.604s, episode steps:  43, steps per second:  71, episode reward: 34.505, mean reward:  0.802 [-20.000, 24.418], mean action: 3.977 [1.000, 9.000],  loss: 33.987367, mae: 0.568772, mean_q: 0.836001, mean_eps: 0.439720
+Reset
+ 18735/30000: episode: 161, duration: 0.668s, episode steps:  37, steps per second:  55, episode reward: 69.675, mean reward:  1.883 [-20.000, 79.581], mean action: 5.081 [0.000, 9.000],  loss: 27.683630, mae: 0.548009, mean_q: 0.822502, mean_eps: 0.438520
+Reset
+ 18976/30000: episode: 162, duration: 1.882s, episode steps: 241, steps per second: 128, episode reward: -1652.874, mean reward: -6.858 [-20.000,  8.320], mean action: 5.075 [0.000, 9.000],  loss: 41.716979, mae: 0.576611, mean_q: 0.817480, mean_eps: 0.434350
+Reset
+ 19009/30000: episode: 163, duration: 0.451s, episode steps:  33, steps per second:  73, episode reward: 51.191, mean reward:  1.551 [-20.000, 29.176], mean action: 3.091 [0.000, 9.000],  loss: 26.272857, mae: 0.568733, mean_q: 0.801984, mean_eps: 0.430240
+Reset
+ 19250/30000: episode: 164, duration: 2.900s, episode steps: 241, steps per second:  83, episode reward: -429.389, mean reward: -1.782 [-20.000, 63.277], mean action: 6.564 [0.000, 9.000],  loss: 43.965665, mae: 0.586929, mean_q: 0.805997, mean_eps: 0.426130
+Reset
+ 19363/30000: episode: 165, duration: 1.690s, episode steps: 113, steps per second:  67, episode reward: -223.554, mean reward: -1.978 [-20.000, 87.962], mean action: 5.504 [0.000, 9.000],  loss: 36.170729, mae: 0.561940, mean_q: 0.794290, mean_eps: 0.420820
+Reset
+ 19598/30000: episode: 166, duration: 2.854s, episode steps: 235, steps per second:  82, episode reward: -534.760, mean reward: -2.276 [-20.000, 16.027], mean action: 5.230 [0.000, 9.000],  loss: 49.299620, mae: 0.581675, mean_q: 0.790562, mean_eps: 0.415600
+Reset
+ 19667/30000: episode: 167, duration: 1.090s, episode steps:  69, steps per second:  63, episode reward: 127.001, mean reward:  1.841 [-20.000, 35.939], mean action: 4.362 [0.000, 9.000],  loss: 37.656861, mae: 0.569150, mean_q: 0.808722, mean_eps: 0.411040
+Reset
+ 19742/30000: episode: 168, duration: 1.205s, episode steps:  75, steps per second:  62, episode reward: -79.994, mean reward: -1.067 [-20.000, 53.082], mean action: 6.240 [0.000, 9.000],  loss: 40.538091, mae: 0.582410, mean_q: 0.803376, mean_eps: 0.408880
+Reset
+ 19983/30000: episode: 169, duration: 4.118s, episode steps: 241, steps per second:  59, episode reward: -538.786, mean reward: -2.236 [-20.000, 26.654], mean action: 5.768 [0.000, 9.000],  loss: 35.929211, mae: 0.570252, mean_q: 0.792298, mean_eps: 0.404140
+Reset
+ 20012/30000: episode: 170, duration: 0.380s, episode steps:  29, steps per second:  76, episode reward: 45.584, mean reward:  1.572 [-20.000, 18.922], mean action: 2.828 [0.000, 9.000],  loss: 57.204744, mae: 0.604492, mean_q: 0.792268, mean_eps: 0.400090
+Reset
+ 20039/30000: episode: 171, duration: 0.435s, episode steps:  27, steps per second:  62, episode reward: 93.755, mean reward:  3.472 [-20.000, 104.692], mean action: 2.185 [0.000, 9.000],  loss: 49.551666, mae: 0.590646, mean_q: 0.807819, mean_eps: 0.399250
+Reset
+ 20280/30000: episode: 172, duration: 3.019s, episode steps: 241, steps per second:  80, episode reward: -681.384, mean reward: -2.827 [-20.000, 22.487], mean action: 5.527 [0.000, 9.000],  loss: 45.924807, mae: 0.570737, mean_q: 0.809069, mean_eps: 0.395230
+Reset
+ 20348/30000: episode: 173, duration: 1.029s, episode steps:  68, steps per second:  66, episode reward: 120.159, mean reward:  1.767 [-20.000, 145.506], mean action: 4.559 [0.000, 9.000],  loss: 40.231798, mae: 0.562642, mean_q: 0.811360, mean_eps: 0.390595
+Reset
+ 20456/30000: episode: 174, duration: 1.501s, episode steps: 108, steps per second:  72, episode reward: -46.102, mean reward: -0.427 [-20.000, 100.696], mean action: 4.491 [0.000, 9.000],  loss: 46.147600, mae: 0.573858, mean_q: 0.809175, mean_eps: 0.387955
+Reset
+ 20697/30000: episode: 175, duration: 3.712s, episode steps: 241, steps per second:  65, episode reward: -244.609, mean reward: -1.015 [-20.000, 51.888], mean action: 6.593 [0.000, 9.000],  loss: 41.254541, mae: 0.555364, mean_q: 0.804200, mean_eps: 0.382720
+Reset
+ 20896/30000: episode: 176, duration: 3.381s, episode steps: 199, steps per second:  59, episode reward: -91.423, mean reward: -0.459 [-20.000, 59.345], mean action: 6.307 [0.000, 9.000],  loss: 47.384139, mae: 0.547070, mean_q: 0.795495, mean_eps: 0.376120
+Reset
+ 20947/30000: episode: 177, duration: 0.750s, episode steps:  51, steps per second:  68, episode reward: 163.833, mean reward:  3.212 [-20.000, 26.955], mean action: 3.196 [0.000, 9.000],  loss: 39.714399, mae: 0.548917, mean_q: 0.796657, mean_eps: 0.372370
+Reset
+ 21188/30000: episode: 178, duration: 3.178s, episode steps: 241, steps per second:  76, episode reward: -454.213, mean reward: -1.885 [-20.000, 32.977], mean action: 6.187 [0.000, 9.000],  loss: 43.324529, mae: 0.553382, mean_q: 0.799621, mean_eps: 0.367990
+Reset
+ 21338/30000: episode: 179, duration: 2.461s, episode steps: 150, steps per second:  61, episode reward: 157.925, mean reward:  1.053 [-20.000, 141.191], mean action: 5.507 [0.000, 9.000],  loss: 37.885785, mae: 0.533453, mean_q: 0.780954, mean_eps: 0.362125
+Reset
+ 21556/30000: episode: 180, duration: 2.959s, episode steps: 218, steps per second:  74, episode reward: -311.960, mean reward: -1.431 [-20.000, 39.196], mean action: 5.624 [0.000, 9.000],  loss: 34.384928, mae: 0.520232, mean_q: 0.793443, mean_eps: 0.356605
+Reset
+ 21633/30000: episode: 181, duration: 1.212s, episode steps:  77, steps per second:  64, episode reward: 12.740, mean reward:  0.165 [-20.000, 17.378], mean action: 4.883 [0.000, 9.000],  loss: 34.202659, mae: 0.539286, mean_q: 0.793258, mean_eps: 0.352180
+Reset
+ 21874/30000: episode: 182, duration: 2.949s, episode steps: 241, steps per second:  82, episode reward: -972.956, mean reward: -4.037 [-20.000, 15.384], mean action: 4.207 [0.000, 9.000],  loss: 34.568821, mae: 0.529557, mean_q: 0.786117, mean_eps: 0.347410
+Reset
+ 22039/30000: episode: 183, duration: 2.724s, episode steps: 165, steps per second:  61, episode reward: -180.930, mean reward: -1.097 [-20.000, 97.816], mean action: 6.242 [0.000, 9.000],  loss: 37.688149, mae: 0.526685, mean_q: 0.784092, mean_eps: 0.341320
+Reset
+ 22280/30000: episode: 184, duration: 3.686s, episode steps: 241, steps per second:  65, episode reward: -394.554, mean reward: -1.637 [-20.000, 22.123], mean action: 6.577 [0.000, 9.000],  loss: 38.340609, mae: 0.524652, mean_q: 0.784016, mean_eps: 0.335230
+Reset
+ 22416/30000: episode: 185, duration: 1.879s, episode steps: 136, steps per second:  72, episode reward: 64.845, mean reward:  0.477 [-20.000, 68.343], mean action: 4.699 [0.000, 9.000],  loss: 37.052850, mae: 0.524720, mean_q: 0.784212, mean_eps: 0.329575
+Reset
+ 22657/30000: episode: 186, duration: 3.982s, episode steps: 241, steps per second:  61, episode reward: -161.092, mean reward: -0.668 [-20.000, 29.069], mean action: 5.664 [0.000, 9.000],  loss: 37.145104, mae: 0.506141, mean_q: 0.786605, mean_eps: 0.323920
+Reset
+ 22725/30000: episode: 187, duration: 0.977s, episode steps:  68, steps per second:  70, episode reward: 133.968, mean reward:  1.970 [-20.000, 70.726], mean action: 3.279 [0.000, 9.000],  loss: 48.057046, mae: 0.524041, mean_q: 0.776850, mean_eps: 0.319285
+Reset
+ 22966/30000: episode: 188, duration: 2.863s, episode steps: 241, steps per second:  84, episode reward: -216.958, mean reward: -0.900 [-20.000, 17.464], mean action: 4.925 [0.000, 9.000],  loss: 36.613103, mae: 0.502330, mean_q: 0.775199, mean_eps: 0.314650
+Reset
+ 23207/30000: episode: 189, duration: 4.297s, episode steps: 241, steps per second:  56, episode reward: -169.669, mean reward: -0.704 [-20.000, 50.686], mean action: 5.950 [0.000, 9.000],  loss: 32.801769, mae: 0.511713, mean_q: 0.779737, mean_eps: 0.307420
+Reset
+ 23368/30000: episode: 190, duration: 2.780s, episode steps: 161, steps per second:  58, episode reward: -90.946, mean reward: -0.565 [-20.000, 98.936], mean action: 5.745 [0.000, 9.000],  loss: 26.748992, mae: 0.488495, mean_q: 0.776400, mean_eps: 0.301390
+Reset
+ 23609/30000: episode: 191, duration: 3.248s, episode steps: 241, steps per second:  74, episode reward: -100.422, mean reward: -0.417 [-20.000, 16.959], mean action: 4.793 [0.000, 9.000],  loss: 32.485997, mae: 0.488617, mean_q: 0.777079, mean_eps: 0.295360
+Reset
+ 23850/30000: episode: 192, duration: 3.096s, episode steps: 241, steps per second:  78, episode reward: -269.834, mean reward: -1.120 [-20.000, 87.643], mean action: 5.743 [0.000, 9.000],  loss: 27.945921, mae: 0.483289, mean_q: 0.766659, mean_eps: 0.288130
+Reset
+ 24091/30000: episode: 193, duration: 3.965s, episode steps: 241, steps per second:  61, episode reward: -84.349, mean reward: -0.350 [-20.000, 25.232], mean action: 5.461 [0.000, 9.000],  loss: 30.079739, mae: 0.459545, mean_q: 0.770743, mean_eps: 0.280900
+Reset
+ 24164/30000: episode: 194, duration: 1.148s, episode steps:  73, steps per second:  64, episode reward: 103.185, mean reward:  1.413 [-20.000, 25.513], mean action: 3.726 [0.000, 9.000],  loss: 24.318107, mae: 0.460764, mean_q: 0.787177, mean_eps: 0.276190
+Reset
+ 24405/30000: episode: 195, duration: 4.231s, episode steps: 241, steps per second:  57, episode reward: -577.129, mean reward: -2.395 [-20.000, 81.262], mean action: 4.776 [0.000, 9.000],  loss: 26.915233, mae: 0.448962, mean_q: 0.782250, mean_eps: 0.271480
+Reset
+ 24428/30000: episode: 196, duration: 0.334s, episode steps:  23, steps per second:  69, episode reward: 55.560, mean reward:  2.416 [-20.000, 29.037], mean action: 2.957 [1.000, 7.000],  loss: 20.766836, mae: 0.423093, mean_q: 0.773662, mean_eps: 0.267520
+Reset
+ 24455/30000: episode: 197, duration: 0.383s, episode steps:  27, steps per second:  71, episode reward: 169.743, mean reward:  6.287 [-20.000, 142.630], mean action: 1.593 [0.000, 6.000],  loss: 27.961472, mae: 0.469271, mean_q: 0.768757, mean_eps: 0.266770
+Reset
+ 24696/30000: episode: 198, duration: 3.018s, episode steps: 241, steps per second:  80, episode reward: 77.916, mean reward:  0.323 [-20.000, 51.630], mean action: 6.178 [0.000, 9.000],  loss: 30.565106, mae: 0.450267, mean_q: 0.772880, mean_eps: 0.262750
+Reset
+ 24937/30000: episode: 199, duration: 2.101s, episode steps: 241, steps per second: 115, episode reward: -1213.148, mean reward: -5.034 [-20.000, 24.929], mean action: 6.299 [0.000, 9.000],  loss: 33.235033, mae: 0.449164, mean_q: 0.783315, mean_eps: 0.255520
+Reset
+ 25105/30000: episode: 200, duration: 2.883s, episode steps: 168, steps per second:  58, episode reward: 41.692, mean reward:  0.248 [-20.000, 62.673], mean action: 4.482 [0.000, 9.000],  loss: 30.589104, mae: 0.460525, mean_q: 0.798975, mean_eps: 0.249385
+Reset
+ 25346/30000: episode: 201, duration: 3.909s, episode steps: 241, steps per second:  62, episode reward: -136.360, mean reward: -0.566 [-20.000, 72.708], mean action: 5.830 [0.000, 9.000],  loss: 26.856121, mae: 0.439455, mean_q: 0.778655, mean_eps: 0.243250
+Reset
+ 25454/30000: episode: 202, duration: 1.913s, episode steps: 108, steps per second:  56, episode reward: 28.232, mean reward:  0.261 [-20.000, 75.516], mean action: 5.352 [0.000, 9.000],  loss: 22.922106, mae: 0.438775, mean_q: 0.780756, mean_eps: 0.238015
+Reset
+ 25508/30000: episode: 203, duration: 0.779s, episode steps:  54, steps per second:  69, episode reward: 106.769, mean reward:  1.977 [-20.000, 80.326], mean action: 3.648 [0.000, 8.000],  loss: 20.580177, mae: 0.428908, mean_q: 0.776937, mean_eps: 0.235585
+Reset
+ 25749/30000: episode: 204, duration: 3.795s, episode steps: 241, steps per second:  64, episode reward: 144.773, mean reward:  0.601 [-20.000, 93.093], mean action: 5.925 [0.000, 9.000],  loss: 27.616414, mae: 0.442790, mean_q: 0.768422, mean_eps: 0.231160
+Reset
+ 25823/30000: episode: 205, duration: 0.778s, episode steps:  74, steps per second:  95, episode reward: -71.718, mean reward: -0.969 [-10.030, 29.786], mean action: 5.662 [0.000, 9.000],  loss: 26.249846, mae: 0.439773, mean_q: 0.765596, mean_eps: 0.226435
+Reset
+ 25852/30000: episode: 206, duration: 0.431s, episode steps:  29, steps per second:  67, episode reward: 38.668, mean reward:  1.333 [-20.000, 42.829], mean action: 4.931 [2.000, 7.000],  loss: 22.257971, mae: 0.447216, mean_q: 0.773331, mean_eps: 0.224890
+Reset
+ 26093/30000: episode: 207, duration: 3.478s, episode steps: 241, steps per second:  69, episode reward: -38.068, mean reward: -0.158 [-20.000, 71.556], mean action: 6.220 [0.000, 9.000],  loss: 33.276582, mae: 0.444183, mean_q: 0.775532, mean_eps: 0.220840
+Reset
+ 26111/30000: episode: 208, duration: 0.169s, episode steps:  18, steps per second: 106, episode reward: 20.655, mean reward:  1.147 [-17.269, 25.009], mean action: 5.556 [1.000, 8.000],  loss: 33.462247, mae: 0.440595, mean_q: 0.761248, mean_eps: 0.216955
+Reset
+ 26212/30000: episode: 209, duration: 1.625s, episode steps: 101, steps per second:  62, episode reward: 112.129, mean reward:  1.110 [-20.000, 71.991], mean action: 4.485 [0.000, 9.000],  loss: 27.709187, mae: 0.427951, mean_q: 0.776962, mean_eps: 0.215170
+Reset
+ 26355/30000: episode: 210, duration: 2.717s, episode steps: 143, steps per second:  53, episode reward: 88.207, mean reward:  0.617 [-20.000, 99.954], mean action: 4.986 [0.000, 9.000],  loss: 25.603405, mae: 0.432539, mean_q: 0.788103, mean_eps: 0.211510
+Reset
+ 26386/30000: episode: 211, duration: 0.438s, episode steps:  31, steps per second:  71, episode reward: 51.669, mean reward:  1.667 [-20.000, 59.880], mean action: 3.645 [0.000, 8.000],  loss: 47.966857, mae: 0.479705, mean_q: 0.807527, mean_eps: 0.208900
+Reset
+ 26472/30000: episode: 212, duration: 0.997s, episode steps:  86, steps per second:  86, episode reward: 123.997, mean reward:  1.442 [-10.060, 67.868], mean action: 4.826 [0.000, 8.000],  loss: 31.848915, mae: 0.450306, mean_q: 0.805937, mean_eps: 0.207145
+Reset
+ 26674/30000: episode: 213, duration: 3.445s, episode steps: 202, steps per second:  59, episode reward: 121.335, mean reward:  0.601 [-20.000, 57.357], mean action: 5.228 [0.000, 9.000],  loss: 30.305333, mae: 0.446262, mean_q: 0.799324, mean_eps: 0.202825
+Reset
+ 26713/30000: episode: 214, duration: 0.535s, episode steps:  39, steps per second:  73, episode reward: 112.727, mean reward:  2.890 [-10.030, 28.883], mean action: 3.897 [1.000, 9.000],  loss: 19.521790, mae: 0.415018, mean_q: 0.795734, mean_eps: 0.199210
+Reset
+ 26954/30000: episode: 215, duration: 2.739s, episode steps: 241, steps per second:  88, episode reward: -1072.229, mean reward: -4.449 [-20.000, 29.850], mean action: 5.954 [0.000, 9.000],  loss: 24.150519, mae: 0.412583, mean_q: 0.790210, mean_eps: 0.195010
+Reset
+ 27195/30000: episode: 216, duration: 3.364s, episode steps: 241, steps per second:  72, episode reward: 74.631, mean reward:  0.310 [-20.000, 30.077], mean action: 6.108 [0.000, 9.000],  loss: 25.916431, mae: 0.424574, mean_q: 0.764335, mean_eps: 0.187780
+Reset
+ 27224/30000: episode: 217, duration: 0.355s, episode steps:  29, steps per second:  82, episode reward: 206.691, mean reward:  7.127 [-10.000, 73.914], mean action: 3.172 [0.000, 8.000],  loss: 25.924423, mae: 0.417562, mean_q: 0.772199, mean_eps: 0.183730
+Reset
+ 27465/30000: episode: 218, duration: 3.369s, episode steps: 241, steps per second:  72, episode reward: 92.910, mean reward:  0.386 [-20.000, 76.258], mean action: 5.237 [0.000, 9.000],  loss: 26.159129, mae: 0.419335, mean_q: 0.771897, mean_eps: 0.179680
+Reset
+ 27706/30000: episode: 219, duration: 3.060s, episode steps: 241, steps per second:  79, episode reward: 159.685, mean reward:  0.663 [-20.000, 131.440], mean action: 6.187 [0.000, 9.000],  loss: 27.871461, mae: 0.425815, mean_q: 0.763404, mean_eps: 0.172450
+Reset
+ 27735/30000: episode: 220, duration: 0.409s, episode steps:  29, steps per second:  71, episode reward: 205.863, mean reward:  7.099 [-20.000, 58.156], mean action: 1.897 [0.000, 7.000],  loss: 20.579389, mae: 0.384136, mean_q: 0.767064, mean_eps: 0.168400
+Reset
+ 27881/30000: episode: 221, duration: 2.059s, episode steps: 146, steps per second:  71, episode reward: 53.272, mean reward:  0.365 [-10.060, 42.720], mean action: 6.281 [0.000, 9.000],  loss: 29.640601, mae: 0.422953, mean_q: 0.771027, mean_eps: 0.165775
+Reset
+ 27884/30000: episode: 222, duration: 0.041s, episode steps:   3, steps per second:  72, episode reward: 37.510, mean reward: 12.503 [-6.856, 24.686], mean action: 2.000 [2.000, 2.000],  loss: 25.708344, mae: 0.421062, mean_q: 0.742910, mean_eps: 0.163540
+Reset
+ 28125/30000: episode: 223, duration: 3.822s, episode steps: 241, steps per second:  63, episode reward: 121.174, mean reward:  0.503 [-20.000, 76.716], mean action: 5.755 [0.000, 9.000],  loss: 32.475027, mae: 0.432038, mean_q: 0.756686, mean_eps: 0.159880
+Reset
+ 28148/30000: episode: 224, duration: 0.302s, episode steps:  23, steps per second:  76, episode reward: 94.476, mean reward:  4.108 [-20.000, 18.505], mean action: 3.087 [0.000, 7.000],  loss: 24.479081, mae: 0.424747, mean_q: 0.762747, mean_eps: 0.155920
+Reset
+ 28389/30000: episode: 225, duration: 3.876s, episode steps: 241, steps per second:  62, episode reward: 166.153, mean reward:  0.689 [-20.000, 23.302], mean action: 5.627 [0.000, 9.000],  loss: 33.882728, mae: 0.423683, mean_q: 0.769629, mean_eps: 0.151960
+Reset
+ 28630/30000: episode: 226, duration: 3.486s, episode steps: 241, steps per second:  69, episode reward: 153.074, mean reward:  0.635 [-20.000, 19.695], mean action: 5.793 [0.000, 9.000],  loss: 30.069710, mae: 0.414791, mean_q: 0.771086, mean_eps: 0.144730
+Reset
+ 28673/30000: episode: 227, duration: 0.690s, episode steps:  43, steps per second:  62, episode reward: 74.475, mean reward:  1.732 [-20.340, 14.330], mean action: 1.465 [0.000, 7.000],  loss: 21.636269, mae: 0.417717, mean_q: 0.785702, mean_eps: 0.140470
+Reset
+ 28702/30000: episode: 228, duration: 0.455s, episode steps:  29, steps per second:  64, episode reward: 123.143, mean reward:  4.246 [-20.000, 70.706], mean action: 1.966 [0.000, 8.000],  loss: 33.076094, mae: 0.433104, mean_q: 0.776379, mean_eps: 0.139390
+Reset
+ 28943/30000: episode: 229, duration: 3.705s, episode steps: 241, steps per second:  65, episode reward: 128.876, mean reward:  0.535 [-20.000, 37.318], mean action: 6.448 [0.000, 9.000],  loss: 29.113835, mae: 0.409973, mean_q: 0.781236, mean_eps: 0.135340
+Reset
+ 28965/30000: episode: 230, duration: 0.363s, episode steps:  22, steps per second:  61, episode reward: 107.051, mean reward:  4.866 [-20.000, 25.847], mean action: 2.000 [0.000, 6.000],  loss: 29.109953, mae: 0.410162, mean_q: 0.799908, mean_eps: 0.131395
+Reset
+ 29181/30000: episode: 231, duration: 4.032s, episode steps: 216, steps per second:  54, episode reward: 238.697, mean reward:  1.105 [-20.000, 109.115], mean action: 6.657 [0.000, 9.000],  loss: 29.511429, mae: 0.407777, mean_q: 0.775681, mean_eps: 0.127825
+Reset
+ 29422/30000: episode: 232, duration: 4.332s, episode steps: 241, steps per second:  56, episode reward: 18.117, mean reward:  0.075 [-20.000, 66.576], mean action: 6.759 [0.000, 9.000],  loss: 28.988692, mae: 0.405908, mean_q: 0.771917, mean_eps: 0.120970
+Reset
+ 29663/30000: episode: 233, duration: 3.658s, episode steps: 241, steps per second:  66, episode reward: 177.723, mean reward:  0.737 [-20.000, 26.882], mean action: 6.062 [0.000, 9.000],  loss: 26.384615, mae: 0.393149, mean_q: 0.770845, mean_eps: 0.113740
+Reset
+ 29737/30000: episode: 234, duration: 1.070s, episode steps:  74, steps per second:  69, episode reward: 334.016, mean reward:  4.514 [-20.000, 104.011], mean action: 3.432 [0.000, 9.000],  loss: 31.836632, mae: 0.392856, mean_q: 0.764222, mean_eps: 0.109015
+Reset
+ 29978/30000: episode: 235, duration: 2.634s, episode steps: 241, steps per second:  92, episode reward: -1041.853, mean reward: -4.323 [-20.000, 13.157], mean action: 5.004 [0.000, 8.000],  loss: 28.916589, mae: 0.380813, mean_q: 0.775620, mean_eps: 0.104290
+Reset
+done, took 383.725 seconds
+Reset
+Testing for 100 episodes ...
+Reset
+Episode 1: reward: 417.593, steps: 241
+Reset
+Episode 2: reward: 316.361, steps: 241
+Reset
+Episode 3: reward: 120.532, steps: 37
+Reset
+Episode 4: reward: 303.040, steps: 241
+Reset
+Episode 5: reward: 468.064, steps: 241
+Reset
+Episode 6: reward: 306.920, steps: 133
+Reset
+Episode 7: reward: 453.265, steps: 241
+Reset
+Episode 8: reward: -364.431, steps: 241
+Reset
+Episode 9: reward: 157.805, steps: 31
+Reset
+Episode 10: reward: 399.410, steps: 241
+Reset
+Episode 11: reward: 290.719, steps: 40
+Reset
+Episode 12: reward: 143.224, steps: 46
+Reset
+Episode 13: reward: 68.517, steps: 19
+Reset
+Episode 14: reward: -592.153, steps: 241
+Reset
+Episode 15: reward: 301.231, steps: 241
+Reset
+Episode 16: reward: 321.052, steps: 241
+Reset
+Episode 17: reward: 379.183, steps: 179
+Reset
+Episode 18: reward: 233.958, steps: 101
+Reset
+Episode 19: reward: 243.756, steps: 134
+Reset
+Episode 20: reward: 302.693, steps: 132
+Reset
+Episode 21: reward: 400.275, steps: 214
+Reset
+Episode 22: reward: 182.675, steps: 92
+Reset
+Episode 23: reward: 321.201, steps: 241
+Reset
+Episode 24: reward: 226.880, steps: 66
+Reset
+Episode 25: reward: 384.067, steps: 241
+Reset
+Episode 26: reward: 328.020, steps: 153
+Reset
+Episode 27: reward: 213.776, steps: 94
+Reset
+Episode 28: reward: 329.687, steps: 241
+Reset
+Episode 29: reward: -1869.906, steps: 241
+Reset
+Episode 30: reward: 195.250, steps: 39
+Reset
+Episode 31: reward: 76.919, steps: 26
+Reset
+Episode 32: reward: 136.006, steps: 72
+Reset
+Episode 33: reward: 209.611, steps: 137
+Reset
+Episode 34: reward: 377.763, steps: 241
+Reset
+Episode 35: reward: 200.172, steps: 25
+Reset
+Episode 36: reward: 412.584, steps: 241
+Reset
+Episode 37: reward: 379.810, steps: 241
+Reset
+Episode 38: reward: 385.317, steps: 183
+Reset
+Episode 39: reward: 475.707, steps: 241
+Reset
+Episode 40: reward: 480.532, steps: 241
+Reset
+Episode 41: reward: 232.153, steps: 153
+Reset
+Episode 42: reward: 157.707, steps: 16
+Reset
+Episode 43: reward: 328.008, steps: 241
+Reset
+Episode 44: reward: 337.924, steps: 188
+Reset
+Episode 45: reward: -1239.600, steps: 241
+Reset
+Episode 46: reward: 162.704, steps: 100
+Reset
+Episode 47: reward: 262.673, steps: 241
+Reset
+Episode 48: reward: 232.252, steps: 148
+Reset
+Episode 49: reward: 302.478, steps: 219
+Reset
+Episode 50: reward: 287.108, steps: 241
+Reset
+Episode 51: reward: 374.796, steps: 150
+Reset
+Episode 52: reward: 381.130, steps: 223
+Reset
+Episode 53: reward: 341.929, steps: 241
+Reset
+Episode 54: reward: 153.798, steps: 97
+Reset
+Episode 55: reward: 481.843, steps: 241
+Reset
+Episode 56: reward: 366.711, steps: 241
+Reset
+Episode 57: reward: 333.525, steps: 241
+Reset
+Episode 58: reward: 148.578, steps: 74
+Reset
+Episode 59: reward: 281.537, steps: 241
+Reset
+Episode 60: reward: 318.850, steps: 126
+Reset
+Episode 61: reward: 353.525, steps: 241
+Reset
+Episode 62: reward: 342.381, steps: 241
+Reset
+Episode 63: reward: 344.387, steps: 241
+Reset
+Episode 64: reward: -334.473, steps: 241
+Reset
+Episode 65: reward: 319.315, steps: 241
+Reset
+Episode 66: reward: 125.658, steps: 54
+Reset
+Episode 67: reward: 166.625, steps: 48
+Reset
+Episode 68: reward: 486.551, steps: 241
+Reset
+Episode 69: reward: 360.635, steps: 151
+Reset
+Episode 70: reward: 347.699, steps: 241
+Reset
+Episode 71: reward: 233.526, steps: 96
+Reset
+Episode 72: reward: 212.795, steps: 158
+Reset
+Episode 73: reward: 403.828, steps: 241
+Reset
+Episode 74: reward: 362.213, steps: 241
+Reset
+Episode 75: reward: 251.190, steps: 60
+Reset
+Episode 76: reward: 377.922, steps: 241
+Reset
+Episode 77: reward: 412.193, steps: 241
+Reset
+Episode 78: reward: 119.549, steps: 45
+Reset
+Episode 79: reward: 383.080, steps: 241
+Reset
+Episode 80: reward: 378.086, steps: 241
+Reset
+Episode 81: reward: 381.048, steps: 221
+Reset
+Episode 82: reward: 320.985, steps: 241
+Reset
+Episode 83: reward: 156.568, steps: 30
+Reset
+Episode 84: reward: 359.574, steps: 170
+Reset
+Episode 85: reward: 429.872, steps: 241
+Reset
+Episode 86: reward: 379.707, steps: 223
+Reset
+Episode 87: reward: 377.294, steps: 241
+Reset
+Episode 88: reward: 75.055, steps: 36
+Reset
+Episode 89: reward: 429.855, steps: 241
+Reset
+Episode 90: reward: 242.085, steps: 42
+Reset
+Episode 91: reward: 361.119, steps: 241
+Reset
+Episode 92: reward: 434.411, steps: 241
+Reset
+Episode 93: reward: 370.987, steps: 186
+Reset
+Episode 94: reward: 433.644, steps: 179
+Reset
+Episode 95: reward: 337.541, steps: 147
+Reset
+Episode 96: reward: 101.251, steps: 27
+Reset
+Episode 97: reward: 217.063, steps: 50
+Reset
+Episode 98: reward: 326.882, steps: 241
+Reset
+Episode 99: reward: 314.775, steps: 241
+Reset
+Episode 100: reward: 255.259, steps: 241
+243.14852499731168
+Reset
+Reset
+(20, 242)
