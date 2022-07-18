@@ -5,7 +5,7 @@ import argparse
 import matplotlib.pyplot as plt
 from PIL import Image
 from datetime import datetime
-from roboticstoolbox import DstarPlanner
+from roboticstoolbox import DistanceTransformPlanner
 
 class RandomMapServerWithPedestrians(object):
 	"""docstring for RandomMapServerWithPedestrians"""
@@ -132,33 +132,45 @@ class RandomMapServerWithPedestrians(object):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser()
+	parser = argparse.ArgumentParser()
 
-    # map metadata
-    parser.add_argument("--width", type = int, default = 5)
-    parser.add_argument("--height", type = int, default = 5)
-    parser.add_argument("--resolution", type = int, default = 10)
+	# map metadata
+	parser.add_argument("--width", type = int, default = 5)
+	parser.add_argument("--height", type = int, default = 5)
+	parser.add_argument("--resolution", type = int, default = 10)
 
-    # map creation arguments
-    parser.add_argument("--wall_width", type = int, default = 3)
-    parser.add_argument("--external_wall", type = bool, default = True)
-    parser.add_argument("--min_room_dim", type = int, default = 10)
-    parser.add_argument("--door_width", type = int, default = 5)
-    parser.add_argument("--door_to_wall_min", type = int, default = 2)
-    parser.add_argument("--max_depth", type = int, default = 3)
+	# map creation arguments
+	parser.add_argument("--wall_width", type = int, default = 3)
+	parser.add_argument("--external_wall", type = bool, default = True)
+	parser.add_argument("--min_room_dim", type = int, default = 10)
+	parser.add_argument("--door_width", type = int, default = 5)
+	parser.add_argument("--door_to_wall_min", type = int, default = 2)
+	parser.add_argument("--max_depth", type = int, default = 3)
 
-    # pedestrian creation arguments
-    parser.add_argument("--num_of_predestrians", type = int, default = 2)
+	# pedestrian creation arguments
+	parser.add_argument("--num_of_predestrians", type = int, default = 2)
 
-    args = parser.parse_args()
+	args = parser.parse_args()
 
-    m = RandomMapServerWithPedestrians(args)
-    m.regenerate_map()
-    m.save_map_to_file('random_map', False)
-    m.plot()
+	m = RandomMapServerWithPedestrians(args)
+	m.regenerate_map()
+	m.save_map_to_file('random_map', False)
 
-    planner = DstarPlanner(m.map, goal = (46, 46))
-    planner.plan()
-    path = planner.query(start = (4, 4))
-    ds.plot(path)
-    # planner.plot()
+	# planner = DstarPlanner(m.map, goal = (46, 46))
+	# planner.plan()
+	# path, status = planner.query(start = (4, 4))
+
+	planner = DistanceTransformPlanner(m.map, goal = (46, 46), distance = 'manhattan')
+	planner.plan()
+	path = planner.query(start = (3, 3))
+
+	print(path.T)
+
+	rows, cols = np.shape(m.map)
+	plt.figure()
+	for row in range(rows):
+		for col in range(cols):
+			if m.map[row, col]:
+				plt.plot(col, -row, color = 'black', marker = 's', markersize = 1)
+	plt.plot(path.T[0], -path.T[1])
+	plt.show()
