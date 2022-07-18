@@ -2,10 +2,15 @@
 import numpy as np
 import random
 import argparse
+import math
 import matplotlib.pyplot as plt
 from PIL import Image
 from datetime import datetime
-from roboticstoolbox import DistanceTransformPlanner
+from roboticstoolbox import DistanceTransformPlanner, PRMPlanner
+from linear_path import LinearPath
+
+import rospy
+from nav_msgs.msg import OccupancyGrid
 
 class RandomMapServerWithPedestrians(object):
 	"""docstring for RandomMapServerWithPedestrians"""
@@ -23,6 +28,26 @@ class RandomMapServerWithPedestrians(object):
 		
 		self.map = np.empty((self.h*self.res, self.w*self.res))
 
+		self.num_p = args.num_of_pedestrians
+		if self.num_p > 0:
+			self.p_min_sp = args.pedestrian_min_speed
+			self.p_max_sp = args.pedestrian_max_speed
+			self.p_rad = args.pedestrian_radius
+			self.foot_rad = args.pedestrian_foot_radius
+
+			# self.planner = DistanceTransformPlanner(self.map, distance = 'euclidean', inflate = self.p_rad + self.foot_rad)
+			self.planner = PRMPlanner(self.map, distance = 'euclidean', inflate = self.p_rad + self.foot_rad)
+			self.p = [LinearPath([0, 0], [[0, 0]]) for _ in range(self.num_p)]
+			self.p_path = [[] for _ in range(self.num_p)]
+			self.p_sp = [0 for _ in range(self.num_p)]
+
+			Y, X = np.ogrid[-self.foot_rad:self.foot_rad+1, -self.foot_rad:self.foot_rad+1]
+			dist_from_center = np.sqrt((X)**2 + (Y)**2)
+			self.foot_mask = dist_from_center <= self.foot_rad
+			# print(self.foot_mask)
+
+		self.regenerate_map()
+
 	def regenerate_map(self):
 		# map has an external wall
 		if self.ext_wall:
@@ -33,6 +58,25 @@ class RandomMapServerWithPedestrians(object):
 		else:
 			self.map = np.zeros((self.h*self.res, self.w*self.res))
 			self.add_wall(0, self.h*self.res, 0, self.w*self.res)
+		# regenerate pedestrians if needed
+		if self.num_p > 0:
+			self.planner = PRMPlanner(self.map, distance = 'euclidean', inflate = self.p_rad + self.foot_rad)
+			self.planner.plan()
+			self.regenerate_pedestrians()
+
+	def regenerate_pedestrians(self):
+		for i in range(self.num_p):
+			while True:
+				try:
+					start = (random.randrange(0, self.h*self.res), random.randrange(0, self.w*self.res))
+					goal = (random.randrange(0, self.h*self.res), random.randrange(0, self.w*self.res))
+					# self.planner.goal = goal
+					self.p_path[i] = self.planner.query(start = start, goal = goal)
+					self.p[i] = LinearPath(start, self.p_path[i][1:])
+					self.p_sp[i] = random.uniform(self.p_min_sp, self.p_max_sp)
+					break
+				except ValueError:
+					pass
 
 	def add_wall(self, hmin, hmax, wmin, wmax, depth = 1):
 		# plot the current map state
@@ -105,6 +149,26 @@ class RandomMapServerWithPedestrians(object):
 		self.add_wall(hmin, hmax, wmin, wall_pos, depth + 1)
 		self.add_wall(hmin, hmax, wall_pos + self.wall_w, wmax, depth + 1)
 
+	def step(self, dt):
+		if self.num_p > 0:
+			for i in range(self.num_p):
+				pos, time_left = self.p[i].step(self.p_sp[i], dt)
+				while time_left:
+					self.p_path[i] = np.flip(self.p_path[i], axis = 0)
+					self.p[i] = LinearPath(self.p_path[i][0], self.p_path[i][1:])
+					pos, time_left = self.p[i].step(self.p_sp[i], dt - time_left)
+
+	def get_pedmap(self):
+		m = np.zeros((self.h*self.res, self.w*self.res), dtype=np.bool)
+		if self.num_p > 0:
+			for p in self.p:
+				dist = p.points[0] - p.pos
+				angle = math.atan2(dist[1], dist[0])
+				m[int(p.pos[1] + self.p_rad*math.sin(angle-math.pi/2))-self.foot_rad:int(p.pos[1] + self.p_rad*math.sin(angle-math.pi/2))+self.foot_rad+1,
+					int(p.pos[0] + self.p_rad*math.cos(angle-math.pi/2))-self.foot_rad:int(p.pos[0] + self.p_rad*math.cos(angle-math.pi/2))+1+self.foot_rad] |= self.foot_mask
+				m[int(p.pos[1] - self.p_rad*math.sin(angle-math.pi/2))-self.foot_rad:int(p.pos[1] - self.p_rad*math.sin(angle-math.pi/2))+self.foot_rad+1,
+					int(p.pos[0] - self.p_rad*math.cos(angle-math.pi/2))-self.foot_rad:int(p.pos[0] - self.p_rad*math.cos(angle-math.pi/2))+1+self.foot_rad] |= self.foot_mask
+		return np.maximum(m, self.map)
 
 
 	def plot(self):
@@ -113,14 +177,18 @@ class RandomMapServerWithPedestrians(object):
 		for row in range(rows):
 			for col in range(cols):
 				if self.map[row, col]:
-					plt.plot(col, -row, color = 'black', marker = 's', markersize = 1)
+					plt.plot(col, row, color = 'black', marker = 's', markersize = 1)
+		if self.num_p > 0:
+			for i in range(self.num_p):
+				plt.plot(self.p_path[i].T[0], self.p_path[i].T[1])
+				plt.plot(self.p[i].pos[0], self.p[i].pos[1], color = 'black', marker = 'o', markersize = 1)
 		plt.show()
 
-	def save_map_to_file(self, mapname, add_timestamp = False):
+	def save_map_to_pgm(self, mapname, add_timestamp = False):
 		filename = mapname + ('' if not add_timestamp else '_' + '_'.join(str(datetime.now().timestamp()).split('.')))
 
 		# save map as image
-		im = Image.fromarray(np.uint8(255 - self.map*255), 'L')
+		im = Image.fromarray(np.uint8(255 - np.flip(self.map, axis=0)*255), 'L')
 		im.save(filename + '.pgm')
 
 		# save map parameters to file
@@ -135,42 +203,60 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 
 	# map metadata
-	parser.add_argument("--width", type = int, default = 5)
-	parser.add_argument("--height", type = int, default = 5)
+	parser.add_argument("--width", type = int, default = 15)
+	parser.add_argument("--height", type = int, default = 15)
 	parser.add_argument("--resolution", type = int, default = 10)
 
 	# map creation arguments
 	parser.add_argument("--wall_width", type = int, default = 3)
 	parser.add_argument("--external_wall", type = bool, default = True)
-	parser.add_argument("--min_room_dim", type = int, default = 10)
-	parser.add_argument("--door_width", type = int, default = 5)
+	parser.add_argument("--min_room_dim", type = int, default = 30)
+	parser.add_argument("--door_width", type = int, default = 15)
 	parser.add_argument("--door_to_wall_min", type = int, default = 2)
-	parser.add_argument("--max_depth", type = int, default = 3)
+	parser.add_argument("--max_depth", type = int, default = 4)
 
 	# pedestrian creation arguments
-	parser.add_argument("--num_of_predestrians", type = int, default = 2)
+	parser.add_argument("--num_of_pedestrians", type = int, default = 5)
+	parser.add_argument("--pedestrian_min_speed", type = float, default = 10)
+	parser.add_argument("--pedestrian_max_speed", type = float, default = 20)
+	parser.add_argument("--pedestrian_radius", type = int, default = 3)
+	parser.add_argument("--pedestrian_foot_radius", type = int, default = 1)
 
 	args = parser.parse_args()
 
 	m = RandomMapServerWithPedestrians(args)
-	m.regenerate_map()
-	m.save_map_to_file('random_map', False)
+	m.save_map_to_pgm('random_map', False)
+	m.plot()
+	# plt.savefig('random_map.jpg')
 
-	# planner = DstarPlanner(m.map, goal = (46, 46))
-	# planner.plan()
-	# path, status = planner.query(start = (4, 4))
+	# while(True):
+	# 	m.step(10)
+	# 	m.plot()
 
-	planner = DistanceTransformPlanner(m.map, goal = (46, 46), distance = 'manhattan')
-	planner.plan()
-	path = planner.query(start = (3, 3))
+	rospy.init_node('random_map_test')
+	pub = rospy.Publisher('map', OccupancyGrid, queue_size=10)
+	rate = rospy.Rate(100)
 
-	print(path.T)
+	msg = OccupancyGrid()
+	msg.header.frame_id = "map"
+	msg.info.width = m.w*m.res
+	msg.info.height = m.h*m.res
+	msg.info.resolution = 1/m.res
+	msg.info.map_load_time = rospy.Time.now()
+	msg.info.origin.position.x = 0
+	msg.info.origin.position.y = 0
+	msg.info.origin.position.z = 0
+	msg.info.origin.orientation.x = 0
+	msg.info.origin.orientation.y = 0
+	msg.info.origin.orientation.z = 0
+	msg.info.origin.orientation.w = 1
 
-	rows, cols = np.shape(m.map)
-	plt.figure()
-	for row in range(rows):
-		for col in range(cols):
-			if m.map[row, col]:
-				plt.plot(col, -row, color = 'black', marker = 's', markersize = 1)
-	plt.plot(path.T[0], -path.T[1])
-	plt.show()
+	while not rospy.is_shutdown():
+		m.step(0.01)
+		msg.data = np.uint8(m.get_pedmap().reshape(-1)*100)
+		# msg.data = np.uint8(m.map.reshape(-1)*100)
+		msg.header.stamp = rospy.Time.now()
+		pub.publish(msg)
+		rate.sleep()
+
+
