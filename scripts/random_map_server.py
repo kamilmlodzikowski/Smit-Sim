@@ -11,6 +11,53 @@ from linear_path import LinearPath
 
 import rospy
 from nav_msgs.msg import OccupancyGrid
+from smit_matlab_sim.srv import Step
+from std_srvs.srv import Empty
+
+class RandomMapServerNode(object):
+	"""docstring for RandomMapServerNode"""
+	def __init__(self, args):
+		self.rms = RandomMapServerWithPedestrians(args)
+		self.pub = rospy.Publisher('map', OccupancyGrid, queue_size=10)
+		self.srv_step = rospy.Service('perform_pedestrians_step', Step, self.perform_step)
+		self.srv_regenerate = rospy.Service('regenerate_map', Empty, self.regenerate_map)
+
+		self.publish = args.publish
+		self.rate = args.publish_rate
+		self.auto_step = args.auto_step
+		self.pub_on_step = args.publish_on_step
+
+		self.msg = OccupancyGrid()
+		self.msg.header.frame_id = "map"
+		self.msg.info.width = self.rms.w*self.rms.res
+		self.msg.info.height = self.rms.h*self.rms.res
+		self.msg.info.resolution = 1/self.rms.res
+		self.msg.info.map_load_time = rospy.Time.now()
+		self.msg.info.origin.position.x = 0
+		self.msg.info.origin.position.y = 0
+		self.msg.info.origin.position.z = 0
+		self.msg.info.origin.orientation.x = 0
+		self.msg.info.origin.orientation.y = 0
+		self.msg.info.origin.orientation.z = 0
+		self.msg.info.origin.orientation.w = 1
+
+		if self.publish:
+			self.timer = rospy.Timer(rospy.Duration(1.0/self.rate), self.publish_map)
+
+	def perform_step(self, req):
+		self.rms.step(req.time)
+		if self.pub_on_step:
+			self.publish_map()
+
+	def publish_map(self, event = None):
+		self.msg.data = np.uint8(self.rms.get_pedmap().reshape(-1)*100)
+		self.msg.header.stamp = rospy.Time.now()
+		self.pub.publish(self.msg)
+		if (self.auto_step):
+			self.rms.step(1.0/self.rate)
+
+	def regenerate_map(self, req):
+		self.rms.regenerate_map()
 
 class RandomMapServerWithPedestrians(object):
 	"""docstring for RandomMapServerWithPedestrians"""
@@ -76,6 +123,8 @@ class RandomMapServerWithPedestrians(object):
 					self.p_sp[i] = random.uniform(self.p_min_sp, self.p_max_sp)
 					break
 				except ValueError:
+					pass
+				except RuntimeError:
 					pass
 
 	def add_wall(self, hmin, hmax, wmin, wmax, depth = 1):
@@ -222,41 +271,23 @@ if __name__ == '__main__':
 	parser.add_argument("--pedestrian_radius", type = int, default = 3)
 	parser.add_argument("--pedestrian_foot_radius", type = int, default = 1)
 
+	# node arguments
+	parser.add_argument("--publish", type = bool, default = True)
+	parser.add_argument("--publish_rate", type = int, default = 100)
+	parser.add_argument("--auto_step", type = bool, default = False)
+	parser.add_argument("--publish_on_step", type = bool, default = False)
+
 	args = parser.parse_args()
 
-	m = RandomMapServerWithPedestrians(args)
-	m.save_map_to_pgm('random_map', False)
-	m.plot()
+	# rms = RandomMapServerWithPedestrians(args)
+	# rms.save_map_to_pgm('random_map', False)
+	# rms.plot()
 	# plt.savefig('random_map.jpg')
 
 	# while(True):
-	# 	m.step(10)
-	# 	m.plot()
+	# 	rms.step(10)
+	# 	rms.plot()
 
 	rospy.init_node('random_map_test')
-	pub = rospy.Publisher('map', OccupancyGrid, queue_size=10)
-	rate = rospy.Rate(100)
-
-	msg = OccupancyGrid()
-	msg.header.frame_id = "map"
-	msg.info.width = m.w*m.res
-	msg.info.height = m.h*m.res
-	msg.info.resolution = 1/m.res
-	msg.info.map_load_time = rospy.Time.now()
-	msg.info.origin.position.x = 0
-	msg.info.origin.position.y = 0
-	msg.info.origin.position.z = 0
-	msg.info.origin.orientation.x = 0
-	msg.info.origin.orientation.y = 0
-	msg.info.origin.orientation.z = 0
-	msg.info.origin.orientation.w = 1
-
-	while not rospy.is_shutdown():
-		m.step(0.01)
-		msg.data = np.uint8(m.get_pedmap().reshape(-1)*100)
-		# msg.data = np.uint8(m.map.reshape(-1)*100)
-		msg.header.stamp = rospy.Time.now()
-		pub.publish(msg)
-		rate.sleep()
-
-
+	node = RandomMapServerNode(args)
+	rospy.spin()
