@@ -29,9 +29,9 @@ class RandomMapServerNode(object):
 
 		self.msg = OccupancyGrid()
 		self.msg.header.frame_id = "map"
-		self.msg.info.width = self.rms.w*self.rms.res
-		self.msg.info.height = self.rms.h*self.rms.res
-		self.msg.info.resolution = 1/self.rms.res
+		self.msg.info.width = self.rms.w
+		self.msg.info.height = self.rms.h
+		self.msg.info.resolution = self.rms.res
 		self.msg.info.map_load_time = rospy.Time.now()
 		self.msg.info.origin.position.x = 0
 		self.msg.info.origin.position.y = 0
@@ -62,28 +62,30 @@ class RandomMapServerNode(object):
 class RandomMapServerWithPedestrians(object):
 	"""docstring for RandomMapServerWithPedestrians"""
 	def __init__(self, args):
-		self.w = args.width
-		self.h = args.height
 		self.res = args.resolution
+		self.w = int(args.width/self.res)
+		self.h = int(args.height/self.res)
 
-		self.wall_w = args.wall_width
+		self.wall_w = int(args.wall_width/self.res)
 		self.ext_wall = args.external_wall
-		self.min_room_dim = args.min_room_dim
-		self.door_w = args.door_width
-		self.door_to_wall_min = args.door_to_wall_min
+		self.min_room_dim = int(args.min_room_dim/self.res)
+		self.door_w = int(args.door_width/self.res)
+		self.door_to_wall_min = int(args.door_to_wall_min/self.res)
 		self.max_depth = args.max_depth
 		
-		self.map = np.empty((self.h*self.res, self.w*self.res))
+		self.map = np.empty((self.h, self.w))
 
 		self.num_p = args.num_of_pedestrians
+		self.p_min_sp = int(args.pedestrian_min_speed/self.res)
+		self.p_max_sp = int(args.pedestrian_max_speed/self.res)
+		self.p_rad = int(args.pedestrian_radius/self.res)
+		self.foot_rad = int(args.pedestrian_foot_radius/self.res)
+		self.p_circle = args.pedestrian_walk_circles
+
 		if self.num_p > 0:
-			self.p_min_sp = args.pedestrian_min_speed
-			self.p_max_sp = args.pedestrian_max_speed
-			self.p_rad = args.pedestrian_radius
-			self.foot_rad = args.pedestrian_foot_radius
 
 			# self.planner = DistanceTransformPlanner(self.map, distance = 'euclidean', inflate = self.p_rad + self.foot_rad)
-			self.planner = PRMPlanner(self.map, distance = 'euclidean', inflate = self.p_rad + self.foot_rad)
+			self.planner = PRMPlanner(self.map, distance = 'euclidean', inflate = self.p_rad + self.foot_rad, npoints = int((self.w*self.h)/100))
 			self.p = [LinearPath([0, 0], [[0, 0]]) for _ in range(self.num_p)]
 			self.p_path = [[] for _ in range(self.num_p)]
 			self.p_sp = [0 for _ in range(self.num_p)]
@@ -98,16 +100,16 @@ class RandomMapServerWithPedestrians(object):
 	def regenerate_map(self):
 		# map has an external wall
 		if self.ext_wall:
-			self.map = np.ones((self.h*self.res, self.w*self.res))
+			self.map = np.ones((self.h, self.w))
 			self.map[self.wall_w:-self.wall_w, self.wall_w:-self.wall_w] = 0
-			self.add_wall(self.wall_w, self.h*self.res-self.wall_w, self.wall_w, self.w*self.res-self.wall_w)
+			self.add_wall(self.wall_w, self.h-self.wall_w, self.wall_w, self.w-self.wall_w)
 		# map has no external wall
 		else:
-			self.map = np.zeros((self.h*self.res, self.w*self.res))
-			self.add_wall(0, self.h*self.res, 0, self.w*self.res)
+			self.map = np.zeros((self.h, self.w))
+			self.add_wall(0, self.h, 0, self.w)
 		# regenerate pedestrians if needed
-		self.planner = PRMPlanner(self.map, distance = 'euclidean', inflate = self.p_rad + self.foot_rad)
 		if self.num_p > 0:
+			self.planner = PRMPlanner(self.map, distance = 'euclidean', inflate = self.p_rad + self.foot_rad, npoints = int((self.w*self.h)/100))
 			self.planner.plan()
 			self.regenerate_pedestrians()
 
@@ -115,8 +117,8 @@ class RandomMapServerWithPedestrians(object):
 		for i in range(self.num_p):
 			while True:
 				try:
-					start = (random.randrange(0, self.h*self.res), random.randrange(0, self.w*self.res))
-					goal = (random.randrange(0, self.h*self.res), random.randrange(0, self.w*self.res))
+					start = (random.randrange(0, self.h), random.randrange(0, self.w))
+					goal = (random.randrange(0, self.h), random.randrange(0, self.w))
 					# self.planner.goal = goal
 					self.p_path[i] = self.planner.query(start = start, goal = goal)
 					self.p[i] = LinearPath(start, self.p_path[i][1:])
@@ -202,13 +204,28 @@ class RandomMapServerWithPedestrians(object):
 		if self.num_p > 0:
 			for i in range(self.num_p):
 				pos, time_left = self.p[i].step(self.p_sp[i], dt)
-				while time_left:
-					self.p_path[i] = np.flip(self.p_path[i], axis = 0)
-					self.p[i] = LinearPath(self.p_path[i][0], self.p_path[i][1:])
-					pos, time_left = self.p[i].step(self.p_sp[i], dt - time_left)
+				if time_left and self.p_circle:
+					while time_left:
+						self.p_path[i] = np.flip(self.p_path[i], axis = 0)
+						self.p[i] = LinearPath(self.p_path[i][0], self.p_path[i][1:])
+						pos, time_left = self.p[i].step(self.p_sp[i], dt - time_left)
+				if time_left and not self.p_circle:
+					while time_left:
+						try:
+							start = (random.randrange(0, self.h), random.randrange(0, self.w))
+							goal = (random.randrange(0, self.h), random.randrange(0, self.w))
+							# self.planner.goal = goal
+							self.p_path[i] = self.planner.query(start = start, goal = goal)
+							self.p[i] = LinearPath(start, self.p_path[i][1:])
+							self.p_sp[i] = random.uniform(self.p_min_sp, self.p_max_sp)
+							break
+						except ValueError:
+							pass
+						except RuntimeError:
+							pass
 
 	def get_pedmap(self):
-		m = np.zeros((self.h*self.res, self.w*self.res), dtype=np.bool)
+		m = np.zeros((self.h, self.w), dtype=np.bool)
 		if self.num_p > 0:
 			for p in self.p:
 				dist = p.points[0] - p.pos
@@ -242,7 +259,7 @@ class RandomMapServerWithPedestrians(object):
 
 		# save map parameters to file
 		with open(filename + '.yaml', 'w') as f:
-			f.write('image: ' + filename + '.pgm\nresolution: ' + str(1/self.res) + '\norigin: [0.0, 0.0, 0.0]\nnegate: 0\noccupied_thresh: 0.65\nfree_thresh: 0.196\n')
+			f.write('image: ' + filename + '.pgm\nresolution: ' + str(self.res) + '\norigin: [0.0, 0.0, 0.0]\nnegate: 0\noccupied_thresh: 0.65\nfree_thresh: 0.196\n')
 
 	def __str__(self):
 		return str(self.map)
@@ -252,24 +269,25 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 
 	# map metadata
-	parser.add_argument("--width", type = int, default = 15)
-	parser.add_argument("--height", type = int, default = 15)
-	parser.add_argument("--resolution", type = int, default = 10)
+	parser.add_argument("--width", type = float, default = 15)
+	parser.add_argument("--height", type = float, default = 15)
+	parser.add_argument("--resolution", type = float, default = 0.1)
 
 	# map creation arguments
-	parser.add_argument("--wall_width", type = int, default = 3)
+	parser.add_argument("--wall_width", type = float, default = 0.3)
 	parser.add_argument("--external_wall", type = bool, default = True)
-	parser.add_argument("--min_room_dim", type = int, default = 30)
-	parser.add_argument("--door_width", type = int, default = 15)
-	parser.add_argument("--door_to_wall_min", type = int, default = 2)
+	parser.add_argument("--min_room_dim", type = float, default = 3)
+	parser.add_argument("--door_width", type = float, default = 1)
+	parser.add_argument("--door_to_wall_min", type = float, default = 0.2)
 	parser.add_argument("--max_depth", type = int, default = 4)
 
 	# pedestrian creation arguments
 	parser.add_argument("--num_of_pedestrians", type = int, default = 5)
-	parser.add_argument("--pedestrian_min_speed", type = float, default = 10)
-	parser.add_argument("--pedestrian_max_speed", type = float, default = 20)
-	parser.add_argument("--pedestrian_radius", type = int, default = 3)
-	parser.add_argument("--pedestrian_foot_radius", type = int, default = 1)
+	parser.add_argument("--pedestrian_min_speed", type = float, default = 0.5)
+	parser.add_argument("--pedestrian_max_speed", type = float, default = 2)
+	parser.add_argument("--pedestrian_radius", type = float, default = 0.2)
+	parser.add_argument("--pedestrian_foot_radius", type = float, default = 0.1)
+	parser.add_argument("--pedestrian_walk_circles", type = bool, default = False)
 
 	# node arguments
 	parser.add_argument("--publish", type = bool, default = True)
