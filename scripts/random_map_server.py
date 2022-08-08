@@ -106,8 +106,8 @@ class RandomMapServerWithPedestrians(object):
 			self.map = np.zeros((self.h*self.res, self.w*self.res))
 			self.add_wall(0, self.h*self.res, 0, self.w*self.res)
 		# regenerate pedestrians if needed
+		self.planner = PRMPlanner(self.map, distance = 'euclidean', inflate = self.p_rad + self.foot_rad)
 		if self.num_p > 0:
-			self.planner = PRMPlanner(self.map, distance = 'euclidean', inflate = self.p_rad + self.foot_rad)
 			self.planner.plan()
 			self.regenerate_pedestrians()
 
