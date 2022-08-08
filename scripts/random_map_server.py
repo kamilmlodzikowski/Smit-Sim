@@ -10,8 +10,9 @@ from roboticstoolbox import DistanceTransformPlanner, PRMPlanner
 from linear_path import LinearPath
 
 import rospy
+from std_msgs.msg import Float64MultiArray
 from nav_msgs.msg import OccupancyGrid
-from smit_matlab_sim.srv import Step
+from smit_matlab_sim.srv import Step, AddPedestrian, AddPedestrianResponse
 from std_srvs.srv import Empty
 
 class RandomMapServerNode(object):
@@ -21,6 +22,7 @@ class RandomMapServerNode(object):
 		self.pub = rospy.Publisher('map', OccupancyGrid, queue_size=10)
 		self.srv_step = rospy.Service('perform_pedestrians_step', Step, self.perform_step)
 		self.srv_regenerate = rospy.Service('regenerate_map', Empty, self.regenerate_map)
+		self.srv_add_ped = rospy.Service('add_pedestrian', AddPedestrian, self.add_pedestrian)
 
 		self.publish = args.publish
 		self.rate = args.publish_rate
@@ -48,6 +50,17 @@ class RandomMapServerNode(object):
 		self.rms.step(req.time)
 		if self.pub_on_step:
 			self.publish_map()
+
+	def add_pedestrian(self, req):
+		if len(req.path.layout.dim) == 2 and req.path.layout.dim[1].size == 2:
+			path = []
+			for i in range(req.path.layout.dim[0].size):
+				path.append([req.path.data[req.path.layout.data_offset + req.path.layout.dim[1].stride*i], req.path.data[req.path.layout.data_offset + req.path.layout.dim[1].stride*i + 1]])
+			self.rms.add_pedestrian(req.velocity, np.array(path), req.full_path, req.circle)
+			return AddPedestrianResponse(True)
+		else:
+			return AddPedestrianResponse(False)
+
 
 	def publish_map(self, event = None):
 		self.msg.data = np.uint8(self.rms.get_pedmap().reshape(-1)*100)
@@ -80,7 +93,7 @@ class RandomMapServerWithPedestrians(object):
 		self.p_max_sp = int(args.pedestrian_max_speed/self.res)
 		self.p_rad = int(args.pedestrian_radius/self.res)
 		self.foot_rad = int(args.pedestrian_foot_radius/self.res)
-		self.p_circle = args.pedestrian_walk_circles
+		self.p_circles = args.pedestrian_walk_circles
 
 		if self.num_p > 0:
 
@@ -89,6 +102,7 @@ class RandomMapServerWithPedestrians(object):
 			self.p = [LinearPath([0, 0], [[0, 0]]) for _ in range(self.num_p)]
 			self.p_path = [[] for _ in range(self.num_p)]
 			self.p_sp = [0 for _ in range(self.num_p)]
+			self.p_circle = [self.p_circles for _ in range(self.num_p)]
 
 			Y, X = np.ogrid[-self.foot_rad:self.foot_rad+1, -self.foot_rad:self.foot_rad+1]
 			dist_from_center = np.sqrt((X)**2 + (Y)**2)
@@ -204,12 +218,12 @@ class RandomMapServerWithPedestrians(object):
 		if self.num_p > 0:
 			for i in range(self.num_p):
 				pos, time_left = self.p[i].step(self.p_sp[i], dt)
-				if time_left and self.p_circle:
+				if time_left and self.p_circle[i]:
 					while time_left:
 						self.p_path[i] = np.flip(self.p_path[i], axis = 0)
 						self.p[i] = LinearPath(self.p_path[i][0], self.p_path[i][1:])
 						pos, time_left = self.p[i].step(self.p_sp[i], dt - time_left)
-				if time_left and not self.p_circle:
+				if time_left and not self.p_circle[i]:
 					while time_left:
 						try:
 							start = (random.randrange(0, self.h), random.randrange(0, self.w))
@@ -224,10 +238,34 @@ class RandomMapServerWithPedestrians(object):
 						except RuntimeError:
 							pass
 
+	def add_pedestrian(self, speed, path, planned, circle):
+		if self.num_p == 0:
+			self.planner = PRMPlanner(self.map, distance = 'euclidean', inflate = self.p_rad + self.foot_rad, npoints = int((self.w*self.h)/100))
+
+		path = path*(1/self.res)
+
+		start = (path[0][0], path[0][1])
+		if not planned:
+			goal = (path[1][0], path[1][1])
+			path = self.planner.query(start = start, goal = goal)
+		self.p_path.append(path)
+		self.p.append(LinearPath(start, self.p_path[-1][1:]))
+		if speed == 0:
+			speed = random.uniform(self.p_min_sp, self.p_max_sp)
+		self.p_sp.append(speed)
+		self.p_circle.append(circle)
+
+		self.num_p += 1
+
+
 	def get_pedmap(self):
 		m = np.zeros((self.h, self.w), dtype=np.bool)
 		if self.num_p > 0:
 			for p in self.p:
+				print('Pos')
+				print(p.pos)
+				print('Points')
+				print(p.points)
 				dist = p.points[0] - p.pos
 				angle = math.atan2(dist[1], dist[0])
 				m[int(p.pos[1] + self.p_rad*math.sin(angle-math.pi/2))-self.foot_rad:int(p.pos[1] + self.p_rad*math.sin(angle-math.pi/2))+self.foot_rad+1,
