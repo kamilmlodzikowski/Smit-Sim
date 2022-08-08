@@ -114,6 +114,7 @@ class RandomMapServerWithPedestrians(object):
 			# print(self.foot_mask)
 
 		self.rooms = []
+		self.doors = []
 		self.regenerate_map()
 
 	def regenerate_map(self):
@@ -191,6 +192,7 @@ class RandomMapServerWithPedestrians(object):
 		door_pos = random.randint(wmin + self.door_to_wall_min, wmax - self.door_to_wall_min - self.door_w)
 		print('Door: ' + str(door_pos))
 		self.map[wall_pos:(wall_pos + self.wall_w), door_pos:(door_pos + self.door_w)] = 0
+		self.doors.append({"id": len(self.doors), "y": [wall_pos, wall_pos + self.wall_w - 1], "x": [door_pos, door_pos + self.door_w - 1]})
 
 		# further split created rooms
 		self.add_wall(hmin, wall_pos, wmin, wmax, depth + 1)
@@ -216,6 +218,7 @@ class RandomMapServerWithPedestrians(object):
 		door_pos = random.randint(hmin + self.door_to_wall_min, hmax - self.door_to_wall_min - self.door_w)
 		print('Door: ' + str(door_pos))
 		self.map[door_pos:(door_pos + self.door_w), wall_pos:(wall_pos + self.wall_w)] = 0
+		self.doors.append({"id": len(self.doors), "x": [wall_pos, wall_pos + self.wall_w - 1], "y": [door_pos, door_pos + self.door_w - 1]})
 
 		# further split created rooms
 		self.add_wall(hmin, hmax, wmin, wall_pos, depth + 1)
@@ -287,11 +290,16 @@ class RandomMapServerWithPedestrians(object):
 					plt.plot(col, row, color = 'black', marker = 's', markersize = 1)
 		if self.num_p > 0:
 			for i in range(self.num_p):
-				plt.plot(self.p_path[i].T[0], self.p_path[i].T[1], color = 'blue')
-				plt.plot(self.p[i].pos[0], self.p[i].pos[1], color = 'blue', marker = 'o', markersize = 1)
+				if self.p_circle[i]:
+					plt.plot(self.p_path[i].T[0], self.p_path[i].T[1], color = 'blue')
+					plt.plot(self.p[i].pos[0], self.p[i].pos[1], color = 'blue', marker = 'o', markersize = 1)
+					plt.text(self.p_path[i].T[0][0], self.p_path[i].T[1][0], str(i), c = 'blue')
 		for r in self.rooms:
 			plt.plot(r["x"], r["y"], color = "red")
 			plt.text(mean(r["x"]), mean(r["y"]), str(r["id"]), c = 'red')
+		for d in self.doors:
+			plt.plot(d["x"], d["y"], color = "green")
+			plt.text(mean(d["x"]), mean(d["y"]), str(d["id"]), c = 'green')
 		plt.show()
 
 	def save_map_to_pgm(self, mapname, add_timestamp = False):
