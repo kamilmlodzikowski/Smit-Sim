@@ -3,6 +3,7 @@ import numpy as np
 import random
 import argparse
 import math
+from statistics import mean
 import matplotlib.pyplot as plt
 from PIL import Image
 from datetime import datetime
@@ -76,23 +77,26 @@ class RandomMapServerWithPedestrians(object):
 	"""docstring for RandomMapServerWithPedestrians"""
 	def __init__(self, args):
 		self.res = args.resolution
-		self.w = int(args.width/self.res)
-		self.h = int(args.height/self.res)
+		self.w = round(args.width/self.res)
+		self.h = round(args.height/self.res)
 
-		self.wall_w = int(args.wall_width/self.res)
+		self.wall_w = round(args.wall_width/self.res)
+		print("Original wall width: " + str(args.wall_width))
+		print("Resolution: " + str(self.res))
+		print("Wall width: " + str(self.wall_w))
 		self.ext_wall = args.external_wall
-		self.min_room_dim = int(args.min_room_dim/self.res)
-		self.door_w = int(args.door_width/self.res)
-		self.door_to_wall_min = int(args.door_to_wall_min/self.res)
+		self.min_room_dim = round(args.min_room_dim/self.res)
+		self.door_w = round(args.door_width/self.res)
+		self.door_to_wall_min = round(args.door_to_wall_min/self.res)
 		self.max_depth = args.max_depth
 		
 		self.map = np.empty((self.h, self.w))
 
 		self.num_p = args.num_of_pedestrians
-		self.p_min_sp = int(args.pedestrian_min_speed/self.res)
-		self.p_max_sp = int(args.pedestrian_max_speed/self.res)
-		self.p_rad = int(args.pedestrian_radius/self.res)
-		self.foot_rad = int(args.pedestrian_foot_radius/self.res)
+		self.p_min_sp = args.pedestrian_min_speed/self.res
+		self.p_max_sp = args.pedestrian_max_speed/self.res
+		self.p_rad = round(args.pedestrian_radius/self.res)
+		self.foot_rad = round(args.pedestrian_foot_radius/self.res)
 		self.p_circles = args.pedestrian_walk_circles
 
 		if self.num_p > 0:
@@ -109,6 +113,7 @@ class RandomMapServerWithPedestrians(object):
 			self.foot_mask = dist_from_center <= self.foot_rad
 			# print(self.foot_mask)
 
+		self.rooms = []
 		self.regenerate_map()
 
 	def regenerate_map(self):
@@ -151,11 +156,13 @@ class RandomMapServerWithPedestrians(object):
 		# maximum depth reached
 		if depth > self.max_depth:
 			print('Max depth reached')
+			self.rooms.append({"id": len(self.rooms), "x": [wmin, wmax-1], "y": [hmin, hmax-1]})
 			return
 
 		# room is too small to add wall
 		if hmax - hmin < 2*self.min_room_dim + self.wall_w and wmax - wmin < 2*self.min_room_dim + self.wall_w:
 			print('Room too small to divide')
+			self.rooms.append({"id": len(self.rooms), "x": [wmin, wmax-1], "y": [hmin, hmax-1]})
 			return
 
 		# divide room with wall across bigger dimension (horizontally if botyh axis are equal)
@@ -262,16 +269,12 @@ class RandomMapServerWithPedestrians(object):
 		m = np.zeros((self.h, self.w), dtype=np.bool)
 		if self.num_p > 0:
 			for p in self.p:
-				print('Pos')
-				print(p.pos)
-				print('Points')
-				print(p.points)
 				dist = p.points[0] - p.pos
 				angle = math.atan2(dist[1], dist[0])
-				m[int(p.pos[1] + self.p_rad*math.sin(angle-math.pi/2))-self.foot_rad:int(p.pos[1] + self.p_rad*math.sin(angle-math.pi/2))+self.foot_rad+1,
-					int(p.pos[0] + self.p_rad*math.cos(angle-math.pi/2))-self.foot_rad:int(p.pos[0] + self.p_rad*math.cos(angle-math.pi/2))+1+self.foot_rad] |= self.foot_mask
-				m[int(p.pos[1] - self.p_rad*math.sin(angle-math.pi/2))-self.foot_rad:int(p.pos[1] - self.p_rad*math.sin(angle-math.pi/2))+self.foot_rad+1,
-					int(p.pos[0] - self.p_rad*math.cos(angle-math.pi/2))-self.foot_rad:int(p.pos[0] - self.p_rad*math.cos(angle-math.pi/2))+1+self.foot_rad] |= self.foot_mask
+				m[round(p.pos[1] + self.p_rad*math.sin(angle-math.pi/2))-self.foot_rad:round(p.pos[1] + self.p_rad*math.sin(angle-math.pi/2))+self.foot_rad+1,
+					round(p.pos[0] + self.p_rad*math.cos(angle-math.pi/2))-self.foot_rad:round(p.pos[0] + self.p_rad*math.cos(angle-math.pi/2))+1+self.foot_rad] |= self.foot_mask
+				m[round(p.pos[1] - self.p_rad*math.sin(angle-math.pi/2))-self.foot_rad:round(p.pos[1] - self.p_rad*math.sin(angle-math.pi/2))+self.foot_rad+1,
+					round(p.pos[0] - self.p_rad*math.cos(angle-math.pi/2))-self.foot_rad:round(p.pos[0] - self.p_rad*math.cos(angle-math.pi/2))+1+self.foot_rad] |= self.foot_mask
 		return np.maximum(m, self.map)
 
 
@@ -284,8 +287,11 @@ class RandomMapServerWithPedestrians(object):
 					plt.plot(col, row, color = 'black', marker = 's', markersize = 1)
 		if self.num_p > 0:
 			for i in range(self.num_p):
-				plt.plot(self.p_path[i].T[0], self.p_path[i].T[1])
-				plt.plot(self.p[i].pos[0], self.p[i].pos[1], color = 'black', marker = 'o', markersize = 1)
+				plt.plot(self.p_path[i].T[0], self.p_path[i].T[1], color = 'blue')
+				plt.plot(self.p[i].pos[0], self.p[i].pos[1], color = 'blue', marker = 'o', markersize = 1)
+		for r in self.rooms:
+			plt.plot(r["x"], r["y"], color = "red")
+			plt.text(mean(r["x"]), mean(r["y"]), str(r["id"]), c = 'red')
 		plt.show()
 
 	def save_map_to_pgm(self, mapname, add_timestamp = False):
@@ -346,4 +352,5 @@ if __name__ == '__main__':
 
 	rospy.init_node('random_map_test')
 	node = RandomMapServerNode(args)
+	node.rms.plot()
 	rospy.spin()
