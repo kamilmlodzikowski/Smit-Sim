@@ -198,7 +198,7 @@ class RandomMapServerWithPedestrians(object):
 					print(e)
 					pass
 
-	def add_wall(self, hmin, hmax, wmin, wmax, depth = 1):
+	def add_wall(self, hmin, hmax, wmin, wmax, depth = 1, top_d = None, bot_d = None, left_d = None, right_d = None):
 		# plot the current map state
 		# if depth > 1:
 		# 	self.plot()
@@ -206,26 +206,26 @@ class RandomMapServerWithPedestrians(object):
 		# maximum depth reached
 		if depth > self.max_depth:
 			print('Max depth reached')
-			self.rooms.append({"id": len(self.rooms) + 1, "x": [wmin, wmax-1], "y": [hmin, hmax-1]})
+			self.rooms.append({"id": len(self.rooms) + 1, "x": [wmin, wmax-1], "y": [hmin, hmax-1], 'doors': list(filter(lambda d: d is not None, [top_d, bot_d, left_d, right_d]))})
 			return
 
 		# room is too small to add wall
 		if hmax - hmin < 2*self.min_room_dim + self.wall_w and wmax - wmin < 2*self.min_room_dim + self.wall_w:
 			print('Room too small to divide')
-			self.rooms.append({"id": len(self.rooms) + 1, "x": [wmin, wmax-1], "y": [hmin, hmax-1]})
+			self.rooms.append({"id": len(self.rooms) + 1, "x": [wmin, wmax-1], "y": [hmin, hmax-1], 'doors': list(filter(lambda d: d is not None, [top_d, bot_d, left_d, right_d]))})
 			return
 
 		# divide room with wall across bigger dimension (horizontally if botyh axis are equal)
 		if (hmax-hmin) >= (wmax-wmin):
-			self.add_wall_horizontal(hmin, hmax, wmin, wmax, depth)
+			self.add_wall_horizontal(hmin, hmax, wmin, wmax, depth, 0, top_d, bot_d, left_d, right_d)
 		else:
-			self.add_wall_vertical(hmin, hmax, wmin, wmax, depth)
+			self.add_wall_vertical(hmin, hmax, wmin, wmax, depth, 0, top_d, bot_d, left_d, right_d)
 
-	def add_wall_horizontal(self, hmin, hmax, wmin, wmax, depth, retry = 0):
+	def add_wall_horizontal(self, hmin, hmax, wmin, wmax, depth, retry = 0, top_d = None, bot_d = None, left_d = None, right_d = None):
 		# cancel the wall after too many retries
 		if retry == 10:
 			print('Max number of retries reached, wall aborted.')
-			self.rooms.append({"id": len(self.rooms) + 1, "x": [wmin, wmax-1], "y": [hmin, hmax-1]})
+			self.rooms.append({"id": len(self.rooms) + 1, "x": [wmin, wmax-1], "y": [hmin, hmax-1], 'doors': list(filter(lambda d: d is not None, [top_d, bot_d, left_d, right_d]))})
 			return
 
 		# create wall
@@ -234,7 +234,7 @@ class RandomMapServerWithPedestrians(object):
 		# check for doors on the sides
 		if depth > 1 and sum(self.map[wall_pos:(wall_pos + self.wall_w), wmin - 1]) < self.wall_w or sum(self.map[wall_pos:(wall_pos + self.wall_w), wmax]) < self.wall_w:
 			print('Wall blocking the door on try ' + str(retry))
-			self.add_wall_horizontal(hmin, hmax, wmin, wmax, depth, retry + 1)
+			self.add_wall_horizontal(hmin, hmax, wmin, wmax, depth, retry + 1, top_d, bot_d, left_d, right_d)
 			return
 		self.map[wall_pos:(wall_pos + self.wall_w), wmin:wmax] = 1
 
@@ -242,17 +242,40 @@ class RandomMapServerWithPedestrians(object):
 		door_pos = random.randint(wmin + self.door_to_wall_min, wmax - self.door_to_wall_min - self.door_w)
 		print('Door: ' + str(door_pos))
 		self.map[wall_pos:(wall_pos + self.wall_w), door_pos:(door_pos + self.door_w)] = 0
-		self.doors.append({"id": - len(self.doors) - 1, "y": [wall_pos, wall_pos + self.wall_w - 1], "x": [door_pos, door_pos + self.door_w - 1]})
+		d_id = - len(self.doors) - 1
+		self.doors.append({"id": d_id, "y": [wall_pos, wall_pos + self.wall_w - 1], "x": [door_pos, door_pos + self.door_w - 1]})
+
+		# decide where left and right doors go
+		if left_d:
+			if self.doors[-left_d-1]["y"][0] < wall_pos:
+				bot_left_d = left_d
+				top_left_d = None
+			else:
+				bot_left_d = None
+				top_left_d = left_d
+		else:
+			bot_left_d = None
+			top_left_d = None
+		if right_d:
+			if self.doors[-right_d-1]["y"][0] < wall_pos:
+				bot_right_d = right_d
+				top_right_d = None
+			else:
+				bot_right_d = None
+				top_right_d = right_d
+		else:
+			bot_right_d = None
+			top_right_d = None
 
 		# further split created rooms
-		self.add_wall(hmin, wall_pos, wmin, wmax, depth + 1)
-		self.add_wall(wall_pos + self.wall_w, hmax, wmin, wmax, depth + 1)
+		self.add_wall(hmin, wall_pos, wmin, wmax, depth + 1, self.doors[- d_id - 1]["id"], bot_d, bot_left_d, bot_right_d)
+		self.add_wall(wall_pos + self.wall_w, hmax, wmin, wmax, depth + 1, top_d, self.doors[- d_id - 1]["id"], top_left_d, top_right_d)
 
-	def add_wall_vertical(self, hmin, hmax, wmin, wmax, depth, retry = 0):
+	def add_wall_vertical(self, hmin, hmax, wmin, wmax, depth, retry = 0, top_d = None, bot_d = None, left_d = None, right_d = None):
 		# cancel the wall after too many retries
 		if retry == 10:
 			print('Max number of retries reached, wall aborted.')
-			self.rooms.append({"id": len(self.rooms) + 1, "x": [wmin, wmax-1], "y": [hmin, hmax-1]})
+			self.rooms.append({"id": len(self.rooms) + 1, "x": [wmin, wmax-1], "y": [hmin, hmax-1], 'doors': list(filter(lambda d: d is not None, [top_d, bot_d, left_d, right_d]))})
 			return
 
 		# create wall
@@ -261,7 +284,7 @@ class RandomMapServerWithPedestrians(object):
 		# check for doors on the sides
 		if depth > 1 and sum(self.map[hmin - 1, wall_pos:(wall_pos + self.wall_w)]) < self.wall_w or sum(self.map[hmax, wall_pos:(wall_pos + self.wall_w)]) < self.wall_w:
 			print('Wall blocking the door on try ' + str(retry))
-			self.add_wall_vertical(hmin, hmax, wmin, wmax, depth, retry + 1)
+			self.add_wall_vertical(hmin, hmax, wmin, wmax, depth, retry + 1, top_d, bot_d, left_d, right_d)
 			return
 		self.map[hmin:hmax, wall_pos:(wall_pos + self.wall_w)] = 1
 
@@ -269,11 +292,34 @@ class RandomMapServerWithPedestrians(object):
 		door_pos = random.randint(hmin + self.door_to_wall_min, hmax - self.door_to_wall_min - self.door_w)
 		print('Door: ' + str(door_pos))
 		self.map[door_pos:(door_pos + self.door_w), wall_pos:(wall_pos + self.wall_w)] = 0
-		self.doors.append({"id":- len(self.doors) - 1, "x": [wall_pos, wall_pos + self.wall_w - 1], "y": [door_pos, door_pos + self.door_w - 1]})
+		d_id = - len(self.doors) - 1
+		self.doors.append({"id": d_id, "x": [wall_pos, wall_pos + self.wall_w - 1], "y": [door_pos, door_pos + self.door_w - 1]})
+
+		# decide where top and bottom doors go
+		if bot_d:
+			if self.doors[-bot_d-1]["x"][0] < wall_pos:
+				left_bot_d = bot_d
+				right_bot_d = None
+			else:
+				left_bot_d = None
+				right_bot_d = bot_d
+		else:
+			left_bot_d = None
+			right_bot_d = None
+		if top_d:
+			if self.doors[-top_d-1]["x"][0] < wall_pos:
+				left_top_d = top_d
+				right_top_d = None
+			else:
+				left_top_d = None
+				right_top_d = top_d
+		else:
+			left_top_d = None
+			right_top_d = None
 
 		# further split created rooms
-		self.add_wall(hmin, hmax, wmin, wall_pos, depth + 1)
-		self.add_wall(hmin, hmax, wall_pos + self.wall_w, wmax, depth + 1)
+		self.add_wall(hmin, hmax, wmin, wall_pos, depth + 1, left_top_d, left_bot_d, left_d, self.doors[- d_id - 1]["id"])
+		self.add_wall(hmin, hmax, wall_pos + self.wall_w, wmax, depth + 1, right_top_d, right_bot_d, self.doors[- d_id - 1]["id"], right_d)
 
 	def add_external_door(self):
 		if random.random() < 0.5: # horizontal
@@ -505,6 +551,8 @@ if __name__ == '__main__':
 
 	rospy.init_node('random_map_test')
 	node = RandomMapServerNode(args)
+	for r in node.rms.rooms:
+		print(r)
 	node.rms.plot()
 	# node.rms.plot_probability_map()
 	rospy.spin()
