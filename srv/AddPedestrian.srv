@@ -1,6 +1,6 @@
 float64 velocity
 std_msgs/Float64MultiArray path
 bool full_path
-bool circle
+int8 behaviour
 ---
 bool success

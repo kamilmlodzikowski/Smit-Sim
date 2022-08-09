@@ -7,6 +7,7 @@ from statistics import mean
 import matplotlib.pyplot as plt
 from PIL import Image
 from datetime import datetime
+from enum import IntEnum
 from roboticstoolbox import DistanceTransformPlanner, PRMPlanner
 from linear_path import LinearPath
 
@@ -57,7 +58,7 @@ class RandomMapServerNode(object):
 			path = []
 			for i in range(req.path.layout.dim[0].size):
 				path.append([req.path.data[req.path.layout.data_offset + req.path.layout.dim[1].stride*i], req.path.data[req.path.layout.data_offset + req.path.layout.dim[1].stride*i + 1]])
-			self.rms.add_pedestrian(req.velocity, np.array(path), req.full_path, req.circle)
+			self.rms.add_pedestrian(req.velocity, np.array(path), req.full_path, req.behaviour)
 			return AddPedestrianResponse(True)
 		else:
 			return AddPedestrianResponse(False)
@@ -73,7 +74,14 @@ class RandomMapServerNode(object):
 	def regenerate_map(self, req):
 		self.rms.regenerate_map()
 
+class PedestrianBehaviour(IntEnum):
+	CIRCLE = 1
+	RANDOM = 2
+	DISSAPEAR = 3
+	REROUTE = 4
+
 class RandomMapServerWithPedestrians(object):
+
 	"""docstring for RandomMapServerWithPedestrians"""
 	def __init__(self, args):
 		self.res = args.resolution
@@ -81,40 +89,49 @@ class RandomMapServerWithPedestrians(object):
 		self.h = round(args.height/self.res)
 
 		self.wall_w = round(args.wall_width/self.res)
-		print("Original wall width: " + str(args.wall_width))
-		print("Resolution: " + str(self.res))
-		print("Wall width: " + str(self.wall_w))
 		self.ext_wall = args.external_wall
+		self.ext_ent = args.external_entrance
 		self.min_room_dim = round(args.min_room_dim/self.res)
 		self.door_w = round(args.door_width/self.res)
 		self.door_to_wall_min = round(args.door_to_wall_min/self.res)
 		self.max_depth = args.max_depth
 		
 		self.map = np.empty((self.h, self.w))
+		self.prob_map = np.zeros((self.h, self.w))
+		self.norm_prob_map = np.zeros((self.h, self.w))
+
+		self.prob_room = args.room_probability
+		self.prob_door = args.door_probability
+		self.prob_ent = args.entrance_probability
 
 		self.num_p = args.num_of_pedestrians
 		self.p_min_sp = args.pedestrian_min_speed/self.res
 		self.p_max_sp = args.pedestrian_max_speed/self.res
 		self.p_rad = round(args.pedestrian_radius/self.res)
 		self.foot_rad = round(args.pedestrian_foot_radius/self.res)
-		self.p_circles = args.pedestrian_walk_circles
+		self.p_def_beh = PedestrianBehaviour(args.pedestrian_behaviour)
 
+		self.planner = PRMPlanner(self.map, distance = 'euclidean', inflate = self.p_rad + self.foot_rad, npoints = int((self.w*self.h)/100))
 		if self.num_p > 0:
-
 			# self.planner = DistanceTransformPlanner(self.map, distance = 'euclidean', inflate = self.p_rad + self.foot_rad)
-			self.planner = PRMPlanner(self.map, distance = 'euclidean', inflate = self.p_rad + self.foot_rad, npoints = int((self.w*self.h)/100))
 			self.p = [LinearPath([0, 0], [[0, 0]]) for _ in range(self.num_p)]
 			self.p_path = [[] for _ in range(self.num_p)]
 			self.p_sp = [0 for _ in range(self.num_p)]
-			self.p_circle = [self.p_circles for _ in range(self.num_p)]
+			self.p_beh = [self.p_def_beh for _ in range(self.num_p)]
+		else:
+			self.p = []
+			self.p_path = []
+			self.p_sp = []
+			self.p_beh = []
 
-			Y, X = np.ogrid[-self.foot_rad:self.foot_rad+1, -self.foot_rad:self.foot_rad+1]
-			dist_from_center = np.sqrt((X)**2 + (Y)**2)
-			self.foot_mask = dist_from_center <= self.foot_rad
-			# print(self.foot_mask)
+		Y, X = np.ogrid[-self.foot_rad:self.foot_rad+1, -self.foot_rad:self.foot_rad+1]
+		dist_from_center = np.sqrt((X)**2 + (Y)**2)
+		self.foot_mask = dist_from_center <= self.foot_rad
+		# print(self.foot_mask)
 
 		self.rooms = []
 		self.doors = []
+		self.ext_door = {"id": -1, "x":[], "y":[]}
 		self.regenerate_map()
 
 	def regenerate_map(self):
@@ -127,11 +144,28 @@ class RandomMapServerWithPedestrians(object):
 		else:
 			self.map = np.zeros((self.h, self.w))
 			self.add_wall(0, self.h, 0, self.w)
+
+		if self.ext_wall and self.ext_ent:
+			self.add_external_door()
+
+		self.regenerate_probability_map()
+
 		# regenerate pedestrians if needed
+		self.planner = PRMPlanner(self.map, distance = 'euclidean', inflate = self.p_rad + self.foot_rad, npoints = int((self.w*self.h)/100))
+		self.planner.plan()
 		if self.num_p > 0:
-			self.planner = PRMPlanner(self.map, distance = 'euclidean', inflate = self.p_rad + self.foot_rad, npoints = int((self.w*self.h)/100))
-			self.planner.plan()
 			self.regenerate_pedestrians()
+
+	def regenerate_probability_map(self):
+		for r in self.rooms:
+			self.prob_map[r["x"][0]:r["x"][1]+1, r["y"][0]:r["y"][1]+1] = self.prob_room
+		for d in self.doors:
+			self.prob_map[d["x"][0]:d["x"][1]+1, d["y"][0]:d["y"][1]+1] = self.prob_door
+		if self.ext_wall and self.ext_ent:
+			d = self.ext_door
+			self.prob_map[d["x"][0]:d["x"][1]+1, d["y"][0]:d["y"][1]+1] = self.prob_ent
+		max_p = self.prob_map.max()
+		self.norm_prob_map = self.prob_map/max_p
 
 	def regenerate_pedestrians(self):
 		for i in range(self.num_p):
@@ -176,6 +210,7 @@ class RandomMapServerWithPedestrians(object):
 		# cancel the wall after too many retries
 		if retry == 10:
 			print('Max number of retries reached, wall aborted.')
+			self.rooms.append({"id": len(self.rooms), "x": [wmin, wmax-1], "y": [hmin, hmax-1]})
 			return
 
 		# create wall
@@ -224,33 +259,89 @@ class RandomMapServerWithPedestrians(object):
 		self.add_wall(hmin, hmax, wmin, wall_pos, depth + 1)
 		self.add_wall(hmin, hmax, wall_pos + self.wall_w, wmax, depth + 1)
 
+	def add_external_door(self):
+		if random.random() < 0.5: # horizontal
+			door_pos = random.randint(self.wall_w, self.w - self.wall_w - self.door_w)
+			if random.random() < 0.5: # bottom
+				if sum(self.map[self.wall_w, door_pos:(door_pos + self.door_w)]) > 0:
+					self.add_external_door()
+					return
+				self.map[0:self.wall_w, door_pos:(door_pos + self.door_w)] = 0
+				self.ext_door["y"] = [0, self.wall_w - 1]
+			else: # top
+				if sum(self.map[self.h - self.wall_w - 1, door_pos:(door_pos + self.door_w)]) > 0:
+					self.add_external_door()
+					return
+				self.map[self.h - self.wall_w:self.h, door_pos:(door_pos + self.door_w)] = 0
+				self.ext_door["y"] = [self.h - self.wall_w, self.h - 1]
+			self.ext_door["x"] = [door_pos, door_pos + self.door_w - 1]
+		else: # vertical
+			door_pos = random.randint(self.wall_w, self.h - self.wall_w - self.door_w)
+			if random.random() < 0.5: # left
+				if sum(self.map[door_pos:(door_pos + self.door_w), self.wall_w]) > 0:
+					self.add_external_door()
+					return
+				self.map[door_pos:(door_pos + self.door_w), 0:self.wall_w] = 0
+				self.ext_door['x'] = [0, self.wall_w - 1]
+			else: # right
+				if sum(self.map[door_pos:(door_pos + self.door_w), self.w - self.wall_w - 1]) > 0:
+					self.add_external_door()
+					return
+				self.map[door_pos:(door_pos + self.door_w), self.w - self.wall_w:self.w] = 0
+				self.ext_door["x"] = [self.w - self.wall_w , self.w - 1]
+			self.ext_door["y"] = [door_pos, door_pos + self.door_w - 1]
+
 	def step(self, dt):
 		if self.num_p > 0:
+			to_pop = []
 			for i in range(self.num_p):
 				pos, time_left = self.p[i].step(self.p_sp[i], dt)
-				if time_left and self.p_circle[i]:
-					while time_left:
-						self.p_path[i] = np.flip(self.p_path[i], axis = 0)
-						self.p[i] = LinearPath(self.p_path[i][0], self.p_path[i][1:])
-						pos, time_left = self.p[i].step(self.p_sp[i], dt - time_left)
-				if time_left and not self.p_circle[i]:
-					while time_left:
-						try:
-							start = (random.randrange(0, self.h), random.randrange(0, self.w))
-							goal = (random.randrange(0, self.h), random.randrange(0, self.w))
-							# self.planner.goal = goal
-							self.p_path[i] = self.planner.query(start = start, goal = goal)
-							self.p[i] = LinearPath(start, self.p_path[i][1:])
-							self.p_sp[i] = random.uniform(self.p_min_sp, self.p_max_sp)
-							break
-						except ValueError:
-							pass
-						except RuntimeError:
-							pass
+				if time_left:
+					if self.p_beh[i] == PedestrianBehaviour.CIRCLE:
+						while time_left:
+							self.p_path[i] = np.flip(self.p_path[i], axis = 0)
+							self.p[i] = LinearPath(self.p_path[i][0], self.p_path[i][1:])
+							pos, time_left = self.p[i].step(self.p_sp[i], dt - time_left)
+					elif self.p_beh[i] == PedestrianBehaviour.RANDOM:
+						while time_left:
+							try:
+								start = (random.randrange(0, self.h), random.randrange(0, self.w))
+								goal = (random.randrange(0, self.h), random.randrange(0, self.w))
+								self.p_path[i] = self.planner.query(start = start, goal = goal)
+								self.p[i] = LinearPath(start, self.p_path[i][1:])
+								self.p_sp[i] = random.uniform(self.p_min_sp, self.p_max_sp)
+								break
+							except ValueError:
+								pass
+							except RuntimeError:
+								pass
+					elif self.p_beh[i] == PedestrianBehaviour.DISSAPEAR:
+						to_pop.append(i)
+					elif self.p_beh[i] == PedestrianBehaviour.REROUTE:
+						while time_left:
+							try:
+								start = pos
+								goal = (random.randrange(0, self.h), random.randrange(0, self.w))
+								self.p_path[i] = self.planner.query(start = start, goal = goal)
+								self.p[i] = LinearPath(start, self.p_path[i][1:])
+								# self.p_sp[i] = random.uniform(self.p_min_sp, self.p_max_sp)
+								break
+							except ValueError:
+								pass
+							except RuntimeError:
+								pass
+			if len(to_pop) > 0:
+				to_pop.reverse()
+				for i in to_pop:
+					self.p.pop(i)
+					self.p_sp.pop(i)
+					self.p_path.pop(i)
+					self.p_beh.pop(i)
+					self.num_p -= 1
 
-	def add_pedestrian(self, speed, path, planned, circle):
-		if self.num_p == 0:
-			self.planner = PRMPlanner(self.map, distance = 'euclidean', inflate = self.p_rad + self.foot_rad, npoints = int((self.w*self.h)/100))
+	def add_pedestrian(self, speed, path, planned, behaviour):
+		# if self.num_p == 0:
+		# 	self.planner = PRMPlanner(self.map, distance = 'euclidean', inflate = self.p_rad + self.foot_rad, npoints = int((self.w*self.h)/100))
 
 		path = path*(1/self.res)
 
@@ -262,8 +353,12 @@ class RandomMapServerWithPedestrians(object):
 		self.p.append(LinearPath(start, self.p_path[-1][1:]))
 		if speed == 0:
 			speed = random.uniform(self.p_min_sp, self.p_max_sp)
+		else:
+			speed = speed/self.res
 		self.p_sp.append(speed)
-		self.p_circle.append(circle)
+		if behaviour == 0:
+			behaviour = self.p_def_beh
+		self.p_beh.append(PedestrianBehaviour(behaviour))
 
 		self.num_p += 1
 
@@ -290,7 +385,7 @@ class RandomMapServerWithPedestrians(object):
 					plt.plot(col, row, color = 'black', marker = 's', markersize = 1)
 		if self.num_p > 0:
 			for i in range(self.num_p):
-				if self.p_circle[i]:
+				if self.p_beh[i] == PedestrianBehaviour.CIRCLE:
 					plt.plot(self.p_path[i].T[0], self.p_path[i].T[1], color = 'blue')
 					plt.plot(self.p[i].pos[0], self.p[i].pos[1], color = 'blue', marker = 'o', markersize = 1)
 					plt.text(self.p_path[i].T[0][0], self.p_path[i].T[1][0], str(i), c = 'blue')
@@ -300,6 +395,23 @@ class RandomMapServerWithPedestrians(object):
 		for d in self.doors:
 			plt.plot(d["x"], d["y"], color = "green")
 			plt.text(mean(d["x"]), mean(d["y"]), str(d["id"]), c = 'green')
+		if self.ext_wall and self.ext_ent:
+			d =  self.ext_door
+			plt.plot(d["x"], d["y"], color = "green")
+			plt.text(mean(d["x"]), mean(d["y"]), str(d["id"]), c = 'green')
+		plt.grid(b=None)
+		plt.show()
+
+	def plot_probability_map(self):
+		rows, cols = np.shape(self.prob_map)
+		plt.figure()
+		ax = plt.axes()
+		ax.set_facecolor("cyan")
+		for row in range(rows):
+			for col in range(cols):
+				if self.prob_map[row, col]:
+					plt.plot(col, row, color = str(1-self.norm_prob_map[row, col]), marker = 's', markersize = 1)
+		plt.grid(b=None)
 		plt.show()
 
 	def save_map_to_pgm(self, mapname, add_timestamp = False):
@@ -328,10 +440,16 @@ if __name__ == '__main__':
 	# map creation arguments
 	parser.add_argument("--wall_width", type = float, default = 0.3)
 	parser.add_argument("--external_wall", type = bool, default = True)
+	parser.add_argument("--external_entrance", type = bool, default = True)
 	parser.add_argument("--min_room_dim", type = float, default = 3)
 	parser.add_argument("--door_width", type = float, default = 1)
 	parser.add_argument("--door_to_wall_min", type = float, default = 0.2)
 	parser.add_argument("--max_depth", type = int, default = 4)
+
+	# probability map arguments
+	parser.add_argument("--room_probability", type = float, default = 10)
+	parser.add_argument("--door_probability", type = float, default = 1)
+	parser.add_argument("--entrance_probability", type = float, default = 100)
 
 	# pedestrian creation arguments
 	parser.add_argument("--num_of_pedestrians", type = int, default = 5)
@@ -339,7 +457,7 @@ if __name__ == '__main__':
 	parser.add_argument("--pedestrian_max_speed", type = float, default = 2)
 	parser.add_argument("--pedestrian_radius", type = float, default = 0.2)
 	parser.add_argument("--pedestrian_foot_radius", type = float, default = 0.1)
-	parser.add_argument("--pedestrian_walk_circles", type = bool, default = False)
+	parser.add_argument("--pedestrian_behaviour", type = int, default = 1)
 
 	# node arguments
 	parser.add_argument("--publish", type = bool, default = True)
@@ -354,11 +472,8 @@ if __name__ == '__main__':
 	# rms.plot()
 	# plt.savefig('random_map.jpg')
 
-	# while(True):
-	# 	rms.step(10)
-	# 	rms.plot()
-
 	rospy.init_node('random_map_test')
 	node = RandomMapServerNode(args)
 	node.rms.plot()
+	node.rms.plot_probability_map()
 	rospy.spin()
