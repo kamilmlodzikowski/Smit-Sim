@@ -150,9 +150,21 @@ class RandomMapServerWithPedestrians(object):
 			self.map = np.zeros((self.h, self.w))
 			self.add_wall(0, self.h, 0, self.w)
 
+		# set neighbours for rooms
+		for r1 in self.rooms:
+			for r2 in self.rooms[r1["id"]-1:]:
+				if r1["id"] == r2["id"]:
+					continue
+				if list(set(r1["doors"]) & set(r2["doors"])):
+					r1["neighbours"].append(r2["id"])
+					r2["neighbours"].append(r1["id"])
+
+
+		# create entrance door
 		if self.ext_wall and self.ext_ent:
 			self.add_external_door()
 
+		# create probability maps
 		self.regenerate_probability_map()
 
 		# regenerate pedestrians if needed
@@ -206,13 +218,13 @@ class RandomMapServerWithPedestrians(object):
 		# maximum depth reached
 		if depth > self.max_depth:
 			print('Max depth reached')
-			self.rooms.append({"id": len(self.rooms) + 1, "x": [wmin, wmax-1], "y": [hmin, hmax-1], 'doors': list(filter(lambda d: d is not None, [top_d, bot_d, left_d, right_d]))})
+			self.rooms.append({"id": len(self.rooms) + 1, "x": [wmin, wmax-1], "y": [hmin, hmax-1], 'neighbours': [], 'doors': list(filter(lambda d: d is not None, [top_d, bot_d, left_d, right_d]))})
 			return
 
 		# room is too small to add wall
 		if hmax - hmin < 2*self.min_room_dim + self.wall_w and wmax - wmin < 2*self.min_room_dim + self.wall_w:
 			print('Room too small to divide')
-			self.rooms.append({"id": len(self.rooms) + 1, "x": [wmin, wmax-1], "y": [hmin, hmax-1], 'doors': list(filter(lambda d: d is not None, [top_d, bot_d, left_d, right_d]))})
+			self.rooms.append({"id": len(self.rooms) + 1, "x": [wmin, wmax-1], "y": [hmin, hmax-1], 'neighbours': [], 'doors': list(filter(lambda d: d is not None, [top_d, bot_d, left_d, right_d]))})
 			return
 
 		# divide room with wall across bigger dimension (horizontally if botyh axis are equal)
@@ -225,7 +237,7 @@ class RandomMapServerWithPedestrians(object):
 		# cancel the wall after too many retries
 		if retry == 10:
 			print('Max number of retries reached, wall aborted.')
-			self.rooms.append({"id": len(self.rooms) + 1, "x": [wmin, wmax-1], "y": [hmin, hmax-1], 'doors': list(filter(lambda d: d is not None, [top_d, bot_d, left_d, right_d]))})
+			self.rooms.append({"id": len(self.rooms) + 1, "x": [wmin, wmax-1], "y": [hmin, hmax-1], 'neighbours': [], 'doors': list(filter(lambda d: d is not None, [top_d, bot_d, left_d, right_d]))})
 			return
 
 		# create wall
@@ -275,7 +287,7 @@ class RandomMapServerWithPedestrians(object):
 		# cancel the wall after too many retries
 		if retry == 10:
 			print('Max number of retries reached, wall aborted.')
-			self.rooms.append({"id": len(self.rooms) + 1, "x": [wmin, wmax-1], "y": [hmin, hmax-1], 'doors': list(filter(lambda d: d is not None, [top_d, bot_d, left_d, right_d]))})
+			self.rooms.append({"id": len(self.rooms) + 1, "x": [wmin, wmax-1], "y": [hmin, hmax-1], 'neighbours': [], 'doors': list(filter(lambda d: d is not None, [top_d, bot_d, left_d, right_d]))})
 			return
 
 		# create wall
@@ -324,34 +336,51 @@ class RandomMapServerWithPedestrians(object):
 	def add_external_door(self):
 		if random.random() < 0.5: # horizontal
 			door_pos = random.randint(self.wall_w, self.w - self.wall_w - self.door_w)
+			self.ext_door["x"] = [door_pos, door_pos + self.door_w - 1]
 			if random.random() < 0.5: # bottom
 				if sum(self.map[self.wall_w, door_pos:(door_pos + self.door_w)]) > 0:
 					self.add_external_door()
 					return
 				self.map[0:self.wall_w, door_pos:(door_pos + self.door_w)] = 0
 				self.ext_door["y"] = [0, self.wall_w - 1]
+				for r in self.rooms:
+					if self.ext_door["x"][0] > r["x"][0] and self.ext_door["x"][0] < r["x"][1] and r["y"][0] == self.wall_w:
+						r["doors"].append(0)
+						break
 			else: # top
 				if sum(self.map[self.h - self.wall_w - 1, door_pos:(door_pos + self.door_w)]) > 0:
 					self.add_external_door()
 					return
 				self.map[self.h - self.wall_w:self.h, door_pos:(door_pos + self.door_w)] = 0
 				self.ext_door["y"] = [self.h - self.wall_w, self.h - 1]
-			self.ext_door["x"] = [door_pos, door_pos + self.door_w - 1]
+				for r in self.rooms:
+					if self.ext_door["x"][0] > r["x"][0] and self.ext_door["x"][0] < r["x"][1] and r["y"][1] == self.h - self.wall_w - 1:
+						r["doors"].append(0)
+						break
 		else: # vertical
 			door_pos = random.randint(self.wall_w, self.h - self.wall_w - self.door_w)
+			self.ext_door["y"] = [door_pos, door_pos + self.door_w - 1]
 			if random.random() < 0.5: # left
 				if sum(self.map[door_pos:(door_pos + self.door_w), self.wall_w]) > 0:
 					self.add_external_door()
 					return
 				self.map[door_pos:(door_pos + self.door_w), 0:self.wall_w] = 0
 				self.ext_door['x'] = [0, self.wall_w - 1]
+				for r in self.rooms:
+					if self.ext_door["y"][0] > r["y"][0] and self.ext_door["y"][0] < r["y"][1] and r["x"][0] == self.wall_w:
+						r["doors"].append(0)
+						break
 			else: # right
 				if sum(self.map[door_pos:(door_pos + self.door_w), self.w - self.wall_w - 1]) > 0:
 					self.add_external_door()
 					return
 				self.map[door_pos:(door_pos + self.door_w), self.w - self.wall_w:self.w] = 0
 				self.ext_door["x"] = [self.w - self.wall_w , self.w - 1]
-			self.ext_door["y"] = [door_pos, door_pos + self.door_w - 1]
+				for r in self.rooms:
+					if self.ext_door["y"][0] > r["y"][0] and self.ext_door["y"][0] < r["y"][1] and r["x"][1] == self.w - self.wall_w - 1:
+						r["doors"].append(0)
+						break
+
 
 	def get_random_point(self):
 		point = np.random.choice(self.w*self.h, 1, p = self.norm_prob_map.reshape(-1))
@@ -551,8 +580,8 @@ if __name__ == '__main__':
 
 	rospy.init_node('random_map_test')
 	node = RandomMapServerNode(args)
-	for r in node.rms.rooms:
-		print(r)
+	# for r in node.rms.rooms:
+	# 	print(r)
 	node.rms.plot()
-	# node.rms.plot_probability_map()
+	node.rms.plot_probability_map()
 	rospy.spin()
