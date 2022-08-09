@@ -483,27 +483,31 @@ class RandomMapServerWithPedestrians(object):
 	def plot(self):
 		rows, cols = np.shape(self.map)
 		plt.figure()
+		x = []
+		y = []
 		for row in range(rows):
 			for col in range(cols):
 				if self.map[row, col]:
-					plt.plot(col, row, color = 'black', marker = 's', markersize = 1)
+					x.append(col)
+					y.append(row)
+		plt.scatter(x, y, color = 'black', marker = 's', s = 1)
 		if self.num_p > 0:
 			for i in range(self.num_p):
 				if self.p_beh[i] == PedestrianBehaviour.CIRCLE:
 					plt.plot(self.p_path[i].T[0], self.p_path[i].T[1], color = 'blue')
 					plt.plot(self.p[i].pos[0], self.p[i].pos[1], color = 'blue', marker = 'o', markersize = 1)
-					plt.text(self.p_path[i].T[0][0], self.p_path[i].T[1][0], str(i), c = 'blue')
-					plt.text(self.p_path[i].T[0][-1], self.p_path[i].T[1][-1], str(i), c = 'blue')
+					plt.text(self.p_path[i].T[0][0], self.p_path[i].T[1][0], str(i), color = 'blue')
+					plt.text(self.p_path[i].T[0][-1], self.p_path[i].T[1][-1], str(i), color = 'blue')
 		for r in self.rooms:
 			plt.plot(r["x"], r["y"], color = "red")
-			plt.text(mean(r["x"]), mean(r["y"]), str(r["id"]), c = 'red')
+			plt.text(mean(r["x"]), mean(r["y"]), str(r["id"]), color = 'red')
 		for d in self.doors:
 			plt.plot(d["x"], d["y"], color = "green")
-			plt.text(mean(d["x"]), mean(d["y"]), str(d["id"]), c = 'green')
+			plt.text(mean(d["x"]), mean(d["y"]), str(d["id"]), color = 'green')
 		if self.ext_wall and self.ext_ent:
 			d =  self.ext_door
 			plt.plot(d["x"], d["y"], color = "green")
-			plt.text(mean(d["x"]), mean(d["y"]), str(d["id"]), c = 'green')
+			plt.text(mean(d["x"]), mean(d["y"]), str(d["id"]), color = 'green')
 		plt.grid(b=None)
 		plt.show()
 
@@ -512,11 +516,17 @@ class RandomMapServerWithPedestrians(object):
 		plt.figure()
 		ax = plt.axes()
 		ax.set_facecolor("cyan")
+		data = {}
 		for row in range(rows):
 			for col in range(cols):
 				if self.prob_map[row, col]:
-					plt.plot(col, row, color = str(1-self.scaled_prob_map[row, col]), marker = 's', markersize = 1)
-					# plt.plot(col, row, color = 'black', marker = 's', markersize = 1)
+					color = str(1-self.scaled_prob_map[row, col])
+					if color not in data.keys():
+						data[color] = [[],[]]
+					data[color][0].append(col)
+					data[color][1].append(row)
+		for color in data.keys():
+			plt.scatter(data[color][0], data[color][1], color = color, marker = 's', s = 3)
 		plt.grid(b=None)
 		plt.show()
 
