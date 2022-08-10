@@ -686,6 +686,10 @@ class RandomMapServerWithPedestrians(object):
 		self.planner = PRMPlanner(self.map, distance = 'euclidean', inflate = self.p_rad + self.foot_rad, npoints = int((self.w*self.h)/100))
 		self.planner.plan()
 
+		Y, X = np.ogrid[-self.foot_rad:self.foot_rad+1, -self.foot_rad:self.foot_rad+1]
+		dist_from_center = np.sqrt((X)**2 + (Y)**2)
+		self.foot_mask = dist_from_center <= self.foot_rad
+
 	def __str__(self):
 		return str(self.map)
 
