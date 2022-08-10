@@ -8,13 +8,14 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from datetime import datetime
 from enum import IntEnum
-from roboticstoolbox import DistanceTransformPlanner, PRMPlanner
+import json
+from roboticstoolbox import PRMPlanner
 from linear_path import LinearPath
 
 import rospy
 from std_msgs.msg import Float64MultiArray
 from nav_msgs.msg import OccupancyGrid
-from smit_matlab_sim.srv import Step, AddPedestrian, AddPedestrianResponse, GetRoomsAndDoors, GetRoomsAndDoorsResponse
+from smit_matlab_sim.srv import Step, AddPedestrian, AddPedestrianResponse, GetRoomsAndDoors, GetRoomsAndDoorsResponse, SetAreaPriority, FileOperation
 from smit_matlab_sim.msg import Room
 from std_srvs.srv import Empty
 
@@ -28,6 +29,9 @@ class RandomMapServerNode(object):
 		self.srv_regenerate_ped = rospy.Service('regenerate_pedestrians', Empty, self.regenerate_pedestrians)
 		self.srv_add_ped = rospy.Service('add_pedestrian', AddPedestrian, self.add_pedestrian)
 		self.srv_get_structures = rospy.Service('get_rooms_and_doors', GetRoomsAndDoors, self.get_structures)
+		self.srv_set_priority = rospy.Service('set_area_priority', SetAreaPriority, self.set_priority)
+		self.srv_to_file = rospy.Service('save_config', FileOperation, self.save_to_file)
+		self.srv_from_file = rospy.Service('load_config', FileOperation, self.load_from_file)
 
 		self.publish = args.publish
 		self.rate = args.publish_rate
@@ -67,7 +71,6 @@ class RandomMapServerNode(object):
 		else:
 			return AddPedestrianResponse(False)
 
-
 	def publish_map(self, event = None):
 		self.msg.data = np.uint8(self.rms.get_pedmap().reshape(-1)*100)
 		self.msg.header.stamp = rospy.Time.now()
@@ -83,6 +86,46 @@ class RandomMapServerNode(object):
 
 	def get_structures(self, req):
 		return GetRoomsAndDoorsResponse([Room(r["id"], [p*self.rms.res for p in r["x"]], [p*self.rms.res for p in r["y"]], r["doors"], r["neighbours"]) for r in self.rms.rooms], [Room(d["id"], [p*self.rms.res for p in d["x"]], [p*self.rms.res for p in d["y"]], [], []) for d in self.rms.doors], Room(self.rms.ext_door["id"], [p*self.rms.res for p in self.rms.ext_door["x"]], [p*self.rms.res for p in self.rms.ext_door["y"]], [], []) if self.rms.ext_ent else Room())
+
+	def set_priority(self, req):
+		if req.priority < 0:
+			return False
+		if len(req.area) == 1:
+			return self.rms.set_room_priority(req.priority, int(req.area[0]))
+		if len(req.area) == 4:
+			return self.rms.set_area_priority(req.priority, [round(x/self.rms.res) for x in req.area])
+		return False
+
+	def save_to_file(self, req):
+		if req.filename == '':
+			return
+		config = self.rms.get_data_as_dict()
+		config["node"] = [self.publish, self.rate, self.auto_step, self.pub_on_step]
+		with open(req.filename, 'w') as j_file:
+			json.dump(config, j_file)
+
+	def load_from_file(self, req):
+		if req.filename == '':
+			return
+		with open(req.filename, 'r') as j_file:
+			config = json.load(j_file)
+		
+		self.publish = config["node"][0]
+		self.rate = config["node"][1]
+		self.auto_step = config["node"][2]
+		self.pub_on_step = config["node"][3]
+
+		self.rms.load_data_from_dict(config)
+
+		self.msg.info.width = self.rms.w
+		self.msg.info.height = self.rms.h
+		self.msg.info.resolution = self.rms.res
+		self.msg.info.map_load_time = rospy.Time.now()
+
+		if self.publish:
+			del self.timer
+			self.timer = rospy.Timer(rospy.Duration(1.0/self.rate), self.publish_map)
+
 
 class PedestrianBehaviour(IntEnum):
 	CIRCLE = 1
@@ -187,6 +230,9 @@ class RandomMapServerWithPedestrians(object):
 		if self.ext_wall and self.ext_ent:
 			d = self.ext_door
 			self.prob_map[d["y"][0]:d["y"][1], d["x"][0]:d["x"][1]] = self.prob_ent
+		self.refresh_prob_maps()
+
+	def refresh_prob_maps(self):
 		max_p = self.prob_map.max()
 		self.scaled_prob_map = self.prob_map/max_p
 		sum_p = self.prob_map.sum()
@@ -387,6 +433,30 @@ class RandomMapServerWithPedestrians(object):
 						r["doors"].append(0)
 						break
 
+	def set_room_priority(self, p, id):
+		if id > 0:
+			for r in self.rooms:
+				if r["id"] == id:
+					self.prob_map[r["y"][0]:r["y"][1], r["x"][0]:r["x"][1]] = p
+					self.refresh_prob_maps()
+					return True
+		elif id < 0:
+			for d in self.doors:
+				if d["id"] == id:
+					self.prob_map[d["y"][0]:d["y"][1], d["x"][0]:d["x"][1]] = p
+					self.refresh_prob_maps()
+					return True
+		elif id == 0:
+			d = self.ext_door
+			self.prob_map[d["y"][0]:d["y"][1], d["x"][0]:d["x"][1]] = p
+			self.refresh_prob_maps()
+			return True
+		return False
+
+	def set_area_priority(self, p, area):
+		self.prob_map[area[2]:area[3], area[0]:area[1]] = p
+		self.refresh_prob_maps()
+		return True
 
 	def get_random_point(self):
 		point = np.random.choice(self.w*self.h, 1, p = self.norm_prob_map.reshape(-1))
@@ -494,7 +564,6 @@ class RandomMapServerWithPedestrians(object):
 
 		return True
 
-
 	def get_pedmap(self):
 		m = np.zeros((self.h, self.w), dtype=np.bool)
 		if self.num_p > 0:
@@ -509,7 +578,6 @@ class RandomMapServerWithPedestrians(object):
 				except ValueError:
 					pass
 		return np.maximum(m, self.map)
-
 
 	def plot(self):
 		rows, cols = np.shape(self.map)
@@ -572,6 +640,52 @@ class RandomMapServerWithPedestrians(object):
 		with open(filename + '.yaml', 'w') as f:
 			f.write('image: ' + filename + '.pgm\nresolution: ' + str(self.res) + '\norigin: [0.0, 0.0, 0.0]\nnegate: 0\noccupied_thresh: 0.65\nfree_thresh: 0.196\n')
 
+	def get_data_as_dict(self):
+		config = {}
+
+		config['meta'] = [self.w, self.h, self.res]
+		config['regen'] = [self.wall_w, self.ext_wall, self.ext_ent, self.min_room_dim, self.door_w, self.door_to_wall_min, self.max_depth]
+		config['prob'] = [self.prob_room, self.prob_door, self.prob_ent]
+		config['ped'] = [self.num_p, self.p_min_sp, self.p_max_sp, self.p_rad, self.foot_rad, self.p_def_beh]
+
+		config['p_pos'] = [[float(p.pos[0]), float(p.pos[1])] for p in self.p]
+		config['p_points'] = [[list(point) for point in p.points] for p in self.p]
+		config['p_sp'] = self.p_sp
+		config['p_path'] = [[list(point) for point in p] for p in self.p_path]
+		config['p_beh'] = self.p_beh
+
+		config['rooms'] =  self.rooms
+		config['doors'] =  self.doors
+		config['ext_door'] = self.ext_door
+
+		config['map'] = list(self.map.reshape(-1))
+		config['prob_map'] = list(self.prob_map.reshape(-1))
+
+		return config
+
+	def load_data_from_dict(self, config):
+		self.w, self.h, self.res = config['meta']
+		self.wall_w, self.ext_wall, self.ext_ent, self.min_room_dim, self.door_w, self.door_to_wall_min, self.max_depth = config['regen']
+		self.prob_room, self.prob_door, self.prob_ent = config['prob']
+		self.num_p, self.p_min_sp, self.p_max_sp, self.p_rad, self.foot_rad, self.p_def_beh = config['ped']
+
+		self.p_sp = config['p_sp']
+		self.p_path = config['p_path']
+		self.p_beh = config['p_beh']
+		for i in range(self.num_p):
+			self.p[i] = LinearPath(config['p_pos'][i], config['p_points'][i])
+
+		self.rooms = config['rooms']
+		self.doors = config['doors']
+		self.ext_door = config['ext_door']
+
+		self.map = np.array(config['map']).reshape((self.h, self.w))
+		self.prob_map = np.array(config['prob_map']).reshape((self.h, self.w))
+		self.refresh_prob_maps()
+
+		self.planner = PRMPlanner(self.map, distance = 'euclidean', inflate = self.p_rad + self.foot_rad, npoints = int((self.w*self.h)/100))
+		self.planner.plan()
+
 	def __str__(self):
 		return str(self.map)
 
@@ -621,8 +735,8 @@ if __name__ == '__main__':
 
 	rospy.init_node('random_map_test')
 	node = RandomMapServerNode(args)
-	for r in node.rms.rooms:
-		print(r)
-	node.rms.plot()
-	node.rms.plot_probability_map()
+	# for r in node.rms.rooms:
+	# 	print(r)
+	# node.rms.plot()
+	# node.rms.plot_probability_map()
 	rospy.spin()

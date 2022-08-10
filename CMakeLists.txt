@@ -63,6 +63,8 @@ add_service_files(
   Step.srv
   AddPedestrian.srv
   GetRoomsAndDoors.srv
+  SetAreaPriority.srv
+  FileOperation.srv
 )
 
 ## Generate actions in the 'action' folder
