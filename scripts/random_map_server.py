@@ -14,7 +14,8 @@ from linear_path import LinearPath
 import rospy
 from std_msgs.msg import Float64MultiArray
 from nav_msgs.msg import OccupancyGrid
-from smit_matlab_sim.srv import Step, AddPedestrian, AddPedestrianResponse
+from smit_matlab_sim.srv import Step, AddPedestrian, AddPedestrianResponse, GetRoomsAndDoors, GetRoomsAndDoorsResponse
+from smit_matlab_sim.msg import Room
 from std_srvs.srv import Empty
 
 class RandomMapServerNode(object):
@@ -23,9 +24,10 @@ class RandomMapServerNode(object):
 		self.rms = RandomMapServerWithPedestrians(args)
 		self.pub = rospy.Publisher('map', OccupancyGrid, queue_size=10)
 		self.srv_step = rospy.Service('perform_pedestrians_step', Step, self.perform_step)
-		self.srv_regenerate = rospy.Service('regenerate_map', Empty, self.regenerate_map)
-		self.srv_regenerate = rospy.Service('regenerate_pedestrians', Empty, self.regenerate_pedestrians)
+		self.srv_regenerate_map = rospy.Service('regenerate_map', Empty, self.regenerate_map)
+		self.srv_regenerate_ped = rospy.Service('regenerate_pedestrians', Empty, self.regenerate_pedestrians)
 		self.srv_add_ped = rospy.Service('add_pedestrian', AddPedestrian, self.add_pedestrian)
+		self.srv_get_structures = rospy.Service('get_rooms_and_doors', GetRoomsAndDoors, self.get_structures)
 
 		self.publish = args.publish
 		self.rate = args.publish_rate
@@ -55,12 +57,13 @@ class RandomMapServerNode(object):
 			self.publish_map()
 
 	def add_pedestrian(self, req):
+		if req.path.data:
+			return AddPedestrianResponse(self.rms.add_pedestrian(req.velocity, np.array(path), req.full_path, req.behaviour))
 		if len(req.path.layout.dim) == 2 and req.path.layout.dim[1].size == 2:
 			path = []
 			for i in range(req.path.layout.dim[0].size):
 				path.append([req.path.data[req.path.layout.data_offset + req.path.layout.dim[1].stride*i], req.path.data[req.path.layout.data_offset + req.path.layout.dim[1].stride*i + 1]])
-			self.rms.add_pedestrian(req.velocity, np.array(path), req.full_path, req.behaviour)
-			return AddPedestrianResponse(True)
+			return AddPedestrianResponse(self.rms.add_pedestrian(req.velocity, np.array(path), req.full_path, req.behaviour))
 		else:
 			return AddPedestrianResponse(False)
 
@@ -77,6 +80,9 @@ class RandomMapServerNode(object):
 
 	def regenerate_pedestrians(self, req):
 		self.rms.regenerate_pedestrians()
+
+	def get_structures(self, req):
+		return GetRoomsAndDoorsResponse([Room(r["id"], [p*self.rms.res for p in r["x"]], [p*self.rms.res for p in r["y"]], r["doors"], r["neighbours"]) for r in self.rms.rooms], [Room(d["id"], [p*self.rms.res for p in d["x"]], [p*self.rms.res for p in d["y"]], [], []) for d in self.rms.doors], Room(self.rms.ext_door["id"], [p*self.rms.res for p in self.rms.ext_door["x"]], [p*self.rms.res for p in self.rms.ext_door["y"]], [], []) if self.rms.ext_ent else Room())
 
 class PedestrianBehaviour(IntEnum):
 	CIRCLE = 1
@@ -175,12 +181,12 @@ class RandomMapServerWithPedestrians(object):
 
 	def regenerate_probability_map(self):
 		for r in self.rooms:
-			self.prob_map[r["y"][0]:r["y"][1]+1, r["x"][0]:r["x"][1]+1] = self.prob_room
+			self.prob_map[r["y"][0]:r["y"][1], r["x"][0]:r["x"][1]] = self.prob_room
 		for d in self.doors:
-			self.prob_map[d["y"][0]:d["y"][1]+1, d["x"][0]:d["x"][1]+1] = self.prob_door
+			self.prob_map[d["y"][0]:d["y"][1], d["x"][0]:d["x"][1]] = self.prob_door
 		if self.ext_wall and self.ext_ent:
 			d = self.ext_door
-			self.prob_map[d["y"][0]:d["y"][1]+1, d["x"][0]:d["x"][1]+1] = self.prob_ent
+			self.prob_map[d["y"][0]:d["y"][1], d["x"][0]:d["x"][1]] = self.prob_ent
 		max_p = self.prob_map.max()
 		self.scaled_prob_map = self.prob_map/max_p
 		sum_p = self.prob_map.sum()
@@ -336,13 +342,13 @@ class RandomMapServerWithPedestrians(object):
 	def add_external_door(self):
 		if random.random() < 0.5: # horizontal
 			door_pos = random.randint(self.wall_w, self.w - self.wall_w - self.door_w)
-			self.ext_door["x"] = [door_pos, door_pos + self.door_w - 1]
+			self.ext_door["x"] = [door_pos, door_pos + self.door_w]
 			if random.random() < 0.5: # bottom
 				if sum(self.map[self.wall_w, door_pos:(door_pos + self.door_w)]) > 0:
 					self.add_external_door()
 					return
 				self.map[0:self.wall_w, door_pos:(door_pos + self.door_w)] = 0
-				self.ext_door["y"] = [0, self.wall_w - 1]
+				self.ext_door["y"] = [0, self.wall_w]
 				for r in self.rooms:
 					if self.ext_door["x"][0] > r["x"][0] and self.ext_door["x"][0] < r["x"][1] and r["y"][0] == self.wall_w:
 						r["doors"].append(0)
@@ -352,20 +358,20 @@ class RandomMapServerWithPedestrians(object):
 					self.add_external_door()
 					return
 				self.map[self.h - self.wall_w:self.h, door_pos:(door_pos + self.door_w)] = 0
-				self.ext_door["y"] = [self.h - self.wall_w, self.h - 1]
+				self.ext_door["y"] = [self.h - self.wall_w, self.h]
 				for r in self.rooms:
-					if self.ext_door["x"][0] > r["x"][0] and self.ext_door["x"][0] < r["x"][1] and r["y"][1] == self.h - self.wall_w - 1:
+					if self.ext_door["x"][0] > r["x"][0] and self.ext_door["x"][0] < r["x"][1] and r["y"][1] == self.h - self.wall_w:
 						r["doors"].append(0)
 						break
 		else: # vertical
 			door_pos = random.randint(self.wall_w, self.h - self.wall_w - self.door_w)
-			self.ext_door["y"] = [door_pos, door_pos + self.door_w - 1]
+			self.ext_door["y"] = [door_pos, door_pos + self.door_w]
 			if random.random() < 0.5: # left
 				if sum(self.map[door_pos:(door_pos + self.door_w), self.wall_w]) > 0:
 					self.add_external_door()
 					return
 				self.map[door_pos:(door_pos + self.door_w), 0:self.wall_w] = 0
-				self.ext_door['x'] = [0, self.wall_w - 1]
+				self.ext_door['x'] = [0, self.wall_w]
 				for r in self.rooms:
 					if self.ext_door["y"][0] > r["y"][0] and self.ext_door["y"][0] < r["y"][1] and r["x"][0] == self.wall_w:
 						r["doors"].append(0)
@@ -375,9 +381,9 @@ class RandomMapServerWithPedestrians(object):
 					self.add_external_door()
 					return
 				self.map[door_pos:(door_pos + self.door_w), self.w - self.wall_w:self.w] = 0
-				self.ext_door["x"] = [self.w - self.wall_w , self.w - 1]
+				self.ext_door["x"] = [self.w - self.wall_w , self.w]
 				for r in self.rooms:
-					if self.ext_door["y"][0] > r["y"][0] and self.ext_door["y"][0] < r["y"][1] and r["x"][1] == self.w - self.wall_w - 1:
+					if self.ext_door["y"][0] > r["y"][0] and self.ext_door["y"][0] < r["y"][1] and r["x"][1] == self.w - self.wall_w:
 						r["doors"].append(0)
 						break
 
@@ -408,10 +414,10 @@ class RandomMapServerWithPedestrians(object):
 								self.p[i] = LinearPath(start, self.p_path[i][1:])
 								self.p_sp[i] = random.uniform(self.p_min_sp, self.p_max_sp)
 								break
-							except ValueError:
+							except ValueError as e:
 								print(e)
 								pass
-							except RuntimeError:
+							except RuntimeError as e:
 								print(e)
 								pass
 					elif self.p_beh[i] == PedestrianBehaviour.DISSAPEAR:
@@ -425,10 +431,10 @@ class RandomMapServerWithPedestrians(object):
 								self.p[i] = LinearPath(start, self.p_path[i][1:])
 								# self.p_sp[i] = random.uniform(self.p_min_sp, self.p_max_sp)
 								break
-							except ValueError:
+							except ValueError as e:
 								print(e)
 								pass
-							except RuntimeError:
+							except RuntimeError as e:
 								print(e)
 								pass
 			if len(to_pop) > 0:
@@ -444,12 +450,35 @@ class RandomMapServerWithPedestrians(object):
 		# if self.num_p == 0:
 		# 	self.planner = PRMPlanner(self.map, distance = 'euclidean', inflate = self.p_rad + self.foot_rad, npoints = int((self.w*self.h)/100))
 
-		path = path*(1/self.res)
+		if path == []:
+			while(True):
+				try:
+					start = self.get_random_point()
+					goal = start
+					while goal == start:
+						goal = self.get_random_point()
+					path = self.planner.query(start = start, goal = goal)
+					break
+				except ValueError as e:
+					print(e)
+					pass
+				except RuntimeError as e:
+					print(e)
+					pass
+		else:
+			try:
+				path = path*(1/self.res)
+				start = (path[0][0], path[0][1])
+				if not planned:
+					goal = (path[1][0], path[1][1])
+					path = self.planner.query(start = start, goal = goal)
+			except ValueError as e:
+				print(e)
+				return False
+			except RuntimeError as e:
+				print(e)
+				return False
 
-		start = (path[0][0], path[0][1])
-		if not planned:
-			goal = (path[1][0], path[1][1])
-			path = self.planner.query(start = start, goal = goal)
 		self.p_path.append(path)
 		self.p.append(LinearPath(start, self.p_path[-1][1:]))
 		if speed == 0:
@@ -462,6 +491,8 @@ class RandomMapServerWithPedestrians(object):
 		self.p_beh.append(PedestrianBehaviour(behaviour))
 
 		self.num_p += 1
+
+		return True
 
 
 	def get_pedmap(self):
@@ -590,8 +621,8 @@ if __name__ == '__main__':
 
 	rospy.init_node('random_map_test')
 	node = RandomMapServerNode(args)
-	# for r in node.rms.rooms:
-	# 	print(r)
+	for r in node.rms.rooms:
+		print(r)
 	node.rms.plot()
 	node.rms.plot_probability_map()
 	rospy.spin()

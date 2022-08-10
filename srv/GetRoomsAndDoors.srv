@@ -1,0 +1,4 @@
+---
+Room[] rooms
+Room[] doors
+Room ext_door
