@@ -61,8 +61,8 @@ class RandomMapServerNode(object):
 			self.publish_map()
 
 	def add_pedestrian(self, req):
-		if req.path.data:
-			return AddPedestrianResponse(self.rms.add_pedestrian(req.velocity, np.array(path), req.full_path, req.behaviour))
+		if not req.path.data:
+			return AddPedestrianResponse(self.rms.add_pedestrian(req.velocity, np.array([]), req.full_path, req.behaviour))
 		if len(req.path.layout.dim) == 2 and req.path.layout.dim[1].size == 2:
 			path = []
 			for i in range(req.path.layout.dim[0].size):
@@ -669,11 +669,14 @@ class RandomMapServerWithPedestrians(object):
 		self.prob_room, self.prob_door, self.prob_ent = config['prob']
 		self.num_p, self.p_min_sp, self.p_max_sp, self.p_rad, self.foot_rad, self.p_def_beh = config['ped']
 
+		del self.p
+		del self.p_sp
+		del self.p_path
+		del self.p_beh
 		self.p_sp = config['p_sp']
 		self.p_path = config['p_path']
 		self.p_beh = config['p_beh']
-		for i in range(self.num_p):
-			self.p[i] = LinearPath(config['p_pos'][i], config['p_points'][i])
+		self.p = [LinearPath(config['p_pos'][i], config['p_points'][i]) for i in range(self.num_p)]
 
 		self.rooms = config['rooms']
 		self.doors = config['doors']
@@ -741,6 +744,6 @@ if __name__ == '__main__':
 	node = RandomMapServerNode(args)
 	# for r in node.rms.rooms:
 	# 	print(r)
-	# node.rms.plot()
-	# node.rms.plot_probability_map()
+	node.rms.plot()
+	node.rms.plot_probability_map()
 	rospy.spin()
