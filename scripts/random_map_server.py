@@ -265,7 +265,7 @@ class RandomMapServerWithPedestrians(object):
 	def add_wall(self, hmin, hmax, wmin, wmax, depth = 1, top_d = None, bot_d = None, left_d = None, right_d = None):
 		# plot the current map state
 		# if depth > 1:
-		# 	self.plot()
+			# self.plot()
 
 		# maximum depth reached
 		if depth > self.max_depth:
@@ -701,8 +701,8 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 
 	# map metadata
-	parser.add_argument("--width", type = float, default = 15)
-	parser.add_argument("--height", type = float, default = 15)
+	parser.add_argument("--width", type = float, default = 10)
+	parser.add_argument("--height", type = float, default = 10)
 	parser.add_argument("--resolution", type = float, default = 0.1)
 
 	# map creation arguments
@@ -720,7 +720,7 @@ if __name__ == '__main__':
 	parser.add_argument("--entrance_probability", type = float, default = 10000)
 
 	# pedestrian creation arguments
-	parser.add_argument("--num_of_pedestrians", type = int, default = 5)
+	parser.add_argument("--num_of_pedestrians", type = int, default = 0)
 	parser.add_argument("--pedestrian_min_speed", type = float, default = 0.5)
 	parser.add_argument("--pedestrian_max_speed", type = float, default = 2)
 	parser.add_argument("--pedestrian_radius", type = float, default = 0.2)
