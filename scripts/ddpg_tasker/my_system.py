@@ -33,6 +33,7 @@ class SystemConfig(object):
 
     self.save = False
     self.prefix = ""
+    self.beta = 0.9
 
 
 class System(gym.Env):
@@ -42,6 +43,7 @@ class System(gym.Env):
     self.tasks = []
     self.dt = self.config.dt
     self.now = self.config.now
+    self.alpha = -1/(self.config.time_horizon.seconds*self.config.time_horizon.seconds)
     
     # self.penalty = penalty
     # self.max_steps = 2*self.config.time_horizon.seconds/self.config.recalculation_time
@@ -63,53 +65,53 @@ class System(gym.Env):
     self.reset()
 
 
-  # def render(self, mode="save"):
-  #   if (mode=="human" or mode=="save") and self.save:
-  #     out = f"{self.selected};{self.pos[0]};{self.pos[1]};"
-  #     for i,t in enumerate(self.tasks):
-  #       t_id = i // self.N
-  #       t_no = i % self.N
-  #       out = out + f"{t_id};{t_no};{t.do_estimate()};{t.pos[0]};{t.pos[1]};{t.serialize()};"
-  #     self.file_out.write(out + "\n")
-  #   elif mode == "ansi":
-  #     arr = []
-  #     for i in range(20):
-  #       arr.append([-1] * 20)
-  #     for i,t in enumerate(self.tasks):
-  #       t_id = i // self.N
-  #       t_no = i % self.N
-  #       print(t_id, t_no, t)
+  def render(self, mode="save"):
+    if (mode=="human" or mode=="save") and self.save:
+      out = f"{self.selected};{self.pos[0]};{self.pos[1]};"
+      for i,t in enumerate(self.tasks):
+        t_id = i // self.N
+        t_no = i % self.N
+        out = out + f"{t_id};{t_no};{t.do_estimate()};{t.pos[0]};{t.pos[1]};{t.serialize()};"
+      self.file_out.write(out + "\n")
+    elif mode == "ansi":
+      arr = []
+      for i in range(20):
+        arr.append([-1] * 20)
+      for i,t in enumerate(self.tasks):
+        t_id = i // self.N
+        t_no = i % self.N
+        print(t_id, t_no, t)
 
-  #       if t.do_estimate() > 0:
-  #         x = int(t.pos[0] * 2)
-  #         y = int(t.pos[1] * 2)
-  #         arr[x][y] = t_id
+        if t.do_estimate() > 0:
+          x = int(t.pos[0] * 2)
+          y = int(t.pos[1] * 2)
+          arr[x][y] = t_id
 
-  #     x = int(self.pos[0] * 2)
-  #     y = int(self.pos[1] * 2)
-  #     arr[x][y] += 100
+      x = int(self.pos[0] * 2)
+      y = int(self.pos[1] * 2)
+      arr[x][y] += 100
 
-  #     for r in arr:
-  #       for c in r:
-  #         if c >= 50:
-  #           print('>', end='')
-  #           c = c - 100
-  #         else:
-  #           print(' ', end='')
+      for r in arr:
+        for c in r:
+          if c >= 50:
+            print('>', end='')
+            c = c - 100
+          else:
+            print(' ', end='')
 
-  #         if c >= 0:
-  #           print(str(c%100), end='')
-  #         else:
-  #           print('.', end='')
-  #       print('')
+          if c >= 0:
+            print(str(c%100), end='')
+          else:
+            print('.', end='')
+        print('')
 
   def close(self):
     if self.save:
       self.file_out.close()
 
   def reset(self):
-    self.selected = -1
-    # self.steps = 0
+    # self.selected = -1
+    self.steps = 0
     self.now = self.config.now
     self.tasks = self.task_config.generate()
 
@@ -158,7 +160,7 @@ class System(gym.Env):
           self.state[5+s*3] += self.rt.get_request(j.jobID).priority
 
     print("Reset")
-    print(self.state)
+    # print(self.state)
   
     self.fname = ""
     if self.save:
@@ -207,45 +209,52 @@ class System(gym.Env):
   #   return new_state
 
   def do_step_until(self, deadline):
+    print(self.now)
+    print(deadline)
 
     if self.now >= deadline:
       return
+
+    work_done = False
 
     for i,j in enumerate(self.out.scheduled):
 
       if j.start <= self.now and j.stop > self.now:
 
-        # if task is done remove it from TaskER
-        if not self.tasks[j.jobID].do_estimate():
-          self.rt.removeRecord_by_id(j.jobID)
-          return
-
         time_left = self.dt.seconds
 
         # do the actual travel to the action spot if distanse from the agent is greater than threshold
-        if self.tasks[j.jobID].dist(self.pos) > 0.1:
-          path = self.navigator.plan(self.pos, t.pos)
+        if self.tasks[int(j.jobID)].dist(self.pos) > 0.1:
+          path = self.navigator.plan(self.pos, self.tasks[int(j.jobID)].pos)
           [self.pos, time_left] = path.step(self.config.robot_speed, time_left)
 
         # work on a task
         if time_left > 0:
-          self.tasks[j.jobID].do_work(time_left)
-          self.pos = self.tasks[j.jobID].pos
+          self.tasks[int(j.jobID)].do_work(time_left)
+          self.pos = self.tasks[int(j.jobID)].pos
 
         # update time
         self.now = self.now + self.dt
+        work_done = True
 
         # if task is done remove it from TaskER
-        if not self.tasks[j.jobID].do_estimate():
+        if not self.tasks[int(j.jobID)].do_estimate():
           self.rt.removeRecord_by_id(j.jobID)
+          print('Job ' + j.jobID + ' complete')
           return
+        print('Working on job ' + j.jobID)
 
-        # continue work
-        self.do_step_until(deadline)
+        break
+
+    # continue work
+    if work_done:
+      self.do_step_until(deadline)
+    else:
+      self.now = self.now + self.dt
 
   def is_alive(self):
     for t in self.tasks:
-      if not t.is_alive():
+      if not t.is_alive(self.now):
         return False
 
     return True
@@ -258,21 +267,23 @@ class System(gym.Env):
 
   def do_step(self):
     self.proccesed += 1
-    if self.proccesed > self.jobs[-1].getID():
+    if self.proccesed > int(self.jobs[-1].get_id()):
       self.proccesed = 0
       self.steps += 1
-      self.do_step_until(self.now + self.recalculation_time)
+      self.do_step_until(self.now + self.config.recalculation_time)
     if not self.tasks[self.proccesed].do_estimate():
       self.do_step()
 
   def step(self, action):
     self.jobs[self.proccesed].priority = action[0]
     burst = self.tasks[self.proccesed].getBurst() + timedelta(seconds = self.navigator.plan(self.pos, self.tasks[self.proccesed].pos).get_distance() / self.config.robot_speed)
+    old_start = self.jobs[self.proccesed].start_time
     self.jobs[self.proccesed].start_time = self.now + action[1]*self.config.time_horizon
     self.jobs[self.proccesed].deadline = self.jobs[self.proccesed].start_time + burst
     self.jobs[self.proccesed].burst_time = burst
 
     self.rt.updateRecord(self.jobs[self.proccesed])
+    old_profit = self.profit
     self.out, self.profit = self.rt.schedule_with_priority()
 
     if not self.is_alive():
@@ -288,6 +299,10 @@ class System(gym.Env):
       reward = self.config.reward_finish_all
       status = "DONE"
     else:
+      R = self.profit - old_profit
+      dS = ((self.now - old_start) - action[1]*self.config.time_horizon).seconds
+      C = self.alpha * dS * dS
+      reward = self.config.beta * R + (1 - self.config.beta) * C
       self.do_step()
 
       self.state = np.zeros(4 + 3 * self.slot_num)
@@ -307,10 +322,9 @@ class System(gym.Env):
             self.state[6+s*3] += 1
         for i,j in enumerate(self.out.scheduled):
           if j.start >= start and j.start < stop or j.stop > start and j.stop <= stop or j.start < start and j.stop > stop:
-            self.state[5+s*3] += j.priority
+            self.state[5+s*3] += self.rt.get_request(j.jobID).priority
 
       done = False
-      reward = self.profit
       status = "WORK"
 
     return self.state, reward, done, {"status": status, "steps": self.steps, "fname": self.fname}

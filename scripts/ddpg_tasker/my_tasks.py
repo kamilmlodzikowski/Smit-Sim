@@ -150,7 +150,7 @@ class Fall(Task):
         self.urgency = max(self.urgency - dt, 0)
 
     def is_alive(self, now):
-        return now < deadline + timedelta(minutes=15)
+        return now < self.deadline + timedelta(minutes=15)
 
     def __str__(self):
         return f'F | urg: {self.urgency:.0f}'
@@ -206,6 +206,7 @@ class TaskConfig(object):
         # self.task_prob = task_prob
 
     def generate(self):
+        Task.id_counter = 0
         if self.fix_random:
           random.seed(self.seed)
         else:
