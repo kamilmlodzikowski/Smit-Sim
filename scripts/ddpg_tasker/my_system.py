@@ -15,13 +15,13 @@ class SystemConfig(object):
 
     # self.reward_existing_task = 1
     # self.reward_finish_task = 2
-    # self.reward_finish_all = 10
+    self.reward_finish_all = 10
 
     # self.penalty_switch = 2
     # self.penalty_wrong_task = 10
-    # self.penalty_dead = 20
+    self.penalty_dead = 20
 
-    self.dt = 60
+    self.dt = timedelta(seconds = 15)
     self.time_horizon = timedelta(hours = 1)
     self.now = datetime.combine(date.today(), time(15, 0))
     self.time_slot = timedelta(minutes = 15)
@@ -44,7 +44,7 @@ class System(gym.Env):
     self.now = self.config.now
     
     # self.penalty = penalty
-    # self.max_steps = 240
+    # self.max_steps = 2*self.config.time_horizon.seconds/self.config.recalculation_time
     self.save = config.save
     self.random_state = random_state
     if random_state >= 0:
@@ -63,45 +63,45 @@ class System(gym.Env):
     self.reset()
 
 
-  def render(self, mode="save"):
-    if (mode=="human" or mode=="save") and self.save:
-      out = f"{self.selected};{self.pos[0]};{self.pos[1]};"
-      for i,t in enumerate(self.tasks):
-        t_id = i // self.N
-        t_no = i % self.N
-        out = out + f"{t_id};{t_no};{t.do_estimate()};{t.pos[0]};{t.pos[1]};{t.serialize()};"
-      self.file_out.write(out + "\n")
-    elif mode == "ansi":
-      arr = []
-      for i in range(20):
-        arr.append([-1] * 20)
-      for i,t in enumerate(self.tasks):
-        t_id = i // self.N
-        t_no = i % self.N
-        print(t_id, t_no, t)
+  # def render(self, mode="save"):
+  #   if (mode=="human" or mode=="save") and self.save:
+  #     out = f"{self.selected};{self.pos[0]};{self.pos[1]};"
+  #     for i,t in enumerate(self.tasks):
+  #       t_id = i // self.N
+  #       t_no = i % self.N
+  #       out = out + f"{t_id};{t_no};{t.do_estimate()};{t.pos[0]};{t.pos[1]};{t.serialize()};"
+  #     self.file_out.write(out + "\n")
+  #   elif mode == "ansi":
+  #     arr = []
+  #     for i in range(20):
+  #       arr.append([-1] * 20)
+  #     for i,t in enumerate(self.tasks):
+  #       t_id = i // self.N
+  #       t_no = i % self.N
+  #       print(t_id, t_no, t)
 
-        if t.do_estimate() > 0:
-          x = int(t.pos[0] * 2)
-          y = int(t.pos[1] * 2)
-          arr[x][y] = t_id
+  #       if t.do_estimate() > 0:
+  #         x = int(t.pos[0] * 2)
+  #         y = int(t.pos[1] * 2)
+  #         arr[x][y] = t_id
 
-      x = int(self.pos[0] * 2)
-      y = int(self.pos[1] * 2)
-      arr[x][y] += 100
+  #     x = int(self.pos[0] * 2)
+  #     y = int(self.pos[1] * 2)
+  #     arr[x][y] += 100
 
-      for r in arr:
-        for c in r:
-          if c >= 50:
-            print('>', end='')
-            c = c - 100
-          else:
-            print(' ', end='')
+  #     for r in arr:
+  #       for c in r:
+  #         if c >= 50:
+  #           print('>', end='')
+  #           c = c - 100
+  #         else:
+  #           print(' ', end='')
 
-          if c >= 0:
-            print(str(c%100), end='')
-          else:
-            print('.', end='')
-        print('')
+  #         if c >= 0:
+  #           print(str(c%100), end='')
+  #         else:
+  #           print('.', end='')
+  #       print('')
 
   def close(self):
     if self.save:
@@ -169,42 +169,79 @@ class System(gym.Env):
 
     return self.state
 
-  def do_step(self, action):
-    new_state = np.zeros_like(self.state)
-    self.steps = self.steps + 1
-    for i,t in enumerate(self.tasks):
-      t_id = i // self.N
-      t_no = i % self.N
+  # def do_step(self, action):
+  #   new_state = np.zeros_like(self.state)
+  #   self.steps = self.steps + 1
+  #   for i,t in enumerate(self.tasks):
+  #     t_id = i // self.N
+  #     t_no = i % self.N
 
-      if i == action:
-        time_left = self.dt
+  #     if i == action:
+  #       time_left = self.dt
+
+  #       # do the actual travel to the action spot if distanse from the agent is greater than threshold
+  #       if t.dist(self.pos) > 0.5:
+  #         path = self.navigator.plan(self.pos, t.pos)
+  #         [self.pos, time_left] = path.step(self.config.robot_speed, self.dt)
+
+  #         # force the whole step wait
+  #         time_left = 0
+
+  #         # task waits when the agent moves
+  #         t.do_wait(self.dt - time_left)
+
+  #       # travel took less than single time step - do part of the task
+  #       if time_left > 0:
+  #         t.do_work(time_left)
+  #         self.pos = t.updatePos(self.pos)
+
+  #       # task finished
+  #       if t.do_estimate() <= 0:
+  #           self.selected = -1
+  #     else:
+  #       t.do_wait(self.dt)
+
+  #     new_state[t_id, t_no, 0] = t.do_estimate()
+  #     new_state[t_id, t_no, 1] = t.dist(self.pos)
+
+  #   return new_state
+
+  def do_step_until(self, deadline):
+
+    if self.now >= deadline:
+      return
+
+    for i,j in enumerate(self.out.scheduled):
+
+      if j.start <= self.now and j.stop > self.now:
+
+        # if task is done remove it from TaskER
+        if not self.tasks[j.jobID].do_estimate():
+          self.rt.removeRecord_by_id(j.jobID)
+          return
+
+        time_left = self.dt.seconds
 
         # do the actual travel to the action spot if distanse from the agent is greater than threshold
-        if t.dist(self.pos) > 0.5:
+        if self.tasks[j.jobID].dist(self.pos) > 0.1:
           path = self.navigator.plan(self.pos, t.pos)
-          [self.pos, time_left] = path.step(self.config.robot_speed, self.dt)
+          [self.pos, time_left] = path.step(self.config.robot_speed, time_left)
 
-          # force the whole step wait
-          time_left = 0
-
-          # task waits when the agent moves
-          t.do_wait(self.dt - time_left)
-
-        # travel took less than single time step - do part of the task
+        # work on a task
         if time_left > 0:
-          t.do_work(time_left)
-          self.pos = t.updatePos(self.pos)
+          self.tasks[j.jobID].do_work(time_left)
+          self.pos = self.tasks[j.jobID].pos
 
-        # task finished
-        if t.do_estimate() <= 0:
-            self.selected = -1
-      else:
-        t.do_wait(self.dt)
+        # update time
+        self.now = self.now + self.dt
 
-      new_state[t_id, t_no, 0] = t.do_estimate()
-      new_state[t_id, t_no, 1] = t.dist(self.pos)
+        # if task is done remove it from TaskER
+        if not self.tasks[j.jobID].do_estimate():
+          self.rt.removeRecord_by_id(j.jobID)
+          return
 
-    return new_state
+        # continue work
+        self.do_step_until(deadline)
 
   def is_alive(self):
     for t in self.tasks:
@@ -213,59 +250,126 @@ class System(gym.Env):
 
     return True
 
+  def all_done(self):
+    for t in self.tasks:
+      if t.do_estimate():
+        return False
+      return True
+
+  def do_step(self):
+    self.proccesed += 1
+    if self.proccesed > self.jobs[-1].getID():
+      self.proccesed = 0
+      self.steps += 1
+      self.do_step_until(self.now + self.recalculation_time)
+    if not self.tasks[self.proccesed].do_estimate():
+      self.do_step()
+
   def step(self, action):
-    new_state = np.zeros_like(self.state)
-    done = False
-    reward = 0
+    self.jobs[self.proccesed].priority = action[0]
+    burst = self.tasks[self.proccesed].getBurst() + timedelta(seconds = self.navigator.plan(self.pos, self.tasks[self.proccesed].pos).get_distance() / self.config.robot_speed)
+    self.jobs[self.proccesed].start_time = self.now + action[1]*self.config.time_horizon
+    self.jobs[self.proccesed].deadline = self.jobs[self.proccesed].start_time + burst
+    self.jobs[self.proccesed].burst_time = burst
 
-    # old behaviour - fixed penalty for changing the task
-    # if (action != self.selected) and (self.selected != -1):
-    #   for i in range(self.penalty):
-    #     new_state = self.do_step(-1)
+    self.rt.updateRecord(self.jobs[self.proccesed])
+    self.out, self.profit = self.rt.schedule_with_priority()
 
-    # new behaviour - calculating the actual cost (time) to travel to a new task
-    # implemented inside the `do_step` method
-
-    switch_penalty = False
-    if (action != self.selected) and (self.selected != -1):
-        switch_penalty = True
-
-    self.selected = action
-
-    status = "WORK"
-    # big penalty for allowing a task to die or working too long
-    if not self.is_alive() or self.steps >= self.max_steps:
+    if not self.is_alive():
       done = True
       reward = -self.config.penalty_dead
-      status = "DEAD" if not self.is_alive() else "TIME"
+      status = "DEAD"
+    elif self.now > self.config.now + 2 * self.config.time_horizon:
+      done = True
+      reward = -self.config.penalty_dead
+      status = "TIME"
+    elif self.all_done():
+      done = True
+      reward = self.config.reward_finish_all
+      status = "DONE"
     else:
-      # penalty for choosing non-existing or finished task
-      if self.tasks[action].do_estimate() <= 0:
-        reward = -self.config.penalty_wrong_task
+      self.do_step()
 
-      new_state = self.do_step(action)
+      self.state = np.zeros(4 + 3 * self.slot_num)
+      self.state[0:4] = [
+        self.jobs[self.proccesed].priority,
+        m.log(self.jobs[self.proccesed].burst_time.seconds, self.config.time_horizon.seconds),
+        np.tanh((self.jobs[self.proccesed].start_time - self.now).seconds/self.config.time_horizon.seconds),
+        self.navigator.plan(self.pos, self.tasks[self.proccesed].pos).get_distance()/self.area
+      ]
 
-      # bonus reward for finishing all tasks
-      if np.sum(new_state, axis=(0,1))[0] == 0:
-        done = True
-        status = "DONE"
-        reward = self.config.reward_finish_all
+      for s in range(4):
+        start = self.now + s*self.config.time_slot
+        stop = self.now + (s+1)*self.config.time_slot
+        for i,j in enumerate(self.jobs):
+          if j.start_time >= start and j.start_time < stop or j.deadline > start and j.deadline <= stop or j.start_time < start and j.deadline > stop:
+            self.state[4+s*3] += j.priority
+            self.state[6+s*3] += 1
+        for i,j in enumerate(self.out.scheduled):
+          if j.start >= start and j.start < stop or j.stop > start and j.stop <= stop or j.start < start and j.stop > stop:
+            self.state[5+s*3] += j.priority
 
-      # reward for finishing single task
-      if self.tasks[action].do_estimate() <= 0 and reward == 0:
-        reward = self.config.reward_finish_task
+      done = False
+      reward = self.profit
+      status = "WORK"
 
-      # bonus for selecting actual task
-      if reward == 0:
-        reward = self.config.reward_existing_task
-
-      reward = reward + np.sum(self.state[:,:,0] - new_state[:,:,0])
-
-      if switch_penalty:
-        reward = reward - self.config.penalty_switch
-    
-    # penalty for switching task
-
-    #reward = 0.001 * reward
-    self.state = new_state
     return self.state, reward, done, {"status": status, "steps": self.steps, "fname": self.fname}
+
+
+
+  # def step(self, action):
+  #   new_state = np.zeros_like(self.state)
+  #   done = False
+  #   reward = 0
+
+  #   # old behaviour - fixed penalty for changing the task
+  #   # if (action != self.selected) and (self.selected != -1):
+  #   #   for i in range(self.penalty):
+  #   #     new_state = self.do_step(-1)
+
+  #   # new behaviour - calculating the actual cost (time) to travel to a new task
+  #   # implemented inside the `do_step` method
+
+  #   switch_penalty = False
+  #   if (action != self.selected) and (self.selected != -1):
+  #       switch_penalty = True
+
+  #   self.selected = action
+
+  #   status = "WORK"
+  #   # big penalty for allowing a task to die or working too long
+  #   if not self.is_alive() or self.steps >= self.max_steps:
+  #     done = True
+  #     reward = -self.config.penalty_dead
+  #     status = "DEAD" if not self.is_alive() else "TIME"
+  #   else:
+  #     # penalty for choosing non-existing or finished task
+  #     if self.tasks[action].do_estimate() <= 0:
+  #       reward = -self.config.penalty_wrong_task
+
+  #     new_state = self.do_step(action)
+
+  #     # bonus reward for finishing all tasks
+  #     if np.sum(new_state, axis=(0,1))[0] == 0:
+  #       done = True
+  #       status = "DONE"
+  #       reward = self.config.reward_finish_all
+
+  #     # reward for finishing single task
+  #     if self.tasks[action].do_estimate() <= 0 and reward == 0:
+  #       reward = self.config.reward_finish_task
+
+  #     # bonus for selecting actual task
+  #     if reward == 0:
+  #       reward = self.config.reward_existing_task
+
+  #     reward = reward + np.sum(self.state[:,:,0] - new_state[:,:,0])
+
+  #     if switch_penalty:
+  #       reward = reward - self.config.penalty_switch
+    
+  #   # penalty for switching task
+
+  #   #reward = 0.001 * reward
+  #   self.state = new_state
+  #   return self.state, reward, done, {"status": status, "steps": self.steps, "fname": self.fname}
