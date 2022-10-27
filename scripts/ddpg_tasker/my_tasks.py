@@ -150,7 +150,10 @@ class Fall(Task):
         self.urgency = max(self.urgency - dt, 0)
 
     def is_alive(self, now):
-        return now < self.deadline + timedelta(minutes=15)
+        if self.urgency:
+            return now < self.deadline + timedelta(minutes=15)
+        else:
+            return True
 
     def __str__(self):
         return f'F | urg: {self.urgency:.0f}'

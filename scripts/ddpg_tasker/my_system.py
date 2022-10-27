@@ -144,9 +144,9 @@ class System(gym.Env):
     self.proccesed = 0
     self.state = np.zeros(4 + 3 * self.slot_num)
     self.state[0:4] = [
-      self.jobs[self.proccesed].priority,
+      self.tasks[self.proccesed].priority,
       m.log(self.jobs[self.proccesed].burst_time.seconds, self.config.time_horizon.seconds),
-      np.tanh((self.jobs[self.proccesed].start_time - self.now).seconds/self.config.time_horizon.seconds),
+      np.tanh((self.tasks[self.proccesed].deadline - self.jobs[self.proccesed].burst_time - self.now).seconds/self.config.time_horizon.seconds),
       (self.jobs[self.proccesed].burst_time.seconds - self.tasks[self.proccesed].getBurst().seconds) * self.config.robot_speed/self.area
     ]
 
@@ -174,8 +174,7 @@ class System(gym.Env):
     return self.state
 
   def do_step_until(self, deadline):
-    print(self.now)
-    print(deadline)
+    print(str(self.now) + " : " + str(deadline))
 
     if self.now > deadline:
       print('Deadline reached')
@@ -218,7 +217,7 @@ class System(gym.Env):
           print('Job ' + j.jobID + ' complete')
           self.out, self.profit = self.rt.schedule_with_priority()
           return
-        # print('Worked on job ' + j.jobID + ': ' + str(self.tasks[int(j.jobID)].do_estimate()))
+        print('Worked on job ' + j.jobID + ': ' + str(self.tasks[int(j.jobID)].do_estimate()))
 
         break
 
@@ -252,7 +251,7 @@ class System(gym.Env):
       self.do_step()
 
   def step(self, action):
-    print(action)
+    print(' Action:' + str(action))
     self.jobs[self.proccesed].priority = action[0]
     burst = self.tasks[self.proccesed].getBurst() + timedelta(seconds = self.navigator.plan(self.pos, self.tasks[self.proccesed].pos).get_distance() / self.config.robot_speed)
     old_start = self.jobs[self.proccesed].start_time
@@ -307,9 +306,9 @@ class System(gym.Env):
 
       self.state = np.zeros(4 + 3 * self.slot_num)
       self.state[0:4] = [
-        self.jobs[self.proccesed].priority,
-        m.log(self.jobs[self.proccesed].burst_time.seconds, self.config.time_horizon.seconds),
-        np.tanh((self.jobs[self.proccesed].start_time - self.now).seconds/self.config.time_horizon.seconds),
+        self.tasks[self.proccesed].priority,
+        0 if self.jobs[self.proccesed].burst_time.seconds < 1 else m.log(self.jobs[self.proccesed].burst_time.seconds, self.config.time_horizon.seconds),
+        np.tanh((self.tasks[self.proccesed].deadline - self.jobs[self.proccesed].burst_time - self.now).seconds/self.config.time_horizon.seconds),
         self.navigator.plan(self.pos, self.tasks[self.proccesed].pos).get_distance()/self.area
       ]
 
