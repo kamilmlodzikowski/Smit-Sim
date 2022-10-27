@@ -28,8 +28,8 @@ if __name__ == '__main__':
 	# actor.add(Activation('relu'))
 	# actor.add(Dense(16))
 	# actor.add(Activation('relu'))
-	# actor.add(Dense(16))
-	# actor.add(Activation('relu'))
+	actor.add(Dense(16))
+	actor.add(Activation('relu'))
 	actor.add(Dense(nb_actions))
 	actor.add(Activation('sigmoid'))
 	print(actor.summary())
@@ -42,8 +42,8 @@ if __name__ == '__main__':
 	# x = Activation('relu')(x)
 	# x = Dense(32)(x)
 	# x = Activation('relu')(x)
-	# x = Dense(32)(x)
-	# x = Activation('relu')(x)
+	x = Dense(32)(x)
+	x = Activation('relu')(x)
 	x = Dense(1)(x)
 	x = Activation('linear')(x)
 	critic = Model(inputs=[action_input, observation_input], outputs=x)
@@ -52,7 +52,7 @@ if __name__ == '__main__':
 
 	# Finally, we configure and compile our agent. You can use every built-in tensorflow.keras optimizer and
 	# even the metrics!
-	memory = SequentialMemory(limit=10000, window_length=1)
+	memory = SequentialMemory(limit=5000, window_length=1)
 	random_process = OrnsteinUhlenbeckProcess(size=nb_actions, theta=.15, mu=0., sigma=.3)
 	agent = DDPGAgent(nb_actions=nb_actions, actor=actor, critic=critic, critic_action_input=action_input,
 	                  memory=memory, nb_steps_warmup_critic=20, nb_steps_warmup_actor=20,
@@ -62,10 +62,10 @@ if __name__ == '__main__':
 	# Okay, now it's time to learn something! We visualize the training here for show, but this
 	# slows down training quite a lot. You can always safely abort the training prematurely using
 	# Ctrl + C.
-	agent.fit(env, nb_steps=10000, visualize=False, verbose=1, nb_max_episode_steps=10000)
+	agent.fit(env, nb_steps=10000, visualize=False, verbose=1, nb_max_episode_steps=2500)
 
 	# After training is done, we save the final weights.
 	agent.save_weights(f'ddpg_weights.h5f', overwrite=True)
 
 	# Finally, evaluate our algorithm for 1 episodes.
-	agent.test(env, nb_episodes=1, visualize=False, nb_max_episode_steps=10000)
+	# agent.test(env, nb_episodes=1, visualize=False, nb_max_episode_steps=10000)

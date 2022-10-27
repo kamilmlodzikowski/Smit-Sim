@@ -129,6 +129,8 @@ class System(gym.Env):
     self.rt = RequestTable()
     self.jobs = []
     for i, t in enumerate(self.tasks):
+      if i == 0:
+        t.deadline = self.now + timedelta(minutes=2)
       sr = ScheduleRules()
       sr.addRule(ScheduleRule(rule_type='at', rule_value=t.getDeadline()))
       job = TaskerReqest(ID=t.getID(),huid=t.getUUID(), plan_args='', req_time=self.now, shdl_rules=sr, priority=t.getPriority())
@@ -171,67 +173,40 @@ class System(gym.Env):
 
     return self.state
 
-  # def do_step(self, action):
-  #   new_state = np.zeros_like(self.state)
-  #   self.steps = self.steps + 1
-  #   for i,t in enumerate(self.tasks):
-  #     t_id = i // self.N
-  #     t_no = i % self.N
-
-  #     if i == action:
-  #       time_left = self.dt
-
-  #       # do the actual travel to the action spot if distanse from the agent is greater than threshold
-  #       if t.dist(self.pos) > 0.5:
-  #         path = self.navigator.plan(self.pos, t.pos)
-  #         [self.pos, time_left] = path.step(self.config.robot_speed, self.dt)
-
-  #         # force the whole step wait
-  #         time_left = 0
-
-  #         # task waits when the agent moves
-  #         t.do_wait(self.dt - time_left)
-
-  #       # travel took less than single time step - do part of the task
-  #       if time_left > 0:
-  #         t.do_work(time_left)
-  #         self.pos = t.updatePos(self.pos)
-
-  #       # task finished
-  #       if t.do_estimate() <= 0:
-  #           self.selected = -1
-  #     else:
-  #       t.do_wait(self.dt)
-
-  #     new_state[t_id, t_no, 0] = t.do_estimate()
-  #     new_state[t_id, t_no, 1] = t.dist(self.pos)
-
-  #   return new_state
-
   def do_step_until(self, deadline):
     print(self.now)
     print(deadline)
 
-    if self.now >= deadline:
+    if self.now > deadline:
+      print('Deadline reached')
       return
 
     work_done = False
 
     for i,j in enumerate(self.out.scheduled):
 
-      if j.start <= self.now and j.stop > self.now:
+      # print(j.jobID + ' -> ' + str(j.start) + ':' + str(j.stop))
 
-        time_left = self.dt.seconds
+      if j.start <= self.now + self.dt and j.stop > self.now:
+
+        if j.start >= self.now:
+          time_left = self.dt.seconds - (j.start - self.now).seconds
+        else:
+          time_left = self.dt.seconds
 
         # do the actual travel to the action spot if distanse from the agent is greater than threshold
         if self.tasks[int(j.jobID)].dist(self.pos) > 0.1:
           path = self.navigator.plan(self.pos, self.tasks[int(j.jobID)].pos)
           [self.pos, time_left] = path.step(self.config.robot_speed, time_left)
+          # print('Driving to...')
+          # print(self.pos)
+          # print(self.tasks[int(j.jobID)].pos)
 
         # work on a task
         if time_left > 0:
           self.tasks[int(j.jobID)].do_work(time_left)
           self.pos = self.tasks[int(j.jobID)].pos
+          # print('Working...')
 
         # update time
         self.now = self.now + self.dt
@@ -241,8 +216,9 @@ class System(gym.Env):
         if not self.tasks[int(j.jobID)].do_estimate():
           self.rt.removeRecord_by_id(j.jobID)
           print('Job ' + j.jobID + ' complete')
+          self.out, self.profit = self.rt.schedule_with_priority()
           return
-        print('Working on job ' + j.jobID)
+        # print('Worked on job ' + j.jobID + ': ' + str(self.tasks[int(j.jobID)].do_estimate()))
 
         break
 
@@ -267,6 +243,7 @@ class System(gym.Env):
 
   def do_step(self):
     self.proccesed += 1
+    # print(self.proccesed)
     if self.proccesed > int(self.jobs[-1].get_id()):
       self.proccesed = 0
       self.steps += 1
@@ -275,12 +252,18 @@ class System(gym.Env):
       self.do_step()
 
   def step(self, action):
+    print(action)
     self.jobs[self.proccesed].priority = action[0]
     burst = self.tasks[self.proccesed].getBurst() + timedelta(seconds = self.navigator.plan(self.pos, self.tasks[self.proccesed].pos).get_distance() / self.config.robot_speed)
     old_start = self.jobs[self.proccesed].start_time
-    self.jobs[self.proccesed].start_time = self.now + action[1]*self.config.time_horizon
-    self.jobs[self.proccesed].deadline = self.jobs[self.proccesed].start_time + burst
-    self.jobs[self.proccesed].burst_time = burst
+    start_time = self.now + action[1]*self.config.time_horizon
+    sr = ScheduleRules()
+    sr.addRule(ScheduleRule(rule_type='at', rule_value=start_time + burst))
+    self.jobs[self.proccesed].shdl_rules = sr
+    self.jobs[self.proccesed].set_burst_time(burst)
+    self.jobs[self.proccesed].evaluate_rules()
+    # print(self.jobs[self.proccesed].start_time)
+    # print(self.jobs[self.proccesed].deadline)
 
     self.rt.updateRecord(self.jobs[self.proccesed])
     old_profit = self.profit
@@ -300,9 +283,26 @@ class System(gym.Env):
       status = "DONE"
     else:
       R = self.profit - old_profit
-      dS = ((self.now - old_start) - action[1]*self.config.time_horizon).seconds
+      # print(self.profit)
+      # print(old_profit)
+      # print(R)
+      if old_start > self.now:
+        dS = (old_start - self.now).seconds - action[1]*self.config.time_horizon.seconds
+      else:
+        dS = - (self.now - old_start).seconds - action[1]*self.config.time_horizon.seconds
+      # print(old_start)
+      # print(self.now)
+      # print(old_start - self.now)
+      # print(action[1]*self.config.time_horizon)
       C = self.alpha * dS * dS
+      # print(self.alpha)
+      # print(dS)
+      # print(C)
       reward = self.config.beta * R + (1 - self.config.beta) * C
+      # print(reward)
+
+      # input('Press any button to continue...')
+
       self.do_step()
 
       self.state = np.zeros(4 + 3 * self.slot_num)
@@ -328,62 +328,3 @@ class System(gym.Env):
       status = "WORK"
 
     return self.state, reward, done, {"status": status, "steps": self.steps, "fname": self.fname}
-
-
-
-  # def step(self, action):
-  #   new_state = np.zeros_like(self.state)
-  #   done = False
-  #   reward = 0
-
-  #   # old behaviour - fixed penalty for changing the task
-  #   # if (action != self.selected) and (self.selected != -1):
-  #   #   for i in range(self.penalty):
-  #   #     new_state = self.do_step(-1)
-
-  #   # new behaviour - calculating the actual cost (time) to travel to a new task
-  #   # implemented inside the `do_step` method
-
-  #   switch_penalty = False
-  #   if (action != self.selected) and (self.selected != -1):
-  #       switch_penalty = True
-
-  #   self.selected = action
-
-  #   status = "WORK"
-  #   # big penalty for allowing a task to die or working too long
-  #   if not self.is_alive() or self.steps >= self.max_steps:
-  #     done = True
-  #     reward = -self.config.penalty_dead
-  #     status = "DEAD" if not self.is_alive() else "TIME"
-  #   else:
-  #     # penalty for choosing non-existing or finished task
-  #     if self.tasks[action].do_estimate() <= 0:
-  #       reward = -self.config.penalty_wrong_task
-
-  #     new_state = self.do_step(action)
-
-  #     # bonus reward for finishing all tasks
-  #     if np.sum(new_state, axis=(0,1))[0] == 0:
-  #       done = True
-  #       status = "DONE"
-  #       reward = self.config.reward_finish_all
-
-  #     # reward for finishing single task
-  #     if self.tasks[action].do_estimate() <= 0 and reward == 0:
-  #       reward = self.config.reward_finish_task
-
-  #     # bonus for selecting actual task
-  #     if reward == 0:
-  #       reward = self.config.reward_existing_task
-
-  #     reward = reward + np.sum(self.state[:,:,0] - new_state[:,:,0])
-
-  #     if switch_penalty:
-  #       reward = reward - self.config.penalty_switch
-    
-  #   # penalty for switching task
-
-  #   #reward = 0.001 * reward
-  #   self.state = new_state
-  #   return self.state, reward, done, {"status": status, "steps": self.steps, "fname": self.fname}
