@@ -63,7 +63,7 @@ class Transport(Task):
         super().__init__()
         self.uuid = 'transport_' + str(Transport.uuid_counter)
         Transport.uuid_counter+= 1
-        self.priority = 0
+        self.priority = 1
         self.deadline = deadline
         self.pos = np.array(pt1)
         self.goal = np.array(pt2)
@@ -117,7 +117,7 @@ class Fall(Task):
         super().__init__()
         self.uuid = 'fall_' + str(Fall.uuid_counter)
         Fall.uuid_counter+= 1
-        self.priority = 1
+        self.priority = 2
         self.deadline = deadline
         self.pos = np.array(pt)
         self.urgency = urgency
