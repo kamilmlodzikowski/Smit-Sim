@@ -24,7 +24,7 @@ class SystemConfig(object):
     self.dt = timedelta(seconds = 15)
     self.time_horizon = timedelta(hours = 1)
     self.now = datetime.combine(date.today(), time(15, 0))
-    self.time_slot = timedelta(minutes = 15)
+    self.time_slot = timedelta(minutes = 5)
     self.recalculation_time = timedelta(minutes = (5))
 
     # self.weight_estimate = 1.0
@@ -59,7 +59,8 @@ class System(gym.Env):
     state_shape = (4 + 3 * self.slot_num)
     self.state = np.zeros(state_shape)
     self.state_space = gym.spaces.Box(low=0, high=100, shape=(state_shape,))
-    self.action_space = gym.spaces.Box(low = 0, high = 1, shape = (2,))
+    # self.action_space = gym.spaces.Box(low = 0, high = 1, shape = (2,))
+    self.action_space = gym.spaces.Box(low = 0, high = 1, shape = (1,))
 
     self.navigator = ROSNavigation()
     self.reset()
@@ -252,10 +253,11 @@ class System(gym.Env):
 
   def step(self, action):
     print(' Action:' + str(action))
-    self.jobs[self.proccesed].priority = action[0]
+    # self.jobs[self.proccesed].priority = action[0]
     burst = self.tasks[self.proccesed].getBurst() + timedelta(seconds = self.navigator.plan(self.pos, self.tasks[self.proccesed].pos).get_distance() / self.config.robot_speed)
     old_start = self.jobs[self.proccesed].start_time
-    start_time = self.now + action[1]*self.config.time_horizon
+    # start_time = self.now + action[1]*self.config.time_horizon
+    start_time = self.now + action[0]*self.config.time_horizon
     sr = ScheduleRules()
     sr.addRule(ScheduleRule(rule_type='at', rule_value=start_time + burst))
     self.jobs[self.proccesed].shdl_rules = sr
@@ -286,9 +288,11 @@ class System(gym.Env):
       # print(old_profit)
       # print(R)
       if old_start > self.now:
-        dS = (old_start - self.now).seconds - action[1]*self.config.time_horizon.seconds
+        # dS = (old_start - self.now).seconds - action[1]*self.config.time_horizon.seconds
+        dS = (old_start - self.now).seconds - action[0]*self.config.time_horizon.seconds
       else:
-        dS = - (self.now - old_start).seconds - action[1]*self.config.time_horizon.seconds
+        # dS = - (self.now - old_start).seconds - action[1]*self.config.time_horizon.seconds
+        dS = - (self.now - old_start).seconds - action[0]*self.config.time_horizon.seconds
       # print(old_start)
       # print(self.now)
       # print(old_start - self.now)
