@@ -302,6 +302,7 @@ class System(gym.Env):
       # print(dS)
       # print(C)
       reward = self.config.beta * R + (1 - self.config.beta) * C
+      # print(str(R) + ":" + str(C) + ":" + str(reward))
       # print(reward)
 
       # input('Press any button to continue...')
