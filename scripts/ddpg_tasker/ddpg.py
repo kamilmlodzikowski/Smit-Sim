@@ -26,8 +26,8 @@ if __name__ == '__main__':
 	# Next, we build a very simple model.
 	actor = Sequential()
 	actor.add(Flatten(input_shape=(1,) + env.state_space.shape))
-	# actor.add(Dense(16))
-	# actor.add(Activation('relu'))
+	actor.add(Dense(16))
+	actor.add(Activation('relu'))
 	actor.add(Dense(16))
 	actor.add(Activation('relu'))
 	actor.add(Dense(16))
@@ -40,8 +40,8 @@ if __name__ == '__main__':
 	observation_input = Input(shape=(1,) + env.state_space.shape, name='observation_input')
 	flattened_observation = Flatten()(observation_input)
 	x = Concatenate()([action_input, flattened_observation])
-	# x = Dense(32)(x)
-	# x = Activation('relu')(x)
+	x = Dense(32)(x)
+	x = Activation('relu')(x)
 	x = Dense(32)(x)
 	x = Activation('relu')(x)
 	x = Dense(32)(x)
@@ -64,7 +64,7 @@ if __name__ == '__main__':
 	                  memory=memory, nb_steps_warmup_critic=20, nb_steps_warmup_actor=20,
 	                  random_process=random_process, gamma=.99, target_model_update=1e-3)
 	agent.compile(Adam(learning_rate=.001, clipnorm=1.), metrics=['mae'])
-	agent.load_weights(f'tests/time_only/ddpg_weights_recent.h5f')
+	agent.load_weights(f'tests/ddpg_weights_recent.h5f')
 
 	# Okay, now it's time to learn something! We visualize the training here for show, but this
 	# slows down training quite a lot. You can always safely abort the training prematurely using
