@@ -56,9 +56,9 @@ class System(gym.Env):
 
     self.N = task_config.count
     self.slot_num = int(self.config.time_horizon/self.config.time_slot)
-    state_shape = (4 + 3 * self.slot_num)
+    state_shape = (5 + 3 * self.slot_num)
     self.state = np.zeros(state_shape)
-    self.state_space = gym.spaces.Box(low=0, high=100, shape=(state_shape,))
+    self.state_space = gym.spaces.Box(low=-100, high=100, shape=(state_shape,))
     # self.action_space = gym.spaces.Box(low = 0, high = 1, shape = (2,))
     self.action_space = gym.spaces.Box(low = 0, high = 1, shape = (1,))
 
@@ -143,12 +143,18 @@ class System(gym.Env):
 
     # initialize state
     self.proccesed = 0
-    self.state = np.zeros(4 + 3 * self.slot_num)
-    self.state[0:4] = [
+    self.state = np.zeros(5 + 3 * self.slot_num)
+    th = self.config.time_horizon
+    b_all = self.jobs[self.proccesed].burst_time
+    b = self.tasks[self.proccesed].getBurst()
+    dl = self.tasks[self.proccesed].deadline
+    dt = self.tasks[self.proccesed].getDeathTime()
+    self.state[0:5] = [
       self.tasks[self.proccesed].priority,
-      m.log(self.jobs[self.proccesed].burst_time.seconds, self.config.time_horizon.seconds),
-      np.tanh((self.tasks[self.proccesed].deadline - self.jobs[self.proccesed].burst_time - self.now).seconds/self.config.time_horizon.seconds),
-      (self.jobs[self.proccesed].burst_time.seconds - self.tasks[self.proccesed].getBurst().seconds) * self.config.robot_speed/self.area
+      b_all.seconds/th.seconds,
+        (dl - b_all - self.now if dl - b_all >= self.now else self.now - (dl - b_all)).seconds/th.seconds,
+      (b_all.seconds - b.seconds) * self.config.robot_speed/self.area,
+      th.seconds if dt == 0 else (dt - self.now).seconds/th.seconds
     ]
 
     for s in range(4):
@@ -156,11 +162,11 @@ class System(gym.Env):
       stop = self.now + (s+1)*self.config.time_slot
       for i,j in enumerate(self.jobs):
         if j.start_time >= start and j.start_time < stop or j.deadline > start and j.deadline <= stop or j.start_time < start and j.deadline > stop:
-          self.state[4+s*3] += j.priority
-          self.state[6+s*3] += 1
+          self.state[5+s*3] += j.priority
+          self.state[7+s*3] += 1
       for i,j in enumerate(self.out.scheduled):
         if j.start >= start and j.start < stop or j.stop > start and j.stop <= stop or j.start < start and j.stop > stop:
-          self.state[5+s*3] += self.rt.get_request(j.jobID).priority
+          self.state[6+s*3] += self.rt.get_request(j.jobID).priority
 
     print("Reset")
     # print(self.state)
@@ -270,7 +276,7 @@ class System(gym.Env):
     old_profit = self.profit
     self.out, self.profit = self.rt.schedule_with_priority()
 
-    if not self.is_alive():
+    if not self.tasks[self.proccesed].is_alive(self.now):
       done = True
       reward = -self.config.penalty_dead
       status = "DEAD"
@@ -287,12 +293,12 @@ class System(gym.Env):
       # print(self.profit)
       # print(old_profit)
       # print(R)
-      if old_start > self.now:
+      if old_start > start_time:
         # dS = (old_start - self.now).seconds - action[1]*self.config.time_horizon.seconds
-        dS = (old_start - self.now).seconds - action[0]*self.config.time_horizon.seconds
+        dS = (old_start - start_time).seconds
       else:
         # dS = - (self.now - old_start).seconds - action[1]*self.config.time_horizon.seconds
-        dS = - (self.now - old_start).seconds - action[0]*self.config.time_horizon.seconds
+        dS = - (start_time - old_start).seconds
       # print(old_start)
       # print(self.now)
       # print(old_start - self.now)
@@ -309,12 +315,25 @@ class System(gym.Env):
 
       self.do_step()
 
-      self.state = np.zeros(4 + 3 * self.slot_num)
-      self.state[0:4] = [
+      self.state = np.zeros(5 + 3 * self.slot_num)
+      # self.state[0:5] = [
+      #   self.tasks[self.proccesed].priority,
+      #   self.jobs[self.proccesed].burst_time.seconds/self.config.time_horizon.seconds,
+      #   (self.tasks[self.proccesed].deadline.seconds - self.jobs[self.proccesed].burst_time.seconds - self.now.seconds)/self.config.time_horizon.seconds,
+      #   self.navigator.plan(self.pos, self.tasks[self.proccesed].pos).get_distance()/self.area,
+      #   self.config.time_horizon.seconds if self.tasks[self.proccesed].getDeathTime() == 0 else (self.tasks[self.proccesed].getDeathTime().seconds - self.now.seconds)/self.config.time_horizon.seconds
+      # ]
+      th = self.config.time_horizon
+      b_all = self.jobs[self.proccesed].burst_time
+      b = self.tasks[self.proccesed].getBurst()
+      dl = self.tasks[self.proccesed].deadline
+      dt = self.tasks[self.proccesed].getDeathTime()
+      self.state[0:5] = [
         self.tasks[self.proccesed].priority,
-        0 if self.jobs[self.proccesed].burst_time.seconds < 1 else m.log(self.jobs[self.proccesed].burst_time.seconds, self.config.time_horizon.seconds),
-        np.tanh((self.tasks[self.proccesed].deadline - self.jobs[self.proccesed].burst_time - self.now).seconds/self.config.time_horizon.seconds),
-        self.navigator.plan(self.pos, self.tasks[self.proccesed].pos).get_distance()/self.area
+        b_all.seconds/th.seconds,
+        (dl - b_all - self.now if dl - b_all >= self.now else self.now - (dl - b_all)).seconds/th.seconds,
+        (b_all.seconds - b.seconds) * self.config.robot_speed/self.area,
+        th.seconds if dt == 0 else (dt - self.now).seconds/th.seconds
       ]
 
       for s in range(4):
@@ -322,11 +341,11 @@ class System(gym.Env):
         stop = self.now + (s+1)*self.config.time_slot
         for i,j in enumerate(self.jobs):
           if j.start_time >= start and j.start_time < stop or j.deadline > start and j.deadline <= stop or j.start_time < start and j.deadline > stop:
-            self.state[4+s*3] += j.priority
-            self.state[6+s*3] += 1
+            self.state[5+s*3] += j.priority
+            self.state[7+s*3] += 1
         for i,j in enumerate(self.out.scheduled):
           if j.start >= start and j.start < stop or j.stop > start and j.stop <= stop or j.start < start and j.stop > stop:
-            self.state[5+s*3] += self.rt.get_request(j.jobID).priority
+            self.state[6+s*3] += self.rt.get_request(j.jobID).priority
 
       done = False
       status = "WORK"

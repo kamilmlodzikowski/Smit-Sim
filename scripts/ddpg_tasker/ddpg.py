@@ -69,11 +69,11 @@ if __name__ == '__main__':
 	# Okay, now it's time to learn something! We visualize the training here for show, but this
 	# slows down training quite a lot. You can always safely abort the training prematurely using
 	# Ctrl + C.
-	# agent.fit(env, nb_steps=10000, visualize=False, verbose=1, nb_max_episode_steps=2500)
+	agent.fit(env, nb_steps=40000, visualize=False, verbose=1, nb_max_episode_steps=2500)
 
 	# After training is done, we save the final weights.
-	# agent.save_weights(f'tests/ddpg_weights_{datetime.now()}.h5f', overwrite=True)
-	# agent.save_weights(f'tests/ddpg_weights_recent.h5f', overwrite=True)
+	agent.save_weights(f'tests/ddpg_weights_{datetime.now()}.h5f', overwrite=True)
+	agent.save_weights(f'tests/ddpg_weights_recent.h5f', overwrite=True)
 
 	# Finally, evaluate our algorithm for 1 episodes.
 	agent.test(env, nb_episodes=1, visualize=False, nb_max_episode_steps=2500)

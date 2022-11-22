@@ -55,6 +55,9 @@ class Task:
     def is_alive(self, now):
         raise NotImplementedError()
 
+    def getDeathTime(self):
+        raise NotImplementedError()
+
 # Transport z punkt A do B
 class Transport(Task):
     navigator = ROSNavigation()
@@ -100,6 +103,9 @@ class Transport(Task):
 
     def is_alive(self, now):
         return True
+
+    def getDeathTime(self):
+        return 0
 
     def __str__(self):
         dst = self.do_estimate()
@@ -154,6 +160,9 @@ class Fall(Task):
             return now < self.deadline + timedelta(minutes=15)
         else:
             return True
+
+    def getDeathTime(self):
+        return self.deadline + timedelta(minutes=15)
 
     def __str__(self):
         return f'F | urg: {self.urgency:.0f}'
