@@ -33,7 +33,7 @@ class SystemConfig(object):
 
     self.save = False
     self.prefix = ""
-    self.beta = 0.9
+    self.beta = 0.5
 
 
 class System(gym.Env):
