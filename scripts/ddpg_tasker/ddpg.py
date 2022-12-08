@@ -33,7 +33,7 @@ if __name__ == '__main__':
 	actor.add(Dense(16))
 	actor.add(Activation('relu'))
 	actor.add(Dense(nb_actions))
-	actor.add(Activation('sigmoid'))
+	actor.add(Activation('linear'))
 	print(actor.summary())
 
 	action_input = Input(shape=(nb_actions,), name='action_input')
