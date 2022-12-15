@@ -3,7 +3,7 @@ import numpy as np
 import gym
 import os
 from copy import copy
-from matplotlib import plt
+import matplotlib.pyplot as plt
 
 from system_fixed import SystemConfig, System
 from my_tasks import TaskConfig, TransportGenerator, FallGenerator
@@ -159,36 +159,43 @@ print("Min Value of Action ->  {}".format(lower_bound))
 # Next, we build a very simple model.
 actor_model = Sequential()
 actor_model.add(Flatten(input_shape=(1,) + env.state_space.shape))
-actor_model.add(Dense(16))
+actor_model.add(Dense(256))
 actor_model.add(Activation('relu'))
-actor_model.add(Dense(16))
+actor_model.add(Dense(256))
 actor_model.add(Activation('relu'))
-actor_model.add(Dense(16))
-actor_model.add(Activation('relu'))
+# actor_model.add(Dense(16))
+# actor_model.add(Activation('relu'))
 actor_model.add(Dense(num_actions))
-actor_model.add(Activation('linear'))
+actor_model.add(Activation('tanh'))
 print(actor_model.summary())
 
 action_input = Input(shape=(num_actions,), name='action_input')
 observation_input = Input(shape=(1,) + env.state_space.shape, name='observation_input')
 flattened_observation = Flatten()(observation_input)
 x = Concatenate()([action_input, flattened_observation])
-x = Dense(32)(x)
+x = Dense(256)(x)
 x = Activation('relu')(x)
-x = Dense(32)(x)
+x = Dense(256)(x)
 x = Activation('relu')(x)
-x = Dense(32)(x)
-x = Activation('relu')(x)
+# x = Dense(32)(x)
+# x = Activation('relu')(x)
 x = Dense(1)(x)
-x = Activation('linear')(x)
+# x = Activation('linear')(x)
 critic_model = Model(inputs=[action_input, observation_input], outputs=x)
 print(critic_model.summary())
 
 std_dev = 0.2
 ou_noise = OUActionNoise(mean=np.zeros(1), std_deviation=float(std_dev) * np.ones(1))
 
+start_episode = 0
 target_actor = copy(actor_model)
 target_critic = copy(critic_model)
+
+# start_episode = 209
+# actor_model.load_weights(f'tests/recent/actor_{start_episode}.h5')
+# critic_model.load_weights(f'tests/recent/critic_{start_episode}.h5')
+# target_actor.load_weights(f'tests/recent/target_actor_{start_episode}.h5')
+# target_critic.load_weights(f'tests/recent/target_critic_{start_episode}.h5')
 
 # Learning rate for actor-critic models
 critic_lr = 0.002
@@ -197,13 +204,14 @@ actor_lr = 0.001
 critic_optimizer = tf.keras.optimizers.Adam(critic_lr)
 actor_optimizer = tf.keras.optimizers.Adam(actor_lr)
 
-total_episodes = 100
+
+total_episodes = 450
 # Discount factor for future rewards
 gamma = 0.99
 # Used to update target networks
 tau = 0.005
 
-buffer = Buffer(50000, 64)
+buffer = Buffer(50000, 100)
 
 # To store reward history of each episode
 ep_reward_list = []
@@ -211,7 +219,7 @@ ep_reward_list = []
 avg_reward_list = []
 
 # Takes about 4 min to train
-for ep in range(total_episodes):
+for ep in range(start_episode, total_episodes):
 
     env.reset()
     episodic_reward = 0
@@ -240,34 +248,10 @@ for ep in range(total_episodes):
             update_target(target_critic.variables, critic_model.variables, tau)
 
         # End this episode when `done` is True
-        if env.all_done() or not env.is_alive():
+        if env.all_done() or not env.is_alive() or len(completed) == len(env.tasks):
             break
 
         env.run_env()
-
-    # while True:
-    #     # Uncomment this to see the Actor in action
-    #     # But not in a python notebook.
-    #     # env.render()
-
-    #     tf_prev_state = tf.expand_dims(tf.convert_to_tensor(prev_state), 0)
-
-    #     action = policy(tf_prev_state, ou_noise)
-    #     # Recieve state and reward from environment.
-    #     state, reward, done, info = env.step(action)
-
-    #     buffer.record((prev_state, action, reward, state))
-    #     episodic_reward += reward
-
-    #     buffer.learn()
-    #     update_target(target_actor.variables, actor_model.variables, tau)
-    #     update_target(target_critic.variables, critic_model.variables, tau)
-
-    #     # End this episode when `done` is True
-    #     if done:
-    #         break
-
-    #     prev_state = state
 
     ep_reward_list.append(episodic_reward)
 
@@ -277,14 +261,15 @@ for ep in range(total_episodes):
     avg_reward_list.append(avg_reward)
 
     # Save the weights
-    actor_model.save_weights(f"tests/recent/actor_{ep}.h5")
-    actor_model.save_weights(f"tests/recent/critic_{ep}.h5")
-    target_actor.save_weights(f"tests/recent/target_actor_{ep}.h5")
-    target_critic.save_weights(f"tests/recent/target_critic_{ep}.h5")
+    if ep%10 == 9:
+        actor_model.save_weights(f"tests/recent/actor_{ep}.h5")
+        critic_model.save_weights(f"tests/recent/critic_{ep}.h5")
+        target_actor.save_weights(f"tests/recent/target_actor_{ep}.h5")
+        target_critic.save_weights(f"tests/recent/target_critic_{ep}.h5")
 
 # Plotting graph
 # Episodes versus Avg. Rewards
-plt.plot(avg_reward_list)
-plt.xlabel("Episode")
-plt.ylabel("Avg. Epsiodic Reward")
-plt.show()
+# plt.plot(avg_reward_list)
+# plt.xlabel("Episode")
+# plt.ylabel("Avg. Epsiodic Reward")
+# plt.show()

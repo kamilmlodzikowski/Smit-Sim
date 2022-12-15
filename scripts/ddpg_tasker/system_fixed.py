@@ -242,10 +242,8 @@ class System(gym.Env):
     return True
 
   def all_done(self):
-    for t in self.tasks:
-      if t.do_estimate():
-        return False
-      return True
+    print(f'All done: {[not bool(t.do_estimate()) for t in self.tasks]}, {sum([not bool(t.do_estimate()) for t in self.tasks])}, {len(self.tasks)}')
+    return sum([not bool(t.do_estimate()) for t in self.tasks]) == len(self.tasks)
 
   # def do_step(self):
   #   self.proccesed += 1
