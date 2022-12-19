@@ -33,7 +33,7 @@ class SystemConfig(object):
 
     self.save = False
     self.prefix = ""
-    self.beta = 0.1
+    self.beta = 0.5
 
 
 class System(gym.Env):
@@ -322,6 +322,7 @@ class System(gym.Env):
       self.out, self.profit = self.rt.schedule_with_priority()
 
       R = self.profit - old_profit
+      old_start = self.tasks[self.proccesed].deadline - self.jobs[self.proccesed].burst_time
       if old_start > start_time:
         dS = (old_start - start_time).seconds
       else:
