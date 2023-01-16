@@ -180,7 +180,7 @@ x = Activation('relu')(x)
 # x = Dense(32)(x)
 # x = Activation('relu')(x)
 x = Dense(1)(x)
-# x = Activation('linear')(x)
+x = Activation('linear')(x)
 critic_model = Model(inputs=[action_input, observation_input], outputs=x)
 print(critic_model.summary())
 

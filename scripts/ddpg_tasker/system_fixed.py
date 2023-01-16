@@ -20,6 +20,7 @@ class SystemConfig(object):
     # self.penalty_switch = 2
     # self.penalty_wrong_task = 10
     self.penalty_dead = 20
+    self.penalty_task_wont_finish = 10
 
     self.dt = timedelta(seconds = 15)
     self.time_horizon = timedelta(hours = 1)
@@ -33,7 +34,7 @@ class SystemConfig(object):
 
     self.save = False
     self.prefix = ""
-    self.beta = 0.5
+    self.beta = 0.9
 
 
 class System(gym.Env):
@@ -154,7 +155,7 @@ class System(gym.Env):
       b_all.seconds/th.seconds,
         (dl - b_all - self.now if dl - b_all >= self.now else self.now - (dl - b_all)).seconds/th.seconds,
       (b_all.seconds - b.seconds) * self.config.robot_speed/self.area,
-      th.seconds if dt == 0 else (dt - self.now).seconds/th.seconds
+      1 if dt == 0 else (dt - self.now).seconds/th.seconds
     ]
 
     for s in range(4):
@@ -271,7 +272,7 @@ class System(gym.Env):
       b_all.seconds/th.seconds,
       (dl - b_all - self.now if dl - b_all >= self.now else self.now - (dl - b_all)).seconds/th.seconds,
       (b_all.seconds - b.seconds) * self.config.robot_speed/self.area,
-      th.seconds if dt == 0 else (dt - self.now).seconds/th.seconds
+      1 if dt == 0 else (dt - self.now).seconds/th.seconds
     ]
 
     for s in range(4):
@@ -292,7 +293,7 @@ class System(gym.Env):
     print(' Action:' + str(action))
     # self.jobs[self.proccesed].priority = action[0]
     burst = self.tasks[self.proccesed].getBurst() + timedelta(seconds = self.navigator.plan(self.pos, self.tasks[self.proccesed].pos).get_distance() / self.config.robot_speed)
-    burst = self.tasks[self.proccesed].getBurst() + timedelta(seconds = self.navigator.plan(self.pos, self.tasks[self.proccesed].pos).get_distance() / self.config.robot_speed)
+    # burst = self.tasks[self.proccesed].getBurst() + timedelta(seconds = self.navigator.plan(self.pos, self.tasks[self.proccesed].pos).get_distance() / self.config.robot_speed)
     old_start = self.jobs[self.proccesed].start_time
     # start_time = self.now + action[1]*self.config.time_horizon
     start_time = self.now + action[0]*self.config.time_horizon
@@ -328,7 +329,8 @@ class System(gym.Env):
       else:
         dS = - (start_time - old_start).seconds
       C = self.alpha * dS * dS
-      reward = self.config.beta * R + (1 - self.config.beta) * C
+      P = - self.config.penalty_task_wont_finish * ((start_time + self.jobs[self.proccesed].burst_time) > self.tasks[self.proccesed].getDeathTime())
+      reward = self.config.beta * R + (1 - self.config.beta) * C + P
 
       self.state = np.zeros(5 + 3 * self.slot_num)
       th = self.config.time_horizon
@@ -341,7 +343,7 @@ class System(gym.Env):
         b_all.seconds/th.seconds,
         (dl - b_all - self.now if dl - b_all >= self.now else self.now - (dl - b_all)).seconds/th.seconds,
         (b_all.seconds - b.seconds) * self.config.robot_speed/self.area,
-        th.seconds if dt == 0 else (dt - self.now).seconds/th.seconds
+        1 if dt == 0 else (dt - self.now).seconds/th.seconds
       ]
 
       for s in range(4):
