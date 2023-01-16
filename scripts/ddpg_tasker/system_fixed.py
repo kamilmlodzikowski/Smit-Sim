@@ -329,7 +329,9 @@ class System(gym.Env):
       else:
         dS = - (start_time - old_start).seconds
       C = self.alpha * dS * dS
-      P = - self.config.penalty_task_wont_finish * ((start_time + self.jobs[self.proccesed].burst_time) > self.tasks[self.proccesed].getDeathTime())
+      P = 0
+      if self.tasks[self.proccesed].getDeathTime() != 0:
+        P = - self.config.penalty_task_wont_finish * ((start_time + self.jobs[self.proccesed].burst_time) > self.tasks[self.proccesed].getDeathTime())
       reward = self.config.beta * R + (1 - self.config.beta) * C + P
 
       self.state = np.zeros(5 + 3 * self.slot_num)
