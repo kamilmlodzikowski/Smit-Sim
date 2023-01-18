@@ -22,7 +22,7 @@ class SystemConfig(object):
     self.penalty_dead = 20
     self.penalty_task_wont_finish = 10
 
-    self.dt = timedelta(seconds = 15)
+    self.dt = timedelta(seconds = 60)
     self.time_horizon = timedelta(hours = 1)
     self.now = datetime.combine(date.today(), time(15, 0))
     self.time_slot = timedelta(minutes = 5)
