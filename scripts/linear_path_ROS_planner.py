@@ -7,6 +7,7 @@ from linear_path import LinearPath, Navigation
 class ROSNavigation(Navigation):
 
     def __init__(self):
+        print('Waiting for planner service...')
         rospy.wait_for_service('/planner/make_plan')
         self.planner = rospy.ServiceProxy('/planner/make_plan', MakeNavPlan)
 
