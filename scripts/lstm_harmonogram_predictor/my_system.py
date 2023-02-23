@@ -126,7 +126,7 @@ class System():
           # update starting times for non-complete jobs depending on the robot's location
           for n,job in enumerate(self.jobs):
             task = self.tasks[n]
-            if task.do_estimate() and job.start_time < self.now + self.config.time_horizon + self.config.time_slot and job.start_time > self.now - self.config.time_slot:
+            if task.do_estimate() and job.start_time < self.now + self.config.time_slot and job.start_time > self.now - self.config.time_slot:
               burst = task.getBurst() + timedelta(seconds = self.navigator.plan(self.pos, task.pos).get_distance() / self.config.robot_speed)
               job.set_burst_time(burst)
               job.evaluate_rules()

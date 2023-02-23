@@ -7,14 +7,18 @@ WINDOW_SIZE = 1
 SHUFLE_SIZE = 100000
 
 if __name__ == '__main__':
-	timeseries = listdir('timeseries')
+	dirs = ['timeseries/base/', 'timeseries/20%_random_tasks/']
+
+	timeseries = [dirs[0] + f for f in listdir(dirs[0])]
+	for d in dirs[1:]:
+		timeseries = timeseries + [d + f for f in listdir(d)]
 	timeseries.sort()
 
 	full_dataset = None
 
 	for filename in timeseries:
 		print(f'Processing {filename}...')
-		file = open(f'timeseries/{filename}', 'r')
+		file = open(filename, 'r')
 		contents = file.read().split('\n')
 		file.close()
 

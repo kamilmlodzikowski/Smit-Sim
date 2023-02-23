@@ -4,7 +4,7 @@ from my_tasks import TaskConfig, TransportGenerator, FallGenerator
 
 if __name__ == '__main__':
 	sc = SystemConfig()
-	for i in range(2, 7):
+	for i in range(7):
 		sc.day = i + 1
 		sc.prefix = 'base_' + str(sc.day) + "_"
 		sc.save = False
@@ -16,7 +16,7 @@ if __name__ == '__main__':
 		for j in range(100):
 			sc.save = True
 			sc.prefix = str(sc.day) + "_" + str(j) + "_"
-			tc.rcount = 12
+			tc.rcount = 30
 			env.reset()
 			env.run_env()
 			env.close()

@@ -41,8 +41,8 @@ if __name__ == '__main__':
     print(contents[WINDOW_SIZE][2:])
 
     plt.figure()
-    plt.plot(forecast[100], label='forecast')
-    plt.plot(contents[WINDOW_SIZE+100][2:], label = 'original')
+    plt.plot(forecast[0], label='forecast')
+    plt.plot(contents[WINDOW_SIZE][2:], label = 'original')
     plt.legend()
     plt.show()
 
