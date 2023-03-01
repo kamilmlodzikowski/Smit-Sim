@@ -4,8 +4,8 @@ from tensorflow.data import Dataset
 import matplotlib.pyplot as plt
 import numpy as np
 
-data_filename = 'timeseries/1_0_20230202_142351_574671_1.csv'
-model_filename = 'models/20230203_195022_864812_E100_B32/save_100'
+data_filename = 'timeseries/50%_random_tasks/1_0_20230223_102543_641979_1.csv'
+model_filename = 'models/50%_random/20230301_125335_231618_E100_B32/save_100'
 BATCH_SIZE = 32
 WINDOW_SIZE = 1
 

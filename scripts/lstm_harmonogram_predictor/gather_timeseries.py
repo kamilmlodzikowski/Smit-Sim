@@ -15,8 +15,8 @@ if __name__ == '__main__':
 
 		for j in range(100):
 			sc.save = True
-			sc.prefix = str(sc.day) + "_" + str(j) + "_"
-			tc.rcount = 30
+			sc.prefix = "10%_random_fixed/" + str(sc.day) + "_" + str(j) + "_"
+			tc.rcount = 6
 			env.reset()
 			env.run_env()
 			env.close()

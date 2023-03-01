@@ -3,6 +3,7 @@ import random
 import sys
 from linear_path_ROS_planner import ROSNavigation
 from datetime import datetime, timedelta
+import time
 
 class Task:
     id_counter = 0
@@ -235,7 +236,7 @@ class TaskConfig(object):
             tasks.append(task)
 
         if self.rcount > 0:
-            random.seed(random.randint(0, 10000))
+            random.seed(time.time())
             for i,t in enumerate(self.task_desc):
               for i in range(self.rcount):
                 task = t(self.now, self.time_horizon)
