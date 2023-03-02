@@ -1,6 +1,7 @@
 import random
 import numpy as np
 import sys
+import os
 from shutil import copyfile
 from datetime import datetime, timedelta, date, time
 import math as m
@@ -87,10 +88,12 @@ class System():
     if self.config.save:
       now = datetime.now() # current date and time
       fname = self.config.prefix + now.strftime(f"%Y%m%d_%H%M%S_%f_{self.config.day}")
-      self.fname = fname
+      self.fname = 'timeseries/' + fname + '.csv'
       # copyfile('/tmp/tasker_chart_with_rejected.html', 'timeseries/' + fname + '_tcwr.html')
       # copyfile('/tmp/tasker_chart_no_rejected.html', 'timeseries/' + fname + '_tcnr.html')
-      self.file_out = open('timeseries/' + fname + '.csv', "w")
+      if not os.path.exists('/'.join(self.fname.split('/')[:-1])):
+        os.makedirs('/'.join(self.fname.split('/')[:-1]))
+      self.file_out = open(self.fname, "w")
       self.file_out.write(str((self.now - self.config.start).seconds/(self.config.stop - self.config.start).seconds*self.slot_num_full/self.slot_num) + ':' + str(self.config.day) + ':' + str([s for s in self.state]) + '\n')
 
   def step_until(self, deadline):

@@ -33,7 +33,13 @@ class Task:
     def getDeadline(self):
         raise NotImplementedError()
 
+    def setDeadline(self):
+        raise NotImplementedError()
+
     def getBurst(self):
+        raise NotImplementedError()
+
+    def setBurst(self):
         raise NotImplementedError()
 
     def dist(self, pos):
@@ -81,8 +87,14 @@ class Transport(Task):
     def getDeadline(self):
         return self.deadline
 
+    def setDeadline(self, new_deadline):
+        self.deadline = new_deadline
+
     def getBurst(self):
         return timedelta(seconds = self.path.get_distance()/self.spd)
+
+    def setBurst(self, new_burst):
+        self.spd = self.path.get_distance()/new_burst.seconds
 
     def dist(self, pos):
         return np.linalg.norm(pos - self.pos)
@@ -136,8 +148,14 @@ class Fall(Task):
     def getDeadline(self):
         return self.deadline
 
+    def setDeadline(self, new_deadline):
+        self.deadline = new_deadline
+
     def getBurst(self):
         return timedelta(seconds=self.urgency)
+
+    def setBurst(self, new_burst):
+        self.urgency = new_burst.seconds
     
     def dist(self, pos):
         return np.linalg.norm(pos - self.pos)
@@ -201,7 +219,7 @@ def FallGenerator(now, time_horizon):
     return Fall(deadline, [x1, y1], urg)
 
 class TaskConfig(object):
-    def __init__(self, task_desc, count, now, time_horizon, seed = -1, random_task_count = 0):
+    def __init__(self, task_desc, count, now, time_horizon, seed = -1, random_task_count = 0, deadline_variation = 0, burst_variation = 0):
         self.types = len(task_desc)
         self.count = count
         self.rcount = random_task_count
@@ -214,6 +232,8 @@ class TaskConfig(object):
         else:
             self.fix_random = False
             self.seed = -1
+        self.b_var = burst_variation
+        self.d_var = deadline_variation
 
         # self.task_prob = task_prob
 
@@ -234,6 +254,16 @@ class TaskConfig(object):
             task = t(self.now, self.time_horizon)
             print(task.uuid)
             tasks.append(task)
+
+        if self.d_var:
+            random.seed(time.time())
+            for t in tasks:
+                t.setDeadline(t.getDeadline() + random.uniform(-self.d_var, self.d_var) * t.getBurst())
+
+        if self.b_var:
+            random.seed(time.time())
+            for t in tasks:
+                t.setBurst(timedelta(seconds = t.getBurst().seconds + random.uniform(-self.b_var, self.b_var) * t.getBurst().seconds))
 
         if self.rcount > 0:
             random.seed(time.time())
