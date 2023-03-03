@@ -7,7 +7,7 @@ WINDOW_SIZE = 1
 SHUFLE_SIZE = 100000
 
 if __name__ == '__main__':
-	dirs = ['timeseries/base/', 'timeseries/50%_random_fixed/']
+	dirs = ['timeseries/base/', 'timeseries/50%_random_10%_dvar_10%_bvar/']
 
 	timeseries = [dirs[0] + f for f in listdir(dirs[0])]
 	for d in dirs[1:]:

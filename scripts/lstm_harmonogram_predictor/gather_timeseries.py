@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
 		for j in range(100):
 			sc.save = True
-			tc.rcount = 6
+			tc.rcount = 30
 			tc.d_var = 0.1
 			tc.b_var = 0.1
 			sc.prefix = f'{int(100*tc.rcount/tc.count)}%_random_{int(100*tc.d_var)}%_dvar_{int(100*tc.b_var)}%_bvar/{sc.day}_{j}_'
