@@ -235,7 +235,7 @@ for ep in range(start_episode, total_episodes):
 
             tf_prev_state = tf.expand_dims(tf.convert_to_tensor(prev_state), 0)
             action = policy(tf_prev_state, ou_noise)
-            state, reward, done, info = env.step(action, i)
+            state, reward, done, info = env.perform_action(action, i)
 
             if done:
                 completed.append(i)
@@ -251,7 +251,7 @@ for ep in range(start_episode, total_episodes):
         if env.all_done() or not env.is_alive() or len(completed) == len(env.tasks):
             break
 
-        env.run_env()
+        env.step()
 
     ep_reward_list.append(episodic_reward)
 
