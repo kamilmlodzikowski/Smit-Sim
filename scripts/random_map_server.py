@@ -744,6 +744,6 @@ if __name__ == '__main__':
 	node = RandomMapServerNode(args)
 	# for r in node.rms.rooms:
 	# 	print(r)
-	node.rms.plot()
-	node.rms.plot_probability_map()
+	# node.rms.plot()
+	# node.rms.plot_probability_map()
 	rospy.spin()
