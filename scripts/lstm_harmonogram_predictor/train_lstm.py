@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 
 BATCH_SIZE = 32
-ds_file = 'datasets/50%_random_10%_dvar_10%_bvar/20230303_144639_856944_F707_W1_S100000'
+ds_file = 'datasets/50%_random_50%_dvar_50%_bvar/20230309_121323_934590_F707_W1_S100000'
 epochs = 100
 output_folder = 'models/' + datetime.now().strftime(f"%Y%m%d_%H%M%S_%f_E{epochs}_B{BATCH_SIZE}/")
 
