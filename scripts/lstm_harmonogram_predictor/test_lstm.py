@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 data_filename = 'timeseries/50%_random_tasks/1_0_20230223_102543_641979_1.csv'
-model_filename = 'models/50%_random/20230301_125335_231618_E100_B32/save_100'
+model_filename = 'models/50%_random_50%_dvar_50%_bvar/20230309_123014_432175_E100_B32/save_100'
 BATCH_SIZE = 32
 WINDOW_SIZE = 1
 
