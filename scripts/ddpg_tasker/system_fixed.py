@@ -256,7 +256,7 @@ class System(gym.Env):
   #   if not self.tasks[self.proccesed].do_estimate():
   #     self.do_step()
 
-  def run_env(self):
+  def step(self):
     self.do_step_until(self.now + self.config.recalculation_time)
 
   def get_task_state(self, proccesed):
@@ -288,7 +288,7 @@ class System(gym.Env):
 
     return self.state
 
-  def step(self, action, proccesed):
+  def perform_action(self, action, proccesed):
     self.proccesed = proccesed
     print(' Action:' + str(action))
     # self.jobs[self.proccesed].priority = action[0]
