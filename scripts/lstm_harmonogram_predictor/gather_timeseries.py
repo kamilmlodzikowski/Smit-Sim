@@ -10,8 +10,8 @@ if __name__ == '__main__':
 		sc.save = False
 		tc = TaskConfig([TransportGenerator, FallGenerator], 60, sc.start, sc.stop - sc.start, seed = sc.day)
 		env = System(tc, sc)
-		# env.run_env()
-		# env.close()
+		env.run_env()
+		env.close()
 
 		for j in range(100):
 			sc.save = True
@@ -19,7 +19,6 @@ if __name__ == '__main__':
 			tc.d_var = 0.5
 			tc.b_var = 0.5
 			sc.prefix = f'{int(100*tc.rcount/tc.count)}%_random_{int(100*tc.d_var)}%_dvar_{int(100*tc.b_var)}%_bvar/{sc.day}_{j}_'
-			# sc.prefix = "10%_random_10%_dvar_10%_bvar/" + str(sc.day) + "_" + str(j) + "_"
 			env.reset()
 			env.run_env()
 			env.close()

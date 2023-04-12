@@ -4,9 +4,8 @@ from tensorflow.data import Dataset
 import matplotlib.pyplot as plt
 import numpy as np
 
-data_filename = 'timeseries/50%_random_tasks/1_0_20230223_102543_641979_1.csv'
-model_filename = 'models/50%_random_50%_dvar_50%_bvar/20230309_123014_432175_E100_B32/save_100'
-BATCH_SIZE = 32
+data_filename = 'timeseries/50%_random_fixed/1_0_20230301_172620_826569_1.csv'
+model_filename = 'models/50%_random_fixed/20230302_114234_896991_E100_B32/save_100'
 WINDOW_SIZE = 1
 
 if __name__ == '__main__':
@@ -41,8 +40,8 @@ if __name__ == '__main__':
     print(contents[WINDOW_SIZE][2:])
 
     plt.figure()
-    plt.plot(forecast[0], label='forecast')
-    plt.plot(contents[WINDOW_SIZE][2:], label = 'original')
+    plt.scatter(range(36), forecast[0], label='forecast')
+    plt.scatter(range(36), contents[WINDOW_SIZE][2:], label = 'original')
     plt.legend()
     plt.show()
 

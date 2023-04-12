@@ -1,5 +1,39 @@
 # Smit Matlab Sim
 
+## Running and utilizing random_map_server with local planner
+The system utilizes ROS framework using Python3 and was tested on Ubuntu 18.04.
+
+### Running
+
+1. Build this package using ROS.
+2. In first console (starting from ROS workspace) run the local planner.
+```
+source devel/setup.bash
+roslaunch smit_matlab_sim tasks_execution.launch
+```
+3. In first console (starting from ROS workspace) run the map server. The script is run directly from the folder as it uses Python3.
+```
+source devel/setup.bash
+cd src/smit_matlab_sim/scripts/
+./random_map_server.py
+```
+4. (Optional) Load previously created map by sending its filename by a ROS service called /load_config. Service type is FileOperation (included in this package). You can do it with rqt or by console command (example below).
+```
+source devel/setup.bash
+rosservice call /load_config "filename: 'config_file_name'"
+```
+
+### Planning route
+
+To get a route planned according to used map you can call service /planner/make_plan of type MakeNavPlan (from navfn package). Alternatively you can utilize class ROSNavigation from this package to get object of class LinearPath. You can run  LinearPath.step(robot_speed, move_duration_in_secs) function to move through the path with constant speed for set amount of time.
+
+### Adding pedestrians
+
+You can use /add_pedestrian service of type AddPedestrian to add pedestrians to map. It has the following components:
+1. velocity - <float64> - pedestrian velocity during move
+2. path - <std_msgs/Float64MultiArray> - list of points from start to goal, if empty generated randomly
+3. full_path - <bool> - informs if the path is fully planned or only consists of start and goal points
+4. bahevior - <int8> - pedestrian behavior, 1 - go arounf in circles, 2 - plan new random path after completing previous one, 3 - dissapear after path completion, 4 - plan new random path that starts in stop place after of previous one
 
 
 ## Getting started

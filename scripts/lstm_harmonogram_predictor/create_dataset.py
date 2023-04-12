@@ -32,10 +32,6 @@ if __name__ == '__main__':
 		dataset = dataset.flat_map(lambda window: window.batch(WINDOW_SIZE + 1))
 		dataset = dataset.map(lambda window: (window[:-1], window[-1][2:]))
 
-		# for item in dataset:
-		# 	print(item)
-		# 	break
-
 		if not full_dataset:
 			full_dataset = dataset
 		else:

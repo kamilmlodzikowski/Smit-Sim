@@ -746,4 +746,8 @@ if __name__ == '__main__':
 	# 	print(r)
 	# node.rms.plot()
 	# node.rms.plot_probability_map()
-	rospy.spin()
+	try:
+		rospy.spin()
+	except:
+		pass
+	# node.rms.save_map_to_pgm('lstm', False)
