@@ -30,10 +30,10 @@ To get a route planned according to used map you can call service /planner/make_
 ### Adding pedestrians
 
 You can use /add_pedestrian service of type AddPedestrian to add pedestrians to map. It has the following components:
-1. velocity - <float64> - pedestrian velocity during move
-2. path - <std_msgs/Float64MultiArray> - list of points from start to goal, if empty generated randomly
-3. full_path - <bool> - informs if the path is fully planned or only consists of start and goal points
-4. bahevior - <int8> - pedestrian behavior, 1 - go arounf in circles, 2 - plan new random path after completing previous one, 3 - dissapear after path completion, 4 - plan new random path that starts in stop place after of previous one
+1. velocity - <<float64>> - pedestrian velocity during move
+2. path - <<std_msgs/Float64MultiArray>> - list of points from start to goal, if empty generated randomly
+3. full_path - <<bool>> - informs if the path is fully planned or only consists of start and goal points
+4. behavior - <<int8>> - pedestrian behavior, 1 - go arounf in circles, 2 - plan new random path after completing previous one, 3 - dissapear after path completion, 4 - plan new random path that starts in stop place after of previous one
 
 
 ## Getting started
