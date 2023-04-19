@@ -519,8 +519,11 @@ class RandomMapServerWithPedestrians(object):
 	def add_pedestrian(self, speed, path, planned, behaviour):
 		# if self.num_p == 0:
 		# 	self.planner = PRMPlanner(self.map, distance = 'euclidean', inflate = self.p_rad + self.foot_rad, npoints = int((self.w*self.h)/100))
-
-		if path == []:
+		# print(speed)
+		# print(path)
+		# print(planned)
+		# print(behaviour)
+		if len(path) == 0:
 			while(True):
 				try:
 					start = self.get_random_point()
@@ -579,40 +582,44 @@ class RandomMapServerWithPedestrians(object):
 					pass
 		return np.maximum(m, self.map)
 
-	def plot(self):
+	def plot(self, plot_rooms = False, plot_peds = False, use_ped_map = False):
+		pmap = self.map
+		if use_ped_map:
+			pmap = self.get_pedmap()
 		rows, cols = np.shape(self.map)
-		plt.figure()
+		plt.figure(figsize = (2,2))
 		x = []
 		y = []
 		for row in range(rows):
 			for col in range(cols):
-				if self.map[row, col]:
+				if  pmap[row, col]:
 					x.append(col)
 					y.append(row)
 		plt.scatter(x, y, color = 'black', marker = 's', s = 1)
-		if self.num_p > 0:
+		if self.num_p > 0 and plot_peds:
 			for i in range(self.num_p):
 				if self.p_beh[i] == PedestrianBehaviour.CIRCLE:
 					plt.plot(self.p_path[i].T[0], self.p_path[i].T[1], color = 'blue')
 					plt.plot(self.p[i].pos[0], self.p[i].pos[1], color = 'blue', marker = 'o', markersize = 1)
 					plt.text(self.p_path[i].T[0][0], self.p_path[i].T[1][0], str(i), color = 'blue')
 					plt.text(self.p_path[i].T[0][-1], self.p_path[i].T[1][-1], str(i), color = 'blue')
-		for r in self.rooms:
-			plt.plot(r["x"], r["y"], color = "red")
-			plt.text(mean(r["x"]), mean(r["y"]), str(r["id"]), color = 'red')
-		for d in self.doors:
-			plt.plot(d["x"], d["y"], color = "green")
-			plt.text(mean(d["x"]), mean(d["y"]), str(d["id"]), color = 'green')
-		if self.ext_wall and self.ext_ent:
-			d =  self.ext_door
-			plt.plot(d["x"], d["y"], color = "green")
-			plt.text(mean(d["x"]), mean(d["y"]), str(d["id"]), color = 'green')
+		if plot_rooms:
+			for r in self.rooms:
+				plt.plot(r["x"], r["y"], color = "red")
+				plt.text(mean(r["x"]), mean(r["y"]), str(r["id"]), color = 'red')
+			for d in self.doors:
+				plt.plot(d["x"], d["y"], color = "green")
+				plt.text(mean(d["x"]), mean(d["y"]), str(d["id"]), color = 'green')
+			if self.ext_wall and self.ext_ent:
+				d =  self.ext_door
+				plt.plot(d["x"], d["y"], color = "green")
+				plt.text(mean(d["x"]), mean(d["y"]), str(d["id"]), color = 'green')
 		plt.grid(b=None)
 		plt.show()
 
 	def plot_probability_map(self):
 		rows, cols = np.shape(self.prob_map)
-		plt.figure()
+		plt.figure(figsize = (2,2))
 		ax = plt.axes()
 		ax.set_facecolor("cyan")
 		data = {}
@@ -744,10 +751,13 @@ if __name__ == '__main__':
 	node = RandomMapServerNode(args)
 	# for r in node.rms.rooms:
 	# 	print(r)
-	# node.rms.plot()
-	# node.rms.plot_probability_map()
 	try:
 		rospy.spin()
 	except:
 		pass
+	node.rms.plot()
+	node.rms.plot(use_ped_map = True)
+	node.rms.plot(plot_peds = True)
+	node.rms.plot(plot_rooms = True)
+	node.rms.plot_probability_map()
 	# node.rms.save_map_to_pgm('lstm', False)
