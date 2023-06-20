@@ -101,7 +101,7 @@ class System():
         self.file_out.write(':'.join([
           str((self.now - self.config.start).seconds/(self.config.stop - self.config.start).seconds*self.slot_num_full/self.slot_num),
           str(self.config.day),
-          str((job.start_time - self.config.start).seconds/(self.config.stop - self.config.start).seconds*self.slot_num_full/self.slot_num),
+          str((self.tasks[n].deadline - self.config.start).seconds/(self.config.stop - self.config.start).seconds*self.slot_num_full/self.slot_num),
           str(self.tasks[n].pos[0]),
           str(self.tasks[n].pos[1]),
           str(self.tasks[n].goal[0] if isinstance(self.tasks[n], Transport) else self.tasks[n].pos[0]),
@@ -180,11 +180,11 @@ class System():
         # TODO
         # self.file_out.write(str((self.now - self.config.start).seconds/(self.config.stop - self.config.start).seconds*self.slot_num_full/self.slot_num) + ':' + str(self.config.day) + ':' + str([s for s in self.state]) + '\n')
         for n,task in enumerate(self.tasks):
-          if self.tasks[n].do_estimate():
+          if task.do_estimate():
             self.file_out.write(':'.join([
               str((self.now - self.config.start).seconds/(self.config.stop - self.config.start).seconds*self.slot_num_full/self.slot_num),
               str(self.config.day),
-              str((self.jobs[n].start_time - self.config.start).seconds/(self.config.stop - self.config.start).seconds*self.slot_num_full/self.slot_num),
+              str((task.deadline - self.config.start).seconds/(self.config.stop - self.config.start).seconds*self.slot_num_full/self.slot_num),
               str(task.pos[0]),
               str(task.pos[1]),
               str(task.goal[0] if isinstance(self.tasks[n], Transport) else self.tasks[n].pos[0]),

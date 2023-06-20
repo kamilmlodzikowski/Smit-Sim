@@ -13,7 +13,7 @@ if __name__ == '__main__':
 		# env.run_env()
 		env.close()
 
-		for j in range(20,40):
+		for j in range(100):
 			sc.save = True
 			tc.rcount = 30
 			tc.d_var = 0.5
