@@ -9,10 +9,13 @@ sys.path.insert(0, '../')
 from linear_path_ROS_planner import ROSNavigation
 sys.path.insert(0, '../../../tasker/src/TaskER/')
 from RequestTable import RequestTable, ScheduleRules, ScheduleRule, TaskerReqest
+import rospy
+from smit_matlab_sim.srv import GetRoomsAndDoors 
 
 class SystemConfig(object):
   def __init__(self):
     self.robot_speed = 0.5
+    self.robot_radius = 0.3
     self.time_horizon = timedelta(hours = 1)
     self.start = datetime.combine(date.today(), time(8, 0))
     self.stop = datetime.combine(date.today(), time(20, 0))
@@ -34,6 +37,14 @@ class System():
     self.state_shape = (3 * self.slot_num)
     self.state = np.zeros(self.state_shape)
     self.navigator = ROSNavigation()
+
+    rospy.wait_for_service('/get_rooms_and_doors')
+    doors_client = rospy.ServiceProxy('/get_rooms_and_doors', GetRoomsAndDoors)
+    doors_response = doors_client()
+    print(doors_response)
+    self.spawn_zones = [((room.x[0] + self.config.robot_radius, room.x[1] - self.config.robot_radius), (room.y[0] + self.config.robot_radius, room.y[1] - self.config.robot_radius)) for room in doors_response.rooms]
+    print(self.spawn_zones)
+
     self.reset()
 
   def render(self, mode="save"):
@@ -46,15 +57,30 @@ class System():
   def reset(self):
     print('Resetting...')
     self.now = self.config.start
-    self.tasks = self.task_config.generate()
+    self.tasks = self.task_config.generate(self.spawn_zones)
 
     # initial agent position
-    x_min = 1
-    x_max = 9
-    y_min = 1
-    y_max = 9
+    # define absolutes
+    x_min = min([zone[0][0] for zone in self.spawn_zones])
+    x_max = max([zone[0][1] for zone in self.spawn_zones])
+    y_min = min([zone[1][0] for zone in self.spawn_zones])
+    y_max = max([zone[1][1] for zone in self.spawn_zones])
+    # initialize positions
     x1 = x_min + random.random() * (x_max - x_min)
     y1 = y_min + random.random() * (y_max - y_min)
+    # regenerate until proper positions are found
+    while(True):
+        in_room = False
+        for zone in self.spawn_zones:
+            if x1 >= zone[0][0] and x1 <= zone[0][1] and y1 >= zone[1][0] and y1 <= zone[1][1]:
+                in_room = True
+                break
+        # if position is inside a room exit loop
+        if in_room:
+            break
+        # generate new posiitons
+        x1 = x_min + random.random() * (x_max - x_min)
+        y1 = y_min + random.random() * (y_max - y_min)
     self.pos = np.array([x1, y1])
 
     # initialize tasker
