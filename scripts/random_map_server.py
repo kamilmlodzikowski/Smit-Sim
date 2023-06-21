@@ -755,9 +755,9 @@ if __name__ == '__main__':
 		rospy.spin()
 	except:
 		pass
-	node.rms.plot()
-	node.rms.plot(use_ped_map = True)
-	node.rms.plot(plot_peds = True)
-	node.rms.plot(plot_rooms = True)
-	node.rms.plot_probability_map()
+	# node.rms.plot()
+	# node.rms.plot(use_ped_map = True)
+	# node.rms.plot(plot_peds = True)
+	# node.rms.plot(plot_rooms = True)
+	# node.rms.plot_probability_map()
 	# node.rms.save_map_to_pgm('lstm', False)

@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 
 BATCH_SIZE = 32
-ds_file = 'datasets/50%_random_50%_dvar_50%_bvar/20230425_113927_798393_F287_S10000000'
-epochs = 20
+ds_file = 'datasets/50%_random_50%_dvar_50%_bvar'
+epochs = 100
 output_folder = 'models/' + datetime.now().strftime(f"%Y%m%d_%H%M%S_%f_E{epochs}_B{BATCH_SIZE}/")
 
 if __name__ == '__main__':
@@ -40,8 +40,9 @@ if __name__ == '__main__':
     )
 
     # plot MAE and loss
+    minimum = min(history.history['loss'])
     plt.figure()
-    plt.title(f'Metric values through epochs, lowest loss: {min(history.history['loss']):.5f}')
+    plt.title(f'Metric values through epochs, lowest loss: {minimum:.5f}')
     plt.xlabel(f'Epoch number')
     plt.ylabel(f'Metric value')
     plt.plot(history.history['mae'], label='mae')

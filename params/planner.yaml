@@ -1,2 +1,3 @@
 costmap:
   static_map: true
+  robot_radius: 0.25
