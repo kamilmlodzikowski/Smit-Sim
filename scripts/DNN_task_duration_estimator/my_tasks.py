@@ -190,28 +190,73 @@ class Fall(Task):
       return f""
 
 
-def TransportGenerator(now, time_horizon):
-    x_min = 1
-    x_max = 9
-    y_min = 1
-    y_max = 9
+def TransportGenerator(now, time_horizon, spawn_zones):
+    # define absolutes
+    x_min = min([zone[0][0] for zone in spawn_zones])
+    x_max = max([zone[0][1] for zone in spawn_zones])
+    y_min = min([zone[1][0] for zone in spawn_zones])
+    y_max = max([zone[1][1] for zone in spawn_zones])
+    # initialize positions
     x1 = x_min + random.random() * (x_max - x_min)
-    x2 = x_min + random.random() * (x_max - x_min)
     y1 = y_min + random.random() * (y_max - y_min)
+    x2 = x_min + random.random() * (x_max - x_min)
     y2 = y_min + random.random() * (y_max - y_min)
+    # regenerate until proper start positions are found
+    while(True):
+        in_room = False
+        for zone in spawn_zones:
+            if x1 >= zone[0][0] and x1 <= zone[0][1] and y1 >= zone[1][0] and y1 <= zone[1][1]:
+                # print(f'{x1} in {zone}')
+                in_room = True
+                break
+        # if position is inside a room exit loop
+        if in_room:
+            break
+        # generate new posiitons
+        x1 = x_min + random.random() * (x_max - x_min)
+        y1 = y_min + random.random() * (y_max - y_min)
+    # regenerate until proper stop positions are found
+    while(True):
+        in_room = False
+        for zone in spawn_zones:
+            if x2 >= zone[0][0] and x2 <= zone[0][1] and y2 >= zone[1][0] and y2 <= zone[1][1]:
+                # print(f'{x2} in {zone}')
+                in_room = True
+                break
+        # if position is inside a room exit loop
+        if in_room:
+            break
+        # generate new posiitons
+        x2 = x_min + random.random() * (x_max - x_min)
+        y2 = y_min + random.random() * (y_max - y_min)
     spd_min = 0.01
     spd_max = 0.1
     spd = spd_min + random.random() * (spd_max - spd_min)
     deadline = now + random.random() * time_horizon
     return Transport(deadline, [x1, y1], [x2, y2], spd)
 
-def FallGenerator(now, time_horizon):
-    x_min = 1
-    x_max = 9
-    y_min = 1
-    y_max = 9
+def FallGenerator(now, time_horizon, spawn_zones):
+    # define absolutes
+    x_min = min([zone[0][0] for zone in spawn_zones])
+    x_max = max([zone[0][1] for zone in spawn_zones])
+    y_min = min([zone[1][0] for zone in spawn_zones])
+    y_max = max([zone[1][1] for zone in spawn_zones])
+    # initialize positions
     x1 = x_min + random.random() * (x_max - x_min)
     y1 = y_min + random.random() * (y_max - y_min)
+    # regenerate until proper positions are found
+    while(True):
+        in_room = False
+        for zone in spawn_zones:
+            if x1 >= zone[0][0] and x1 <= zone[0][1] and y1 >= zone[1][0] and y1 <= zone[1][1]:
+                in_room = True
+                break
+        # if position is inside a room exit loop
+        if in_room:
+            break
+        # generate new posiitons
+        x1 = x_min + random.random() * (x_max - x_min)
+        y1 = y_min + random.random() * (y_max - y_min)
     urg_min = 60
     urg_max = 300
     urg = urg_min + random.random() * (urg_max - urg_min)
@@ -237,7 +282,7 @@ class TaskConfig(object):
 
         # self.task_prob = task_prob
 
-    def generate(self):
+    def generate(self, spawn_zones = [((1,9),(1,9))]):
         Task.id_counter = 0
         Fall.uuid_counter = 0
         Transport.uuid_counter = 0
@@ -251,8 +296,11 @@ class TaskConfig(object):
         tasks = []
         for i,t in enumerate(self.task_desc):
           for i in range(self.count):
-            task = t(self.now, self.time_horizon)
+            task = t(self.now, self.time_horizon, spawn_zones)
             print(task.uuid)
+            # print(task.pos)
+            # print(task.goal)
+            # sleep(1)
             tasks.append(task)
 
         if self.d_var:
@@ -269,7 +317,7 @@ class TaskConfig(object):
             random.seed(time.time())
             for i,t in enumerate(self.task_desc):
               for i in range(self.rcount):
-                task = t(self.now, self.time_horizon)
+                task = t(self.now, self.time_horizon, spawn_zones)
                 print(task.uuid)
                 tasks.append(task)
 
