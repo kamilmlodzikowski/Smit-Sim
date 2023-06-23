@@ -5,9 +5,10 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 
 BATCH_SIZE = 32
-ds_file = 'datasets/50%_random_50%_dvar_50%_bvar/20230309_121323_934590_F707_W1_S100000'
+ds_file = 'datasets/50%_random_50%_dvar_50%_bvar/20230622_131006_076099_F707_W2_S1000000'
 epochs = 100
-output_folder = 'models/' + datetime.now().strftime(f"%Y%m%d_%H%M%S_%f_E{epochs}_B{BATCH_SIZE}/")
+WINDOW_SIZE = 2
+output_folder = 'models/' + datetime.now().strftime(f"%Y%m%d_%H%M%S_%f_E{epochs}_B{BATCH_SIZE}_W{WINDOW_SIZE}/")
 
 if __name__ == '__main__':
     dataset = experimental.load(ds_file)

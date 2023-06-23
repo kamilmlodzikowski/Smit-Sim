@@ -14,11 +14,11 @@ if __name__ == '__main__':
 		# env.run_env()
 		# env.close()
 
-		t_file = open(f'transport_day{i+1}.csv', 'w', newline='')
-		f_file = open(f'fall_day{i+1}.csv', 'w', newline='')
+		t_file = open(f'saved_tasks/transport_day{i+1}.csv', 'w', newline='')
+		f_file = open(f'saved_tasks/fall_day{i+1}.csv', 'w', newline='')
 
-		t_writer = csv.DictWriter(t_file, fieldnames = ['id', 'uuid', 'priority', 'pos', 'start_time', 'goal', 'spd', 'path'])
-		f_writer = csv.DictWriter(f_file, fieldnames = ['id', 'uuid', 'priority', 'pos', 'start_time', 'urgency'])
+		t_writer = csv.DictWriter(t_file, fieldnames = ['id', 'uuid', 'priority', 'pos', 'start_time', 'deadline', 'goal', 'spd', 'path'])
+		f_writer = csv.DictWriter(f_file, fieldnames = ['id', 'uuid', 'priority', 'pos', 'start_time', 'deadline', 'urgency'])
 		t_writer.writeheader()
 		f_writer.writeheader()
 
@@ -29,6 +29,7 @@ if __name__ == '__main__':
 					'priority':task.priority,
 					'pos': task.pos,
 					'start_time': (task.getDeadline() - task.getBurst()).strftime(f"%H:%M:%S"),
+					'deadline': task.getDeadline().strftime(f"%H:%M:%S"),
 					'goal': task.goal,
 					'spd': task.spd,
 					'path': ','.join([str(p) for p in task.path.points[:-1]]),
@@ -39,6 +40,7 @@ if __name__ == '__main__':
 					'priority':task.priority,
 					'pos': task.pos,
 					'start_time': (task.getDeadline() - task.getBurst()).strftime(f"%H:%M:%S"),
+					'deadline': task.getDeadline().strftime(f"%H:%M:%S"),
 					'urgency': 3600 - (task.getDeathTime() - (task.getDeadline() - task.getBurst())).seconds,
 				})
 
