@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 
 BATCH_SIZE = 32
-ds_file = 'datasets/50%_random_50%_dvar_50%_bvar'
-epochs = 100
+ds_file = 'datasets/50%_random_50%_dvar_50%_bvar/20230622_141159_780606_F707_S20000000'
+epochs = 50
 output_folder = 'models/' + datetime.now().strftime(f"%Y%m%d_%H%M%S_%f_E{epochs}_B{BATCH_SIZE}/")
 
 if __name__ == '__main__':
@@ -18,12 +18,8 @@ if __name__ == '__main__':
     #     break
 
     model = tf.keras.models.Sequential([ 
-        # tf.keras.layers.Lambda(lambda x: tf.expand_dims(x, axis=-1)),
-        # tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(1024, return_sequences=True)),
-        # tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(512, return_sequences=True)),
-        # tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(256, return_sequences=True)),
-        # tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(128, return_sequences=True)),
-        # tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64)),
+#        tf.keras.layers.Dense(256, activation = 'relu'),
+#        tf.keras.layers.Dense(128, activation = 'relu'),
         tf.keras.layers.Dense(64, activation = 'relu'),
         tf.keras.layers.Dense(32, activation = 'relu'),
         tf.keras.layers.Dense(1, activation = 'linear'),

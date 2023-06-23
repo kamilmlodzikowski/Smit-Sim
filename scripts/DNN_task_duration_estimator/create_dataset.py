@@ -3,7 +3,7 @@ from os import listdir
 from tensorflow.data import Dataset, experimental
 from datetime import datetime
 
-SHUFLE_SIZE = 10000000
+SHUFLE_SIZE = 20000000
 
 if __name__ == '__main__':
 	dirs = ['timeseries/base/', 'timeseries/50%_random_50%_dvar_50%_bvar/']
