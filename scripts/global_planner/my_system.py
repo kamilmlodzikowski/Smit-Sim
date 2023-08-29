@@ -42,15 +42,13 @@ class System():
       tf.keras.layers.Dense(32, activation = 'relu'),
       tf.keras.layers.Dense(1, activation = 'linear'),
     ])
-    # self.estimator.compile()
     self.estimator.load_weights(self.config.estimator_path)
 
-    self.predictor = tf.keras.models.Sequential([
-      tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64)),
-      tf.keras.layers.Dense(36),
-    ])
-    # self.predictor.compile()
-    self.predictor.load_weights(self.config.predictor_path)
+    # self.predictor = tf.keras.models.Sequential([
+    #   tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64)),
+    #   tf.keras.layers.Dense(36),
+    # ])
+    # self.predictor.load_weights(self.config.predictor_path)
     
     self.slot_num = int(self.config.time_horizon/self.config.time_slot)
     self.slot_num_full = int((self.config.stop - self.config.start)/self.config.time_slot)
@@ -173,7 +171,7 @@ class System():
 
 
   def step(self):
-
+    # select action
     j = None
     if len(self.jobs) > 0:
       if self.current or self.current == 0:
@@ -187,6 +185,7 @@ class System():
             print(f'Current: {self.current}')
             break
 
+    # perform action
     if j:   
       time_left = self.config.dt.seconds
       t_id = int(self.jobIDs[self.current])
