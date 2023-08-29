@@ -1,26 +1,33 @@
 # Smit Matlab Sim
 
+## Instalation
+This system requires two additional ROS packages and one non-standard library. The two packages are:
+1. [tasker](https://github.com/RCPRG-ros-pkg/tasker/tree/smit-reqTab) on smit-reqTab branch
+2. [tasker_msgs](https://github.com/RCPRG-ros-pkg/tasker_msgs/tree/smit) on smit branch4
+Both packages should be placed in src/ directory in the same workspace as this package with their names unchanged.
+The additional library, that needs to be installed is [Robotics Toolbox for Python](https://github.com/petercorke/robotics-toolbox-python). It can be installed using pip. As this library links to the others created by the same developer, if any exceptions are thrown during random_map_server.py execution, the offending pip package should be removed and the same package should be installed directly from the [sources](https://github.com/petercorke) to get the newest version.
+
 ## Running and utilizing random_map_server with local planner
 The system utilizes ROS framework using Python3 and was tested on Ubuntu 18.04.
 
 ### Running
 
-1. Build this package using ROS.
+1. Build your workspace, including this package, using ROS (catkin build).
 2. In first console (starting from ROS workspace) run the local planner.
 ```
 source devel/setup.bash
 roslaunch smit_matlab_sim tasks_execution.launch
 ```
-3. In first console (starting from ROS workspace) run the map server. The script is run directly from the folder as it uses Python3.
+3. In second console (starting from ROS workspace) run the map server. The script is run directly from the folder as it uses Python3.
 ```
 source devel/setup.bash
 cd src/smit_matlab_sim/scripts/
 ./random_map_server.py
 ```
-4. (Optional) Load previously created map by sending its filename by a ROS service called /load_config. Service type is FileOperation (included in this package). You can do it with rqt or by console command (example below).
+4. (Optional) Load previously created map by sending its filename by a ROS service called /load_config. Service type is FileOperation (included in this package). You can do it with rqt or by console command (example below). Config file directory should be passed in regard to the random_map_server.py file.
 ```
 source devel/setup.bash
-rosservice call /load_config "filename: 'config_file_name'"
+rosservice call /load_config "filename: 'config_file_directory/config_file_name'"
 ```
 
 ### Planning route
@@ -35,6 +42,15 @@ You can use /add_pedestrian service of type AddPedestrian to add pedestrians to 
 3. full_path - bool - informs if the path is fully planned or only consists of start and goal points
 4. behavior - int8 - pedestrian behavior, 1 - go arounf in circles, 2 - plan new random path after completing previous one, 3 - dissapear after path completion, 4 - plan new random path that starts in stop place after of previous one
 
+## Running the scenario for robot performing tasks
+
+1. Perform steps 1-4 from the instructions above (in step 4 use *filename: 'lstm'*)
+2. In second console (starting from ROS workspace) run any executable script from global_planner directory. The script is run directly from the folder as it uses Python3. Example code is for the test_planner.py script.
+```
+source devel/setup.bash
+cd src/smit_matlab_sim/scripts/global_planner/
+./test_planner.py
+```
 
 ## Getting started
 

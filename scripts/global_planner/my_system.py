@@ -100,6 +100,7 @@ class System():
     self.pos = np.array([x1, y1])
 
     self.current = None
+    self.previous = None
 
     # initialize tasker
     self.rt = RequestTable()
@@ -117,7 +118,9 @@ class System():
   def update_jobs(self):
     self.time_eval = (self.now - self.config.start).seconds*self.time_to_horizon
     # update existing job durations
-    if len(self.jobs) > 0:
+    updated_jobs = False
+    if len(self.jobs) > 0 and self.previous != self.current:
+      updated_jobs = True
       for i,job in enumerate(self.jobs):
         t = self.tasks[int(self.jobIDs[i])]
         if self.config.use_estimator:
@@ -167,12 +170,13 @@ class System():
         self.rt.addRecord(job)
         self.jobs.append(job)
     # update tasker
-    self.out, self.profit = self.rt.schedule_with_priority()
-
+    if new_jobs or updated_jobs:
+      self.out, self.profit = self.rt.schedule_with_priority()
 
   def step(self):
     # select action
     j = None
+    self.previous = self.current
     if len(self.jobs) > 0:
       if self.current or self.current == 0:
         if not self.tasks[int(self.jobIDs[self.current])].preemptive:
@@ -207,6 +211,7 @@ class System():
         self.rt.removeRecord_by_id(self.jobIDs[self.current])
         self.jobs.pop(self.current)
         self.jobIDs.pop(self.current)
+        self.current = None
       else:
         print('Worked on job ' + str(t_id) + ': ' + str(self.tasks[t_id].do_estimate()))
 
