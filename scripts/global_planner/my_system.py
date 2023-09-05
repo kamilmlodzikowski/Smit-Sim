@@ -23,7 +23,7 @@ class SystemConfig(object):
     self.stop = datetime.combine(date.today(), time(20, 0))
     self.time_slot = timedelta(minutes = 5)
     self.dt = timedelta(seconds = 5)
-    self.save = True
+    self.save = False
     self.prefix = ""
     self.day = 1
     self.estimator_path = 'estimator_model/save_20'
@@ -53,8 +53,8 @@ class System():
     self.slot_num = int(self.config.time_horizon/self.config.time_slot)
     self.slot_num_full = int((self.config.stop - self.config.start)/self.config.time_slot)
     self.time_to_horizon = self.slot_num_full/self.slot_num/(self.config.stop - self.config.start).seconds
-    self.harmonogram_shape = (3 * self.slot_num)
-    self.harmonogram = np.zeros(self.harmonogram_shape)
+    self.schedule_shape = (3 * self.slot_num)
+    self.schedule = np.zeros(self.schedule_shape)
     self.navigator = ROSNavigation()
     
     rospy.wait_for_service('/get_rooms_and_doors')
@@ -68,7 +68,8 @@ class System():
 
   def close(self):
     if self.config.save:
-      self.file_out.close()
+      self.estimator_file_out.close()
+      self.predictor_file_out.close()
 
   def reset(self):
     print('Resetting...')
@@ -102,16 +103,38 @@ class System():
     self.current = None
     self.previous = None
 
+    # create save files
+    if self.config.save:
+      now = datetime.now() # current date and time
+      fname = self.config.prefix + now.strftime(f"%Y%m%d_%H%M%S_%f")
+
+      self.fname = 'estimator/timeseries/' + fname + '.csv'
+      if not os.path.exists('/'.join(self.fname.split('/')[:-1])):
+        os.makedirs('/'.join(self.fname.split('/')[:-1]))
+      self.estimator_file_out = open(self.fname, "w")
+
+      self.fname = 'predictor/timeseries/' + fname + '.csv'
+      if not os.path.exists('/'.join(self.fname.split('/')[:-1])):
+        os.makedirs('/'.join(self.fname.split('/')[:-1]))
+      self.predictor_file_out = open(self.fname, "w")
+
+      self.next_save = self.now + self.config.time_slot
+
     # initialize tasker
     self.rt = RequestTable()
     self.jobIDs = []
     self.jobs = []
+    self.out = []
+    self.profit = 0
     self.update_jobs()
 
-    self.harmonogram = np.zeros(self.harmonogram_shape)
-    self.predicted_harmonogram = np.zeros(self.harmonogram_shape)
+    self.schedule = np.zeros(self.schedule_shape)
+    self.predicted_schedule = np.zeros(self.schedule_shape)
     self.empty_tasks = []
     self.empty_jobs = []
+
+    if self.config.save:
+      self.save_schedule()
 
     print("Reset done")
 
@@ -140,6 +163,7 @@ class System():
           job.set_burst_time(burst)
         job.evaluate_rules()
         self.rt.updateRecord(job)
+        self.save_estimation(t, job)
     #generate new jobs
     new_jobs = False
     for t in self.tasks:
@@ -169,6 +193,7 @@ class System():
         job.evaluate_rules()
         self.rt.addRecord(job)
         self.jobs.append(job)
+        self.save_estimation(t, job)
     # update tasker
     if new_jobs or updated_jobs:
       self.out, self.profit = self.rt.schedule_with_priority()
@@ -217,18 +242,18 @@ class System():
 
     self.now = self.now + self.config.dt
 
-  # def get_harmonogram(self):
-  #   for s in range(self.slot_num):
-  #     start = self.now + s*self.config.time_slot
-  #     stop = self.now + (s+1)*self.config.time_slot
-  #     for i,j in enumerate(self.jobs):
-  #       if j.start_time >= start and j.start_time < stop or j.deadline > start and j.deadline <= stop or j.start_time < start and j.deadline > stop:
-  #         self.harmonogram[s*3] += j.priority
-  #         self.harmonogram[2+s*3] += 1
-  #     for i,j in enumerate(self.out.scheduled):
-  #       if j.start >= start and j.start < stop or j.stop > start and j.stop <= stop or j.start < start and j.stop > stop:
-  #         self.harmonogram[1+s*3] += self.rt.get_request(j.jobID).priority
-  #   return self.harmonogram
+  def generate_schedule(self):
+    self.schedule = np.zeros(self.schedule_shape)
+    for s in range(self.slot_num):
+      start = self.now + s*self.config.time_slot
+      stop = self.now + (s+1)*self.config.time_slot
+      for i,j in enumerate(self.jobs):
+        if j.start_time >= start and j.start_time < stop or j.deadline > start and j.deadline <= stop or j.start_time < start and j.deadline > stop:
+          self.schedule[s*3] += j.priority
+          self.schedule[2+s*3] += 1
+      for i,j in enumerate(self.out.scheduled):
+        if j.start >= start and j.start < stop or j.stop > start and j.stop <= stop or j.start < start and j.stop > stop:
+          self.schedule[1+s*3] += self.rt.get_request(j.jobID).priority
 
   # def predict_schedule(self):
   #   if len(self.empty_jobs):
@@ -237,13 +262,13 @@ class System():
 
   #   self.empty_tasks = []
   #   self.empty_jobs = []
-  #   self.predicted_harmonogram = np.array(self.predictor(np.expand_dims(np.expand_dims(np.concatenate((np.array([(self.now - self.config.start).seconds*self.time_to_horizon, self.config.day]), self.harmonogram)), axis = 0), axis = 0))[0])
+  #   self.predicted_schedule = np.array(self.predictor(np.expand_dims(np.expand_dims(np.concatenate((np.array([(self.now - self.config.start).seconds*self.time_to_horizon, self.config.day]), self.schedule)), axis = 0), axis = 0))[0])
 
   #   for s in range(self.slot_num - 1):
-  #     task_diff = round(self.predicted_harmonogram[s*3] - self.harmonogram[(s+1)*3])
+  #     task_diff = round(self.predicted_schedule[s*3] - self.schedule[(s+1)*3])
   #     if task_diff > 0:
   #       print(f'Adding {task_diff} empty_tasks')
-  #       task_priorities = round((self.predicted_harmonogram[s*3 + 2] - self.harmonogram[(s+1)*3 + 2])/task_diff)
+  #       task_priorities = round((self.predicted_schedule[s*3 + 2] - self.schedule[(s+1)*3 + 2])/task_diff)
   #       for i in range(task_diff):
   #         t = Empty(self.now + (s+1)*self.config.time_horizon, task_priorities)
   #         self.empty_tasks.append(t)
@@ -258,11 +283,42 @@ class System():
   #   if len(self.empty_jobs):
   #     self.out, self.profit = self.rt.schedule_with_priority()
 
+  def save_estimation(self, task, job):
+    if self.config.save:
+      self.estimator_file_out.write(':'.join([
+          str((self.now - self.config.start).seconds/(self.config.stop - self.config.start).seconds*self.slot_num_full/self.slot_num),
+          str(self.config.day),
+          str((task.deadline - self.config.start).seconds/(self.config.stop - self.config.start).seconds*self.slot_num_full/self.slot_num),
+          str(task.pos[0]),
+          str(task.pos[1]),
+          str(task.goal[0] if isinstance(task, Transport) else task.pos[0]),
+          str(task.goal[1] if isinstance(task, Transport) else task.pos[1]),
+          str(self.navigator.plan(self.pos, task.pos).get_distance()),
+          str(job.priority),
+          str(job.burst_time.seconds/(self.config.stop - self.config.start).seconds*self.slot_num_full/self.slot_num),
+        ]) + '\n')
+
+  def save_schedule(self):    
+    if self.config.save:
+      if len(self.jobs):
+        self.generate_schedule()
+      self.predictor_file_out.write(str((self.now - self.config.start).seconds/(self.config.stop - self.config.start).seconds*self.slot_num_full/self.slot_num) + ':' + str(self.config.day) + ':' + ':'.join([str(s) for s in self.schedule]) + '\n')
+
+  def save(self):
+    if self.config.save:
+      if self.now >= self.next_save:
+        self.next_save += self.config.time_slot
+        self.save_schedule()
+        for i,job in enumerate(self.jobs):
+          t = self.tasks[int(self.jobIDs[i])]
+          self.save_estimation(t, job)
+
   def run_env(self):
     while(self.now < self.config.stop):
       print("Stepping from " + str(self.now) + " to " + str(self.now + self.config.dt))
       # self.predict_schedule()
       self.step()
       self.update_jobs()
+      self.save()
 
-    # self.close()
+    self.close()

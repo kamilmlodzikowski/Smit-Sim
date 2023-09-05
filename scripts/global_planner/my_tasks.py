@@ -294,7 +294,7 @@ def FallGenerator(now, time_horizon, spawn_zones):
     return Fall(deadline, calltime, [x1, y1], urg)
 
 class TaskConfig(object):
-    def __init__(self, task_desc, count, now, time_horizon, seed = -1, random_task_count = 0, deadline_variation = 0, burst_variation = 0):
+    def __init__(self, task_desc, count, now, time_horizon, seed = -1, random_task_count = 0, deadline_variation = 0, burst_variation = 0, randomize_call_time = False):
         self.types = len(task_desc)
         self.count = count
         self.rcount = random_task_count
@@ -309,6 +309,7 @@ class TaskConfig(object):
             self.seed = -1
         self.b_var = burst_variation
         self.d_var = deadline_variation
+        self.random_call = randomize_call_time
 
         # self.task_prob = task_prob
 
@@ -332,6 +333,14 @@ class TaskConfig(object):
             # print(task.goal)
             # sleep(1)
             tasks.append(task)
+
+        if self.random_call:
+            random.seed(time.time())
+            for t in tasks:
+                calltime = self.now + self.time_horizon
+                while calltime > t.deadline - timedelta(seconds = 5):
+                    calltime = self.now + random.random() * self.time_horizon - timedelta(seconds = 5)
+                t.calltime = calltime
 
         if self.d_var:
             random.seed(time.time())
