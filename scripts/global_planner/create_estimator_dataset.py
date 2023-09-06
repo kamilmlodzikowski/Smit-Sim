@@ -4,7 +4,7 @@ from tensorflow.data import Dataset, experimental
 from datetime import datetime
 import sys
 
-SHUFLE_SIZE = 200000000
+SHUFLE_SIZE = 30000000
 
 def main(dirs):
 
