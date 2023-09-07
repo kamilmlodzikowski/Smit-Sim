@@ -9,26 +9,24 @@ import csv
 
 BATCH_SIZE = 32
 epochs = 1
-output_folder = 'estimator/models/' + datetime.now().strftime(f"%Y%m%d_%H%M%S_%f_E{epochs}_B{BATCH_SIZE}")
+output_folder = 'predictor/models/' + datetime.now().strftime(f"%Y%m%d_%H%M%S_%f_E{epochs}_B{BATCH_SIZE}")
 
-def get_estimator_model(input_size = 9):
+def get_predictor_model(window = 2, input_size = 38):
     model = tf.keras.models.Sequential([ 
-    tf.keras.layers.Dense(64, input_shape = (input_size,)),
+    tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64), input_shape = (window, input_size,)),
     tf.keras.layers.LeakyReLU(),
-    tf.keras.layers.Dense(32),
-    tf.keras.layers.LeakyReLU(),
-    tf.keras.layers.Dense(1, activation = 'linear'),
+    tf.keras.layers.Dense(input_size - 2, activation = 'linear'),
     ])
-    assert model.output_shape == (None, 1)
+    assert model.output_shape == (None, input_size - 2)
     return model
 
-def main(ds_file):
+def main(window_size, ds_file):
     # load dataset
     dataset = experimental.load(ds_file)
     dataset = dataset.batch(BATCH_SIZE).prefetch(1)
 
     # create network model
-    model = get_estimator_model()
+    model = get_predictor_model(window = window_size)
 
     # compile model
     model.compile(loss=tf.keras.losses.Huber(), 
@@ -39,20 +37,20 @@ def main(ds_file):
     # train
     history = model.fit(dataset,
         epochs=epochs,
-        callbacks=[tf.keras.callbacks.ModelCheckpoint(output_folder + '/save_{epoch}', save_weights_only = True)],
+        callbacks=[tf.keras.callbacks.ModelCheckpoint(output_folder + f'_W{window_size}' + '/save_{epoch}', save_weights_only = True)],
     )
 
     # save name of used dataset
-    with open(f'{output_folder}/used_dataset.txt', 'w') as write_file:
+    with open(f'{output_folder}_W{window_size}/used_dataset.txt', 'w') as write_file:
         write_file.write(ds_file)
 
     # save model summary
-    with open(f'{output_folder}/model_summary.txt', 'w') as write_file:
+    with open(f'{output_folder}_W{window_size}/model_summary.txt', 'w') as write_file:
         with redirect_stdout(write_file):
             model.summary()
 
     # save history
-    with open(f'{output_folder}/history.csv', 'w', newline = '') as write_file:
+    with open(f'{output_folder}_W{window_size}/history.csv', 'w', newline = '') as write_file:
         writer = csv.writer(write_file, delimiter = ':')
         metrics = list(history.history)
         writer.writerow(metrics)
@@ -70,12 +68,12 @@ def main(ds_file):
     plt.plot(range(1, epochs + 1), history.history['mae'], label='mae')
     plt.plot(range(1, epochs + 1), history.history['mse'], label='mse')
     plt.legend()
-    plt.savefig(output_folder + '/history.eps')
-    plt.savefig(output_folder + '/history.png')
+    plt.savefig(output_folder + f'_W{window_size}/history.eps')
+    plt.savefig(output_folder + f'_W{window_size}/history.png')
     # plt.show()
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print('Pass dataset directory as an argument!')
+    if len(sys.argv) < 3:
+        print('Pass window size (int) and dataset directory as an argument!')
     else:
-        main(sys.argv[1])
+        main(int(sys.argv[1]), sys.argv[2])
