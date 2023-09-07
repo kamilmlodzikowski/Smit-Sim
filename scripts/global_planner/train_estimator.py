@@ -8,7 +8,7 @@ from contextlib import redirect_stdout
 import csv
 
 BATCH_SIZE = 32
-epochs = 1
+epochs = 50
 output_folder = 'estimator/models/' + datetime.now().strftime(f"%Y%m%d_%H%M%S_%f_E{epochs}_B{BATCH_SIZE}")
 
 def get_estimator_model(input_size = 9):

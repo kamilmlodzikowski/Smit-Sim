@@ -8,7 +8,7 @@ from contextlib import redirect_stdout
 import csv
 
 BATCH_SIZE = 32
-epochs = 1
+epochs = 50
 output_folder = 'predictor/models/' + datetime.now().strftime(f"%Y%m%d_%H%M%S_%f_E{epochs}_B{BATCH_SIZE}")
 
 def get_predictor_model(window = 2, input_size = 38):
