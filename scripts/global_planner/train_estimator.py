@@ -11,12 +11,12 @@ BATCH_SIZE = 32
 epochs = 50
 output_folder = 'estimator/models/' + datetime.now().strftime(f"%Y%m%d_%H%M%S_%f_E{epochs}_B{BATCH_SIZE}")
 
-def get_estimator_model(input_size = 10):
+def get_estimator_model(input_size = 9):
     model = tf.keras.models.Sequential([ 
     tf.keras.layers.Dense(64, input_shape = (input_size,)),
-    tf.keras.layers.LeakyRelu(),
+    tf.keras.layers.LeakyReLU(),
     tf.keras.layers.Dense(32),
-    tf.keras.layers.LeakyRelu(),
+    tf.keras.layers.LeakyReLU(),
     tf.keras.layers.Dense(1, activation = 'linear'),
     ])
     assert model.output_shape == (None, 1)
@@ -28,7 +28,7 @@ def main(ds_file):
     dataset = dataset.batch(BATCH_SIZE).prefetch(1)
 
     # create network model
-    estimator = get_estimator_model()
+    model = get_estimator_model()
 
     # compile model
     model.compile(loss=tf.keras.losses.Huber(), 
@@ -78,8 +78,4 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         print('Pass dataset directory as an argument!')
     else:
-        main(argv[1])
-
-
-
-
+        main(sys.argv[1])
