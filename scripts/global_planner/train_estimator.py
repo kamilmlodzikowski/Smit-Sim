@@ -13,11 +13,18 @@ output_folder = 'estimator/models/' + datetime.now().strftime(f"%Y%m%d_%H%M%S_%f
 
 def get_estimator_model(input_size = 9):
     model = tf.keras.models.Sequential([ 
-    tf.keras.layers.Dense(64, input_shape = (input_size,)),
+    tf.keras.layers.Dense(32, input_shape = (input_size,)),
+    tf.keras.layers.LeakyReLU(),
+    tf.keras.layers.Dense(64),
+    tf.keras.layers.LeakyReLU(),
+    tf.keras.layers.Dense(128),
+    tf.keras.layers.LeakyReLU(),
+    tf.keras.layers.Dense(64),
     tf.keras.layers.LeakyReLU(),
     tf.keras.layers.Dense(32),
     tf.keras.layers.LeakyReLU(),
-    tf.keras.layers.Dense(1, activation = 'linear'),
+    tf.keras.layers.Dense(1),
+    tf.keras.layers.Activation('sigmoid'),
     ])
     assert model.output_shape == (None, 1)
     return model

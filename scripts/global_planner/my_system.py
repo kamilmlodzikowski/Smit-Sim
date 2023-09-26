@@ -50,10 +50,11 @@ class System():
     # ])
     # self.predictor.load_weights(self.config.predictor_path)
     
-    self.slot_num = int(self.config.time_horizon/self.config.time_slot)
-    self.slot_num_full = int((self.config.stop - self.config.start)/self.config.time_slot)
-    self.time_to_horizon = self.slot_num_full/self.slot_num/(self.config.stop - self.config.start).seconds
-    self.schedule_shape = (3 * self.slot_num)
+    self.slot_count_horizon = int(self.config.time_horizon/self.config.time_slot)
+    self.slot_count_day = int((self.config.stop - self.config.start)/self.config.time_slot)
+    self.time_to_horizon = self.slot_count_day/self.slot_count_horizon/(self.config.stop - self.config.start).seconds
+    self.time_to_slot = self.slot_count_day/(self.config.stop - self.config.start).seconds
+    self.schedule_shape = (3 * self.slot_count_horizon)
     self.schedule = np.zeros(self.schedule_shape)
     self.navigator = ROSNavigation()
     
@@ -244,7 +245,7 @@ class System():
 
   def generate_schedule(self):
     self.schedule = np.zeros(self.schedule_shape)
-    for s in range(self.slot_num):
+    for s in range(self.slot_count_horizon):
       start = self.now + s*self.config.time_slot
       stop = self.now + (s+1)*self.config.time_slot
       for i,j in enumerate(self.jobs):
@@ -264,7 +265,7 @@ class System():
   #   self.empty_jobs = []
   #   self.predicted_schedule = np.array(self.predictor(np.expand_dims(np.expand_dims(np.concatenate((np.array([(self.now - self.config.start).seconds*self.time_to_horizon, self.config.day]), self.schedule)), axis = 0), axis = 0))[0])
 
-  #   for s in range(self.slot_num - 1):
+  #   for s in range(self.slot_count_horizon - 1):
   #     task_diff = round(self.predicted_schedule[s*3] - self.schedule[(s+1)*3])
   #     if task_diff > 0:
   #       print(f'Adding {task_diff} empty_tasks')
@@ -286,23 +287,23 @@ class System():
   def save_estimation(self, task, job):
     if self.config.save:
       self.estimator_file_out.write(':'.join([
-          str((self.now - self.config.start).seconds/(self.config.stop - self.config.start).seconds*self.slot_num_full/self.slot_num),
+          str((self.now - self.config.start).seconds*self.time_to_horizon),
           str(self.config.day),
-          str((task.deadline - self.config.start).seconds/(self.config.stop - self.config.start).seconds*self.slot_num_full/self.slot_num),
+          str((task.deadline - self.config.start).seconds*self.time_to_horizon),
           str(task.pos[0]),
           str(task.pos[1]),
           str(task.goal[0] if isinstance(task, Transport) else task.pos[0]),
           str(task.goal[1] if isinstance(task, Transport) else task.pos[1]),
           str(self.navigator.plan(self.pos, task.pos).get_distance()),
           str(job.priority),
-          str(job.burst_time.seconds/(self.config.stop - self.config.start).seconds*self.slot_num_full/self.slot_num),
+          str(job.burst_time.seconds*self.time_to_slot),
         ]) + '\n')
 
   def save_schedule(self):    
     if self.config.save:
       if len(self.jobs):
         self.generate_schedule()
-      self.predictor_file_out.write(str((self.now - self.config.start).seconds/(self.config.stop - self.config.start).seconds*self.slot_num_full/self.slot_num) + ':' + str(self.config.day) + ':' + ':'.join([str(s) for s in self.schedule]) + '\n')
+      self.predictor_file_out.write(str((self.now - self.config.start).seconds*self.time_to_horizon) + ':' + str(self.config.day) + ':' + ':'.join([str(s) for s in self.schedule]) + '\n')
 
   def save(self):
     if self.config.save:

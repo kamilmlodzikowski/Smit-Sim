@@ -13,7 +13,7 @@ if __name__ == '__main__':
 		env = System(tc, sc)
 		env.run_env()
 
-		for j in range(25):
+		for j in range(50):
 			tc.rcount = 30
 			tc.d_var = 0.5
 			tc.b_var = 0.5

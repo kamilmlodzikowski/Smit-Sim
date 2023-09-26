@@ -13,7 +13,9 @@ output_folder = 'predictor/models/' + datetime.now().strftime(f"%Y%m%d_%H%M%S_%f
 
 def get_predictor_model(window = 2, input_size = 38):
     model = tf.keras.models.Sequential([ 
-    tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64), input_shape = (window, input_size,)),
+    tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64, return_sequences = True), input_shape = (window, input_size,)),
+    tf.keras.layers.LeakyReLU(),
+    tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(32)),
     tf.keras.layers.LeakyReLU(),
     tf.keras.layers.Dense(input_size - 2, activation = 'linear'),
     ])
