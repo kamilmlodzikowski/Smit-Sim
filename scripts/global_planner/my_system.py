@@ -299,7 +299,7 @@ class System():
           str(task.goal[1] if isinstance(task, Transport) else task.pos[1]),
           str(self.navigator.plan(self.pos, task.pos).get_distance()),
           str(job.priority),
-          str(job.burst_time.seconds*self.time_to_slot),
+          str(job.burst_time.seconds*self.time_to_horizon),
         ]) + '\n')
 
   def save_schedule(self):    
