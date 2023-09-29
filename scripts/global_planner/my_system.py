@@ -13,6 +13,7 @@ from RequestTable import RequestTable, ScheduleRules, ScheduleRule, TaskerReqest
 import rospy
 from smit_matlab_sim.srv import GetRoomsAndDoors 
 import tensorflow as tf
+from train_estimator import get_estimator_model
 
 class SystemConfig(object):
   def __init__(self):
@@ -37,11 +38,7 @@ class System():
     self.tasks = []
     self.now = self.config.start
 
-    self.estimator = tf.keras.models.Sequential([
-      tf.keras.layers.Dense(64, activation = 'relu'),
-      tf.keras.layers.Dense(32, activation = 'relu'),
-      tf.keras.layers.Dense(1, activation = 'linear'),
-    ])
+    self.estimator = get_estimator_model()
     self.estimator.load_weights(self.config.estimator_path)
 
     # self.predictor = tf.keras.models.Sequential([
@@ -143,7 +140,7 @@ class System():
     self.time_eval = (self.now - self.config.start).seconds*self.time_to_horizon
     # update existing job durations
     updated_jobs = False
-    if len(self.jobs) > 0 and self.previous != self.current:
+    if len(self.jobs) > 0 and self.previous != self.current and self.previous != None:
       updated_jobs = True
       for i,job in enumerate(self.jobs):
         t = self.tasks[int(self.jobIDs[i])]
@@ -325,5 +322,5 @@ class System():
       self.update_jobs()
       self.save()
 
-    print(f'Scheduled: {len(self.out.scheduled)}, Rejected: {self.out.rejected}')
+    print(f'Scheduled: {len(self.out.scheduled)}, Rejected: {len(self.out.rejected)}')
     self.close()
