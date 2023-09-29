@@ -170,7 +170,7 @@ class System():
     for t in self.tasks:
       if t.getID() in self.jobIDs:
         continue
-      elif t.calltime < self.now:
+      elif t.calltime < self.now and t.do_estimate():
         new_jobs = True
         self.jobIDs.append(t.getID())
         sr = ScheduleRules()
@@ -200,19 +200,22 @@ class System():
       self.out, self.profit = self.rt.schedule_with_priority()
 
   def step(self):
+    # print(self.jobIDs)
     # select action
     j = None
     self.previous = self.current
     if len(self.jobs) > 0:
       if self.current or self.current == 0:
-        if not self.tasks[int(self.jobIDs[self.current])].preemptive:
+        if not self.tasks[int(self.jobIDs[self.current])].preemptive or self.jobs[self.current].deadline > self.now:
           j = self.jobs[self.current]
-      else:
+        else:
+          self.current = None
+      if self.current == None:
         for job in self.out.scheduled:
           if job.start <= self.now + self.config.dt and job.stop > self.now:
             j = job
             self.current = self.jobIDs.index(j.jobID)
-            print(f'Current: {self.current}')
+            print(f'Current: {self.jobIDs[self.current]}')
             break
 
     # perform action
@@ -322,4 +325,5 @@ class System():
       self.update_jobs()
       self.save()
 
+    print(f'Scheduled: {len(self.out.scheduled)}, Rejected: {self.out.rejected}')
     self.close()
