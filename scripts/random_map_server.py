@@ -798,6 +798,7 @@ class RandomMapServerWithPedestrians(object):
 		config['regen'] = [self.wall_w, self.ext_wall, self.ext_ent, self.min_room_dim, self.door_w, self.door_to_wall_min, self.max_depth]
 		config['prob'] = [self.prob_room, self.prob_door, self.prob_ent]
 		config['ped'] = [self.num_p, self.p_min_sp, self.p_max_sp, self.p_rad, self.foot_rad, self.p_def_beh]
+		config['furn'] = [self.furn_gen, self.furn_s_min, self.furn_s_max, self.furn_n_max, self.furn_ob_n, self.furn_ob_dis]
 
 		config['p_pos'] = [[float(p.pos[0]), float(p.pos[1])] for p in self.p]
 		config['p_points'] = [[list(point) for point in p.points] for p in self.p]
@@ -808,6 +809,8 @@ class RandomMapServerWithPedestrians(object):
 		config['rooms'] =  self.rooms
 		config['doors'] =  self.doors
 		config['ext_door'] = self.ext_door
+		config['furniture'] = self.furniture
+		config['objects'] = self.objects
 
 		config['map'] = list(self.map.reshape(-1))
 		config['prob_map'] = list(self.prob_map.reshape(-1))
@@ -819,6 +822,7 @@ class RandomMapServerWithPedestrians(object):
 		self.wall_w, self.ext_wall, self.ext_ent, self.min_room_dim, self.door_w, self.door_to_wall_min, self.max_depth = config['regen']
 		self.prob_room, self.prob_door, self.prob_ent = config['prob']
 		self.num_p, self.p_min_sp, self.p_max_sp, self.p_rad, self.foot_rad, self.p_def_beh = config['ped']
+		self.furn_gen, self.furn_s_min, self.furn_s_max, self.furn_n_max, self.furn_ob_n, self.furn_ob_dis = config['furn']
 
 		del self.p
 		del self.p_sp
@@ -832,6 +836,8 @@ class RandomMapServerWithPedestrians(object):
 		self.rooms = config['rooms']
 		self.doors = config['doors']
 		self.ext_door = config['ext_door']
+		self.furniture = config['furniture']
+		self.objects = config['objects']
 
 		self.map = np.array(config['map']).reshape((self.h, self.w))
 		self.prob_map = np.array(config['prob_map']).reshape((self.h, self.w))
