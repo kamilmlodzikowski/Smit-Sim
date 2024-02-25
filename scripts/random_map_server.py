@@ -5,6 +5,7 @@ import argparse
 import math
 from statistics import mean
 import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle, Circle
 from PIL import Image
 from datetime import datetime
 from enum import IntEnum
@@ -178,6 +179,13 @@ class RandomMapServerWithPedestrians(object):
 			self.p_sp = []
 			self.p_beh = []
 
+		self.furn_gen = args.generate_furniture
+		self.furn_s_min = args.furniture_size_min/self.res
+		self.furn_s_max = args.furniture_size_max/self.res
+		self.furn_n_max = args.furniture_num_max
+		self.furn_ob_n = args.furniture_object_num
+		self.furn_ob_dis = args.furniture_object_distance/self.res
+
 		Y, X = np.ogrid[-self.foot_rad:self.foot_rad+1, -self.foot_rad:self.foot_rad+1]
 		dist_from_center = np.sqrt((X)**2 + (Y)**2)
 		self.foot_mask = dist_from_center <= self.foot_rad
@@ -185,6 +193,8 @@ class RandomMapServerWithPedestrians(object):
 
 		self.rooms = []
 		self.doors = []
+		self.furniture = []
+		self.objects = []
 		self.ext_door = {"id": 0, "x":[], "y":[]}
 		self.regenerate_map()
 
@@ -213,6 +223,14 @@ class RandomMapServerWithPedestrians(object):
 		if self.ext_wall and self.ext_ent:
 			self.add_external_door()
 
+		# generate furniture
+		if self.furn_gen:
+			for room in self.rooms:
+				self.generate_furniture_in_room(room)
+			for furn in self.furniture:
+				print(f'Generating objects on furniture {furn["id"]}')
+				self.generate_objects_on_furniture(furn)
+
 		# create probability maps
 		self.regenerate_probability_map()
 
@@ -230,6 +248,9 @@ class RandomMapServerWithPedestrians(object):
 		if self.ext_wall and self.ext_ent:
 			d = self.ext_door
 			self.prob_map[d["y"][0]:d["y"][1], d["x"][0]:d["x"][1]] = self.prob_ent
+		if self.furn_gen:
+			for f in self.furniture:
+				self.prob_map[f["y"][0]:f["y"][1], f["x"][0]:f["x"][1]] = 0
 		self.refresh_prob_maps()
 
 	def refresh_prob_maps(self):
@@ -433,6 +454,102 @@ class RandomMapServerWithPedestrians(object):
 						r["doors"].append(0)
 						break
 
+	def generate_furniture_in_room(self, r):
+		print(f'Generating furniture in room {r["id"]}')
+		hmin = r['y'][0]
+		hmax = r['y'][1]
+		hhalf = int(hmin + (hmax - hmin)/2)
+		wmin = r['x'][0]
+		wmax = r['x'][1]
+		whalf = int(wmin + (wmax - wmin)/2)
+		# define four corners where furniture can be
+		available_spaces = [
+			[hmin, int(hmin + (hmax - hmin)/2), wmin, int(wmin + (wmax - wmin)/2)],
+			[int(hmin + (hmax - hmin)/2), hmax, wmin, int(wmin + (wmax - wmin)/2)],
+			[hmin, int(hmin + (hmax - hmin)/2), int(wmin + (wmax - wmin)/2), wmax],
+			[int(hmin + (hmax - hmin)/2), hmax, int(wmin + (wmax - wmin)/2), wmax],
+		]
+		# print(f'Available spaces {available_spaces}')
+
+		# remove spaces blocked by doors
+		for d_id in r['doors']:
+			# get door by id
+			if d_id == 0:
+				d = self.ext_door
+			else:
+				d = self.doors[- d_id - 1]
+
+			horizontal = d['x'][1] - d['x'][0] == self.door_w
+			# doors are horizontal
+			if horizontal:
+				available_spaces[0][3] = min([available_spaces[0][3], d['x'][0]])
+				available_spaces[1][3] = min([available_spaces[1][3], d['x'][0]])
+				available_spaces[2][2] = max([available_spaces[2][2], d['x'][1]])
+				available_spaces[3][2] = max([available_spaces[3][2], d['x'][1]])
+			# doors are vertical
+			else:
+				available_spaces[0][1] = min([available_spaces[0][1], d['y'][0]])
+				available_spaces[2][1] = min([available_spaces[2][1], d['y'][0]])
+				available_spaces[1][0] = max([available_spaces[1][0], d['y'][1]])
+				available_spaces[3][0] = max([available_spaces[3][0], d['y'][1]])
+		# print(f'Available spaces {available_spaces}')
+
+		# create furniture
+		num_of_furniture = random.randint(0, self.furn_n_max)
+		maximum_tries = 3*num_of_furniture
+		print(f'Generating {num_of_furniture} furnitures')
+		while num_of_furniture:
+			if maximum_tries == 0:
+				print('Number of maximum tries exceeded, aborting.')
+				return
+			furn_w = random.uniform(self.furn_s_min, self.furn_s_max)
+			furn_h = random.uniform(self.furn_s_min, self.furn_s_max)
+
+			generated = False
+			for i,s in enumerate(available_spaces):
+				# check for space
+				if furn_w <= s[3] - s[2] and furn_h <= s[1] - s[0]:
+					self.furniture.append({
+						'id': len(self.furniture) + 1000,
+						'x': [s[2], int(s[2] + furn_w)],
+						'y': [s[0], int(s[0] + furn_h)],
+						'height': 1,
+						'room': r['id']
+					})
+					self.map[s[0]:int(s[0]+furn_h), s[2]:int(s[2]+furn_w)] = 1
+					print(f'Furniture {self.furniture[-1]["id"]}')
+					generated = True
+					break
+
+			if generated:
+				num_of_furniture -= 1
+				available_spaces.pop(i)
+			maximum_tries -= 1
+
+	def generate_objects_on_furniture(self, furn, retry = 0):
+		if retry == 10:
+			print('Aborting due to potentialy not enough space.')
+			return
+		h_range = furn['y'][1] - furn['y'][0]
+		w_range = furn['x'][1] - furn['x'][0]
+
+		generated_objects = []
+		for i in range(self.furn_ob_n):
+			generated_objects.append(np.array([h_range*random.random(), w_range*random.random()]))
+
+		for i in range(len(generated_objects) - 1):
+			for j in range(i + 1, len(generated_objects)):
+				if np.linalg.norm(generated_objects[i] - generated_objects[j]) < self.furn_ob_dis:
+					print(generated_objects[i])
+					print(generated_objects[j])
+					print(np.linalg.norm(generated_objects[i] - generated_objects[j]))
+					self.generate_objects_on_furniture(furn, retry = retry + 1)
+					return
+
+		for o in generated_objects:
+			self.objects.append({'id': len(self.objects) + 10000, "x": furn['x'][0] + o[1], "y": furn['y'][0] + o[0], "z": furn['height']})
+			print(f'Added object {self.objects[-1]["id"]} at {o}')
+
 	def set_room_priority(self, p, id):
 		if id > 0:
 			for r in self.rooms:
@@ -582,39 +699,66 @@ class RandomMapServerWithPedestrians(object):
 					pass
 		return np.maximum(m, self.map)
 
-	def plot(self, plot_rooms = False, plot_peds = False, use_ped_map = False):
+	def plot(self, plot_spaces = False, plot_peds = False, use_ped_map = False, add_text = True):
 		pmap = self.map
 		if use_ped_map:
 			pmap = self.get_pedmap()
 		rows, cols = np.shape(self.map)
-		plt.figure(figsize = (2,2))
+		# plt.figure(figsize = (2,2))
+		fig, ax = plt.subplots(figsize = (5,5))
 		x = []
 		y = []
-		for row in range(rows):
-			for col in range(cols):
-				if  pmap[row, col]:
-					x.append(col)
-					y.append(row)
-		plt.scatter(x, y, color = 'black', marker = 's', s = 1)
+		ax.add_patch(Rectangle((0, 0), cols, rows, facecolor = 'black'))
+		for r in self.rooms:
+			ax.add_patch(Rectangle((r['x'][0], r['y'][0]), r['x'][1] - r['x'][0], r['y'][1] - r['y'][0], facecolor = 'white'))
+		for r in self.doors:
+			ax.add_patch(Rectangle((r['x'][0], r['y'][0]), r['x'][1] - r['x'][0], r['y'][1] - r['y'][0], facecolor = 'white'))
+		r =  self.ext_door
+		ax.add_patch(Rectangle((r['x'][0], r['y'][0]), r['x'][1] - r['x'][0], r['y'][1] - r['y'][0], facecolor = 'white'))
+		# for row in range(rows):
+		# 	for col in range(cols):
+		# 		if  pmap[row, col]:
+		# 			x.append(col)
+		# 			y.append(row)
+		# ax.scatter(x, y, color = 'black', marker = 's', s = 1)
 		if self.num_p > 0 and plot_peds:
 			for i in range(self.num_p):
 				if self.p_beh[i] == PedestrianBehaviour.CIRCLE:
-					plt.plot(self.p_path[i].T[0], self.p_path[i].T[1], color = 'blue')
-					plt.plot(self.p[i].pos[0], self.p[i].pos[1], color = 'blue', marker = 'o', markersize = 1)
-					plt.text(self.p_path[i].T[0][0], self.p_path[i].T[1][0], str(i), color = 'blue')
-					plt.text(self.p_path[i].T[0][-1], self.p_path[i].T[1][-1], str(i), color = 'blue')
-		if plot_rooms:
+					ax.plot(self.p_path[i].T[0], self.p_path[i].T[1], color = 'blue')
+					ax.plot(self.p[i].pos[0], self.p[i].pos[1], color = 'blue', marker = 'o', markersize = 1)
+					if add_text:
+						ax.text(self.p_path[i].T[0][0], self.p_path[i].T[1][0], str(i), color = 'blue')
+						ax.text(self.p_path[i].T[0][-1], self.p_path[i].T[1][-1], str(i), color = 'blue')
+		if self.furn_gen:
+			for r in self.furniture:
+				ax.add_patch(Rectangle((r['x'][0], r['y'][0]), r['x'][1] - r['x'][0], r['y'][1] - r['y'][0], facecolor = 'black'))
+			for d in self.objects:
+				# ax.scatter(d["x"], d["y"], color = "blue")
+				ax.add_patch(Circle([d["x"], d["y"]], radius = 1, facecolor = "blue"))
+				if add_text:
+					ax.text(d["x"], d["y"] + 1, str(d["id"]), color = 'blue')
+		if plot_spaces:
 			for r in self.rooms:
-				plt.plot(r["x"], r["y"], color = "red")
-				plt.text(mean(r["x"]), mean(r["y"]), str(r["id"]), color = 'red')
+				ax.plot(r["x"], r["y"], color = "red")
+				if add_text:
+					ax.text(mean(r["x"]), mean(r["y"]), str(r["id"]), color = 'red')
 			for d in self.doors:
-				plt.plot(d["x"], d["y"], color = "green")
-				plt.text(mean(d["x"]), mean(d["y"]), str(d["id"]), color = 'green')
+				ax.plot(d["x"], d["y"], color = "green")
+				if add_text:
+					ax.text(mean(d["x"]), mean(d["y"]), str(d["id"]), color = 'green')
 			if self.ext_wall and self.ext_ent:
-				d =  self.ext_door
-				plt.plot(d["x"], d["y"], color = "green")
-				plt.text(mean(d["x"]), mean(d["y"]), str(d["id"]), color = 'green')
+				r =  self.ext_door
+				ax.plot(r["x"], r["y"], color = "green")
+				if add_text:
+					ax.text(mean(r["x"]), mean(r["y"]), str(r["id"]), color = 'green')
+			if self.furn_gen:
+				for r in self.furniture:
+					ax.plot(r["x"], r["y"], color = "magenta")
+					if add_text:
+						ax.text(mean(r["x"]), mean(r["y"]), str(r["id"]), color = 'magenta')
+
 		plt.grid(b=None)
+		plt.plot(0, 0, color = 'black')
 		plt.show()
 
 	def plot_probability_map(self):
@@ -734,6 +878,14 @@ if __name__ == '__main__':
 	parser.add_argument("--pedestrian_foot_radius", type = float, default = 0.1)
 	parser.add_argument("--pedestrian_behaviour", type = int, default = 1)
 
+	# furniture arguments
+	parser.add_argument("--generate_furniture", type = bool, default = True)
+	parser.add_argument("--furniture_size_min", type = float, default = 0.5)
+	parser.add_argument("--furniture_size_max", type = float, default = 1)
+	parser.add_argument("--furniture_num_max", type = int, default = 2)
+	parser.add_argument("--furniture_object_num", type = int, default = 2)
+	parser.add_argument("--furniture_object_distance", type = float, default = 0.1)
+
 	# node arguments
 	parser.add_argument("--publish", type = bool, default = True)
 	parser.add_argument("--publish_rate", type = int, default = 100)
@@ -755,9 +907,11 @@ if __name__ == '__main__':
 		rospy.spin()
 	except:
 		pass
+	# print(node.rms.rooms)
 	# node.rms.plot()
 	# node.rms.plot(use_ped_map = True)
 	# node.rms.plot(plot_peds = True)
-	# node.rms.plot(plot_rooms = True)
+	# node.rms.plot(plot_spaces = True)
+	# node.rms.plot(plot_spaces = False, add_text = False)
 	# node.rms.plot_probability_map()
 	# node.rms.save_map_to_pgm('lstm', False)
