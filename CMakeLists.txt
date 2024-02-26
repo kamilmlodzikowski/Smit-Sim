@@ -55,6 +55,8 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   Room.msg
+  Furniture.msg
+  Object.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -65,6 +67,10 @@ add_service_files(
   GetRoomsAndDoors.srv
   SetAreaPriority.srv
   FileOperation.srv
+  RemoveObject.srv
+  AddObject.srv
+  GetFurniture.srv
+  GetObjects.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -78,6 +84,7 @@ add_service_files(
 generate_messages(
   DEPENDENCIES
   std_msgs  # Or other packages containing msgs
+  geometry_msgs
 )
 
 ################################################

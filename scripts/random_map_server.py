@@ -16,8 +16,9 @@ from linear_path import LinearPath
 import rospy
 from std_msgs.msg import Float64MultiArray
 from nav_msgs.msg import OccupancyGrid
-from smit_matlab_sim.srv import Step, AddPedestrian, AddPedestrianResponse, GetRoomsAndDoors, GetRoomsAndDoorsResponse, SetAreaPriority, FileOperation
-from smit_matlab_sim.msg import Room
+from geometry_msgs.msg import Pose, Point, Quaternion
+from smit_matlab_sim.srv import Step, AddPedestrian, AddPedestrianResponse, GetRoomsAndDoors, GetRoomsAndDoorsResponse, SetAreaPriority, FileOperation, RemoveObject, RemoveObjectResponse, AddObject, AddObjectResponse, GetFurniture, GetFurnitureResponse, GetObjects, GetObjectsResponse
+from smit_matlab_sim.msg import Room, Furniture, Object
 from std_srvs.srv import Empty
 
 class RandomMapServerNode(object):
@@ -33,6 +34,10 @@ class RandomMapServerNode(object):
 		self.srv_set_priority = rospy.Service('set_area_priority', SetAreaPriority, self.set_priority)
 		self.srv_to_file = rospy.Service('save_config', FileOperation, self.save_to_file)
 		self.srv_from_file = rospy.Service('load_config', FileOperation, self.load_from_file)
+		self.srv_remove_object = rospy.Service('remove_object', RemoveObject, self.remove_object)
+		self.srv_add_object = rospy.Service('add_object', AddObject, self.add_object)
+		self.srv_get_furniture = rospy.Service('get_furniture', GetFurniture, self.get_furniture)
+		self.srv_get_objects = rospy.Service('get_objects', GetObjects, self.get_objects)
 
 		self.publish = args.publish
 		self.rate = args.publish_rate
@@ -127,6 +132,18 @@ class RandomMapServerNode(object):
 			del self.timer
 			self.timer = rospy.Timer(rospy.Duration(1.0/self.rate), self.publish_map)
 
+	def remove_object(self, req):
+		return RemoveObjectResponse(self.rms.remove_object(req.id))
+
+	def add_object(self, req):
+		height, success = self.rms.add_object(req.id, req.pose.position.x/self.rms.res, req.pose.position.y/self.rms.res)
+		return AddObjectResponse(height, success)
+
+	def get_furniture(self, req):
+		return GetFurnitureResponse([Furniture(f['id'], f['room'], [p*self.rms.res for p in f["x"]], [p*self.rms.res for p in f["y"]], f['height']) for f in self.rms.furniture])
+
+	def get_objects(self, req):
+		return GetObjectsResponse([Object(o['id'], Pose(Point(o['x']*self.rms.res, o['y']*self.rms.res, o['z']), Quaternion(0, 0, 0, 1))) for o in self.rms.objects])
 
 class PedestrianBehaviour(IntEnum):
 	CIRCLE = 1
@@ -517,7 +534,8 @@ class RandomMapServerWithPedestrians(object):
 						'room': r['id']
 					})
 					self.map[s[0]:int(s[0]+furn_h), s[2]:int(s[2]+furn_w)] = 1
-					print(f'Furniture {self.furniture[-1]["id"]}')
+					# print(f'Furniture {self.furniture[-1]["id"]}')
+					print(f'Furniture {self.furniture[-1]}')
 					generated = True
 					break
 
@@ -683,6 +701,29 @@ class RandomMapServerWithPedestrians(object):
 		self.num_p += 1
 
 		return True
+
+	def remove_object(self, o_id):
+		for i,o in enumerate(self.objects):
+			if o['id'] == o_id:
+				print(f'Removing object {o}')
+				self.objects.pop(i)
+				return True
+		return False
+
+	def add_object(self, o_id, x, y):
+		for o in self.objects:
+			if o['id'] == o_id:
+				return 0, False
+		for i, r in enumerate(self.rooms):
+			if x >= r['x'][0] and x <= r['x'][1] and y >= r['y'][0] and y <= r['y'][1]:
+				for j, f in enumerate(self.furniture):
+					if f['room'] == r['id']:
+						if x >= f['x'][0] and x <= f['x'][1] and y >= f['y'][0] and y <= f['y'][1]:
+							self.objects.append({'id': o_id, 'x': x, 'y': y, 'z': f['height']})
+							return f['height'], True
+				self.objects.append({'id': o_id, 'x': x, 'y': y, 'z': 0})
+				return 0, True
+		return 0, False
 
 	def get_pedmap(self):
 		m = np.zeros((self.h, self.w), dtype=np.bool)
@@ -909,12 +950,13 @@ if __name__ == '__main__':
 	node = RandomMapServerNode(args)
 	# for r in node.rms.rooms:
 	# 	print(r)
+	node.rms.plot()
 	try:
 		rospy.spin()
 	except:
 		pass
 	# print(node.rms.rooms)
-	# node.rms.plot()
+	node.rms.plot()
 	# node.rms.plot(use_ped_map = True)
 	# node.rms.plot(plot_peds = True)
 	# node.rms.plot(plot_spaces = True)
