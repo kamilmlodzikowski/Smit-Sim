@@ -17,7 +17,7 @@ import rospy
 from std_msgs.msg import Float64MultiArray
 from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Pose, Point, Quaternion
-from smit_matlab_sim.srv import Step, AddPedestrian, AddPedestrianResponse, GetRoomsAndDoors, GetRoomsAndDoorsResponse, SetAreaPriority, FileOperation, RemoveObject, RemoveObjectResponse, AddObject, AddObjectResponse, GetFurniture, GetFurnitureResponse, GetObjects, GetObjectsResponse
+from smit_matlab_sim.srv import Step, AddPedestrian, AddPedestrianResponse, GetRoomsAndDoors, GetRoomsAndDoorsResponse, SetAreaPriority, FileOperation, RemoveObject, RemoveObjectResponse, AddObject, AddObjectResponse, GetFurniture, GetFurnitureResponse, GetObjects, GetObjectsResponse, GetObjectPose, GetObjectPoseResponse
 from smit_matlab_sim.msg import Room, Furniture, Object
 from std_srvs.srv import Empty
 
@@ -38,6 +38,7 @@ class RandomMapServerNode(object):
 		self.srv_add_object = rospy.Service('add_object', AddObject, self.add_object)
 		self.srv_get_furniture = rospy.Service('get_furniture', GetFurniture, self.get_furniture)
 		self.srv_get_objects = rospy.Service('get_objects', GetObjects, self.get_objects)
+		self.srv_get_object_pose = rospy.Service('get_object_pose', GetObjectPose, self.get_object_pose)
 
 		self.publish = args.publish
 		self.rate = args.publish_rate
@@ -144,6 +145,13 @@ class RandomMapServerNode(object):
 
 	def get_objects(self, req):
 		return GetObjectsResponse([Object(o['id'], Pose(Point(o['x']*self.rms.res, o['y']*self.rms.res, o['z']), Quaternion(0, 0, 0, 1))) for o in self.rms.objects])
+
+	def get_object_pose(self, req):
+		o, success = self.rms.get_object(req.id)
+		if success:
+			return GetObjectsResponse(Pose(Point(o['x']*self.rms.res, o['y']*self.rms.res, o['z']), Quaternion(0, 0, 0, 1)), success)
+		else:
+			return GetObjectsResponse(Pose(), success)
 
 class PedestrianBehaviour(IntEnum):
 	CIRCLE = 1
@@ -567,6 +575,12 @@ class RandomMapServerWithPedestrians(object):
 		for o in generated_objects:
 			self.objects.append({'id': len(self.objects) + 10000, "x": furn['x'][0] + o[1], "y": furn['y'][0] + o[0], "z": furn['height']})
 			print(f'Added object {self.objects[-1]["id"]} at {o}')
+
+	def get_object(self, o_id):
+		for o in self.objects:
+			if o['id'] == o_id:
+				return o, True
+		return None, False
 
 	def set_room_priority(self, p, id):
 		if id > 0:

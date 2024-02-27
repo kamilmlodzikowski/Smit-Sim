@@ -11,7 +11,7 @@ from linear_path_ROS_planner import ROSNavigation
 sys.path.insert(0, '../../../tasker/src/TaskER/')
 from RequestTable import RequestTable, ScheduleRules, ScheduleRule, TaskerReqest
 import rospy
-from smit_matlab_sim.srv import GetRoomsAndDoors 
+from smit_matlab_sim.srv import GetRoomsAndDoors, GetFurniture, GetObjects
 import tensorflow as tf
 from train_estimator import get_estimator_model
 
@@ -38,8 +38,9 @@ class System():
     self.tasks = []
     self.now = self.config.start
 
-    self.estimator = get_estimator_model()
-    self.estimator.load_weights(self.config.estimator_path)
+    if self.config.use_estimator or self.config.save:
+      self.estimator = get_estimator_model()
+      self.estimator.load_weights(self.config.estimator_path)
 
     # self.predictor = tf.keras.models.Sequential([
     #   tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64)),
@@ -58,9 +59,22 @@ class System():
     rospy.wait_for_service('/get_rooms_and_doors')
     doors_client = rospy.ServiceProxy('/get_rooms_and_doors', GetRoomsAndDoors)
     doors_response = doors_client()
-    print(doors_response)
+    # print(doors_response)
     self.spawn_zones = [((room.x[0] + self.config.robot_radius, room.x[1] - self.config.robot_radius), (room.y[0] + self.config.robot_radius, room.y[1] - self.config.robot_radius)) for room in doors_response.rooms]
-    print(self.spawn_zones)
+    # print(self.spawn_zones)
+    
+    rospy.wait_for_service('/get_furniture')
+    furn_client = rospy.ServiceProxy('/get_furniture', GetFurniture)
+    furn_response = furn_client()
+    # print(furn_response)
+    self.forbidden_zones = [((room.x[0] - self.config.robot_radius, room.x[1] + self.config.robot_radius), (room.y[0] - self.config.robot_radius, room.y[1] + self.config.robot_radius)) for room in furn_response.furniture]
+    # print(self.forbidden_zones)
+    
+    rospy.wait_for_service('/get_objects')
+    obj_client = rospy.ServiceProxy('/get_objects', GetObjects)
+    obj_response = obj_client()
+    # print(obj_response)
+    self.objects = [o.id for o in obj_response.objects]
 
     self.reset()
 
@@ -72,7 +86,7 @@ class System():
   def reset(self):
     print('Resetting...')
     self.now = self.config.start
-    self.tasks = self.task_config.generate(self.spawn_zones)
+    self.tasks = self.task_config.generate(self.spawn_zones, self.forbidden_zones, self.objects)
 
     # initial agent position
     # define absolutes
@@ -89,6 +103,10 @@ class System():
         for zone in self.spawn_zones:
             if x1 >= zone[0][0] and x1 <= zone[0][1] and y1 >= zone[1][0] and y1 <= zone[1][1]:
                 in_room = True
+                for fzone in self.forbidden_zones:
+                    if x1 >= fzone[0][0] and x1 <= fzone[0][1] and y1 >= fzone[1][0] and y1 <= fzone[1][1]:
+                        in_room = False
+                        break
                 break
         # if position is inside a room exit loop
         if in_room:
@@ -144,6 +162,7 @@ class System():
       updated_jobs = True
       for i,job in enumerate(self.jobs):
         t = self.tasks[int(self.jobIDs[i])]
+        t.updatePos()
         if self.config.use_estimator:
           job.set_burst_time(timedelta(seconds = np.array(self.estimator(np.expand_dims(np.array([
                       self.time_eval,
@@ -168,6 +187,7 @@ class System():
       if t.getID() in self.jobIDs:
         continue
       elif t.calltime < self.now and t.do_estimate():
+        t.updatePos()
         new_jobs = True
         self.jobIDs.append(t.getID())
         sr = ScheduleRules()

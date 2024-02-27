@@ -5,6 +5,8 @@ from linear_path_ROS_planner import ROSNavigation
 from datetime import datetime, timedelta
 import time
 from time import sleep
+import rospy
+from smit_matlab_sim.srv import GetObjectPose, RemoveObject
 
 class Task:
     id_counter = 0
@@ -47,7 +49,7 @@ class Task:
     def dist(self, pos):
         raise NotImplementedError()
 
-    def updatePos(self, pos):
+    def updatePos(self):
         raise NotImplementedError()
 
     def do_estimate(self):
@@ -121,8 +123,8 @@ class Transport(Task):
     def dist(self, pos):
         return np.linalg.norm(pos - self.pos)
 
-    def updatePos(self, pos):
-        return self.pos
+    def updatePos(self):
+        pass
 
     def do_estimate(self):
         return self.path.get_distance()
@@ -184,8 +186,8 @@ class Fall(Task):
     def dist(self, pos):
         return np.linalg.norm(pos - self.pos)
 
-    def updatePos(self, pos):
-        return self.pos
+    def updatePos(self):
+        pass
 
     def do_estimate(self):
         return self.urgency
@@ -213,8 +215,107 @@ class Fall(Task):
     def serialize(self):
       return f""
 
+class Pick(Task):
+    uuid_counter = 0
+    def __init__(self, deadline, calltime, duration, object_id, spawn_zones, forbidden_zones):
+        super().__init__()
+        self.uuid = 'pick_' + str(Pick.uuid_counter)
+        Pick.uuid_counter+= 1
+        self.priority = 1
+        self.deadline = deadline
+        self.calltime = calltime
+        self.pos = None
+        self.object_pos = None
+        self.duration = duration
+        self.object_id = object_id
+        self.spawn_zones = spawn_zones
+        self.forbidden_zones = forbidden_zones
+        # rospy.wait_for_service('/get_object_pose')
+        self.obj_client = rospy.ServiceProxy('/get_object_pose', GetObjectPose)
+        self.generate_position()
 
-def TransportGenerator(now, time_horizon, spawn_zones):
+    def generate_position(self):
+        resp = self.obj_client(self.object_id)
+        if not resp.success:
+            return
+        new_pos = np.array([resp.pose.position.x, resp.pose.position.y])
+        if self.pos == None or self.object_pos != new_pos:
+            self.object_pos = new_pos
+            self.pos = None
+            available_positions = [
+                self.object_pos + [1, 0],
+                self.object_pos + [1, 1],
+                self.object_pos + [0, 1],
+                self.object_pos + [-1, 1],
+                self.object_pos + [-1, 0],
+                self.object_pos + [-1, -1],
+                self.object_pos + [0, -1],
+                self.object_pos + [1, -1],
+            ]
+            for point in available_positions:
+                x1 = point[0]
+                y1 = point[1]
+                for zone in self.spawn_zones:
+                    if x1 >= zone[0][0] and x1 <= zone[0][1] and y1 >= zone[1][0] and y1 <= zone[1][1]:
+                        self.pos = point
+                        for fzone in self.forbidden_zones:
+                            if x1 >= fzone[0][0] and x1 <= fzone[0][1] and y1 >= fzone[1][0] and y1 <= fzone[1][1]:
+                                self.pos = None
+                                break
+                        if self.pos:
+                            return
+
+    def getUUID(self):
+        return self.uuid
+
+    def getPriority(self):
+        return self.priority
+
+    def getDeadline(self):
+        return self.deadline
+
+    def setDeadline(self, new_deadline):
+        self.deadline = new_deadline
+
+    def getBurst(self):
+        return timedelta(seconds=self.duration)
+
+    def setBurst(self, new_burst):
+        self.duration = new_burst.seconds
+    
+    def dist(self, pos):
+        return np.linalg.norm(pos - self.pos)
+
+    def updatePos(self):
+        self.generate_position()
+
+    def do_estimate(self):
+        return self.duration
+
+    def do_wait(self, dt):
+        pass
+
+    def do_work(self, dt):
+        self.duration = max(self.duration - dt, 0)
+        if self.duration == 0:
+            client = rospy.ServiceProxy('/remove_object', RemoveObject)
+            client(self.object_id)
+
+    def is_alive(self, now):
+        return True
+
+    def getDeathTime(self):
+        return 0
+
+    def __str__(self):
+        return f'P | dur: {self.duration:.0f}'
+
+    __repr__ = __str__
+    
+    def serialize(self):
+      return f""
+
+def TransportGenerator(now, time_horizon, spawn_zones, forbidden_zones, objects):
     # define absolutes
     x_min = min([zone[0][0] for zone in spawn_zones])
     x_max = max([zone[0][1] for zone in spawn_zones])
@@ -230,8 +331,12 @@ def TransportGenerator(now, time_horizon, spawn_zones):
         in_room = False
         for zone in spawn_zones:
             if x1 >= zone[0][0] and x1 <= zone[0][1] and y1 >= zone[1][0] and y1 <= zone[1][1]:
-                # print(f'{x1} in {zone}')
                 in_room = True
+                for fzone in forbidden_zones:
+                    if x1 >= fzone[0][0] and x1 <= fzone[0][1] and y1 >= fzone[1][0] and y1 <= fzone[1][1]:
+                        in_room = False
+                        break
+                # print(f'{x1} in {zone}')
                 break
         # if position is inside a room exit loop
         if in_room:
@@ -244,8 +349,12 @@ def TransportGenerator(now, time_horizon, spawn_zones):
         in_room = False
         for zone in spawn_zones:
             if x2 >= zone[0][0] and x2 <= zone[0][1] and y2 >= zone[1][0] and y2 <= zone[1][1]:
-                # print(f'{x2} in {zone}')
                 in_room = True
+                for fzone in forbidden_zones:
+                    if x2 >= fzone[0][0] and x2 <= fzone[0][1] and y2 >= fzone[1][0] and y2 <= fzone[1][1]:
+                        in_room = False
+                        break
+                # print(f'{x2} in {zone}')
                 break
         # if position is inside a room exit loop
         if in_room:
@@ -262,7 +371,7 @@ def TransportGenerator(now, time_horizon, spawn_zones):
         calltime = now + random.random() * time_horizon - timedelta(seconds = 5)
     return Transport(deadline, calltime, [x1, y1], [x2, y2], spd)
 
-def FallGenerator(now, time_horizon, spawn_zones):
+def FallGenerator(now, time_horizon, spawn_zones, forbidden_zones, objects):
     # define absolutes
     x_min = min([zone[0][0] for zone in spawn_zones])
     x_max = max([zone[0][1] for zone in spawn_zones])
@@ -277,6 +386,10 @@ def FallGenerator(now, time_horizon, spawn_zones):
         for zone in spawn_zones:
             if x1 >= zone[0][0] and x1 <= zone[0][1] and y1 >= zone[1][0] and y1 <= zone[1][1]:
                 in_room = True
+                for fzone in forbidden_zones:
+                    if x1 >= fzone[0][0] and x1 <= fzone[0][1] and y1 >= fzone[1][0] and y1 <= fzone[1][1]:
+                        in_room = False
+                        break
                 break
         # if position is inside a room exit loop
         if in_room:
@@ -292,6 +405,17 @@ def FallGenerator(now, time_horizon, spawn_zones):
     while calltime > deadline - timedelta(seconds = 5):
         calltime = now + random.random() * time_horizon - timedelta(seconds = 5)
     return Fall(deadline, calltime, [x1, y1], urg)
+
+def PickGenerator(now, time_horizon, spawn_zones, forbidden_zones, objects):
+    object_id = random.choice(objects)
+    urg_min = 60
+    urg_max = 300
+    duration = urg_min + random.random() * (urg_max - urg_min)
+    deadline = now + random.random() * time_horizon
+    calltime = now + time_horizon
+    while calltime > deadline - timedelta(seconds = 5):
+        calltime = now + random.random() * time_horizon - timedelta(seconds = 5)
+    return Pick(deadline, calltime, duration, object_id, spawn_zones, forbidden_zones)
 
 class TaskConfig(object):
     def __init__(self, task_desc, count, now, time_horizon, seed = -1, random_task_count = 0, deadline_variation = 0, burst_variation = 0, randomize_call_time = False):
@@ -313,7 +437,7 @@ class TaskConfig(object):
 
         # self.task_prob = task_prob
 
-    def generate(self, spawn_zones = [((1,9),(1,9))]):
+    def generate(self, spawn_zones = [((1,9),(1,9))], forbidden_zones = [((0, 0), (0, 0))], objects = []):
         Task.id_counter = 0
         Fall.uuid_counter = 0
         Transport.uuid_counter = 0
@@ -327,7 +451,7 @@ class TaskConfig(object):
         tasks = []
         for i,t in enumerate(self.task_desc):
           for i in range(self.count):
-            task = t(self.now, self.time_horizon, spawn_zones)
+            task = t(self.now, self.time_horizon, spawn_zones, forbidden_zones, objects)
             print(task.uuid)
             # print(task.pos)
             # print(task.goal)
