@@ -149,9 +149,9 @@ class RandomMapServerNode(object):
 	def get_object_pose(self, req):
 		o, success = self.rms.get_object(req.id)
 		if success:
-			return GetObjectsResponse(Pose(Point(o['x']*self.rms.res, o['y']*self.rms.res, o['z']), Quaternion(0, 0, 0, 1)), success)
+			return GetObjectPoseResponse(Pose(Point(o['x']*self.rms.res, o['y']*self.rms.res, o['z']), Quaternion(0, 0, 0, 1)), success)
 		else:
-			return GetObjectsResponse(Pose(), success)
+			return GetObjectPoseResponse(Pose(), success)
 
 class PedestrianBehaviour(IntEnum):
 	CIRCLE = 1

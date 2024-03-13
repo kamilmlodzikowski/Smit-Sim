@@ -71,6 +71,7 @@ add_service_files(
   AddObject.srv
   GetFurniture.srv
   GetObjects.srv
+  GetObjectPose.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -176,6 +177,7 @@ include_directories(
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
   scripts/send_maptobaselink_transform.py
+  scripts/random_map_server.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
