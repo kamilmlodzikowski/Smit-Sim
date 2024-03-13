@@ -161,7 +161,7 @@ class System():
     if len(self.jobs) > 0 and self.previous != self.current and self.previous != None:
       updated_jobs = True
       for i,job in enumerate(self.jobs):
-        t = self.tasks[int(self.jobIDs[i])]
+        t = self.getTaskById(job.id)
         t.updatePos()
         if self.config.use_estimator:
           job.set_burst_time(timedelta(seconds = np.array(self.estimator(np.expand_dims(np.array([
@@ -215,51 +215,68 @@ class System():
     # update tasker
     if new_jobs or updated_jobs:
       self.out, self.profit = self.rt.schedule_with_priority()
+    if len(self.jobs) == 0 and self.previous != self.current:
+      self.out, self.profit = self.rt.schedule_with_priority()
+
+  def getTaskById(self, task_id):
+    return [task for task in self.tasks if task.id == task_id][0]
+
+  def getJobById(self, job_id):
+    return [job for job in self.jobs if job.id == job_id][0]
+
+  def removeJobById(self, job_id):
+    self.rt.removeRecord_by_id(self.current)
+    for i,job in enumerate(self.jobs):
+      if job.id == job_id:
+        break
+    self.jobs.pop(i)
 
   def step(self):
     # print(self.jobIDs)
     # select action
-    j = None
     self.previous = self.current
+    current_task = None
+    current_job = None
     if len(self.jobs) > 0:
       if self.current or self.current == 0:
-        if not self.tasks[int(self.jobIDs[self.current])].preemptive or self.jobs[self.current].deadline > self.now:
-          j = self.jobs[self.current]
+        current_task = self.getTaskById(self.current)
+        current_job = self.getJobById(self.current)
+        if not current_task.preemptive or current_job.deadline > self.now:
+          pass
         else:
           self.current = None
+          current_job = None
       if self.current == None:
         for job in self.out.scheduled:
           if job.start <= self.now + self.config.dt and job.stop > self.now:
-            j = job
-            self.current = self.jobIDs.index(j.jobID)
-            print(f'Current: {self.jobIDs[self.current]}')
+            self.current = job.jobID
+            current_job = self.getJobById(self.current)
+            current_task = self.getTaskById(self.current)
+            print(f'Current: {self.current}')
             break
 
     # perform action
-    if j:   
+    if not(current_job is None):
       time_left = self.config.dt.seconds
-      t_id = int(self.jobIDs[self.current])
 
       # do the actual travel to the action spot if distanse from the agent is greater than threshold
-      if self.tasks[t_id].dist(self.pos) > 0.1:
-        path = self.navigator.plan(self.pos, self.tasks[t_id].pos)
+      if current_task.dist(self.pos) > 0.1:
+        path = self.navigator.plan(self.pos, current_task.pos)
         [self.pos, time_left] = path.step(self.config.robot_speed, time_left)
 
       # work on a task
       if time_left > 0:
-        self.tasks[t_id].do_work(time_left)
-        self.pos = self.tasks[t_id].pos
+        current_task.do_work(time_left)
+        self.pos = current_task.pos
 
       # if task is done remove it from TaskER and job list
-      if not self.tasks[t_id].do_estimate():
-        print('Worked on job ' + str(t_id) + ': ' + str(self.tasks[t_id].do_estimate()))
-        print('Job ' + str(t_id) + ' complete')
-        self.rt.removeRecord_by_id(self.jobIDs[self.current])
-        self.jobs.pop(self.current)
-        self.jobIDs.pop(self.current)
+      if not current_task.do_estimate():
+        print('Worked on job ' + str(self.current) + ': ' + str(current_task.do_estimate()))
+        print('Job ' + str(self.current) + ' complete')
+        self.removeJobById(self.current)
         self.current = None
       else:
-        print('Worked on job ' + str(t_id) + ': ' + str(self.tasks[t_id].do_estimate()))
+        print('Worked on job ' + str(self.current) + ': ' + str(current_task.do_estimate()))
 
     self.now = self.now + self.config.dt
 
