@@ -719,7 +719,7 @@ class RandomMapServerWithPedestrians(object):
 	def remove_object(self, o_id):
 		for i,o in enumerate(self.objects):
 			if o['id'] == o_id:
-				print(f'Removing object {o}')
+				# print(f'Removing object {o}')
 				self.objects.pop(i)
 				return True
 		return False

@@ -300,11 +300,11 @@ class Pick(Task):
 
     def do_work(self, dt):
         self.duration = max(self.duration - dt, 0)
-        print(f'Pickung up object {self.object_id}, duration left {self.duration}')
+        # print(f'Pickung up object {self.object_id}, duration left {self.duration}')
         if self.duration == 0:
             client = rospy.ServiceProxy('/remove_object', RemoveObject)
             client(self.object_id)
-            print(f'Removing object {self.object_id}')
+            # print(f'Removing object {self.object_id}')
 
     def is_alive(self, now):
         return True
@@ -394,11 +394,11 @@ class Place(Task): #TODO
 
     def do_work(self, dt):
         self.duration = max(self.duration - dt, 0)
-        print(f'Placing object {self.object_id}, duration left {self.duration}')
+        # print(f'Placing object {self.object_id}, duration left {self.duration}')
         if self.duration == 0:
             client = rospy.ServiceProxy('/add_object', AddObject)
             client(self.object_id, Pose(Point(self.object_pos[0], self.object_pos[1],0),Quaternion(0, 0, 0, 1)))
-            print(f'Placed object {self.object_id}')
+            # print(f'Placed object {self.object_id}')
 
     def is_alive(self, now):
         return True
