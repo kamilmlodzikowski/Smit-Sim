@@ -137,6 +137,7 @@ class RandomMapServerNode(object):
 		return RemoveObjectResponse(self.rms.remove_object(req.id))
 
 	def add_object(self, req):
+		# print(f'Adding object service called, id {req.id}')
 		height, success = self.rms.add_object(req.id, req.pose.position.x/self.rms.res, req.pose.position.y/self.rms.res)
 		return AddObjectResponse(height, success)
 
@@ -734,8 +735,10 @@ class RandomMapServerWithPedestrians(object):
 					if f['room'] == r['id']:
 						if x >= f['x'][0] and x <= f['x'][1] and y >= f['y'][0] and y <= f['y'][1]:
 							self.objects.append({'id': o_id, 'x': x, 'y': y, 'z': f['height']})
+							# print(f'Adding object {self.objects[-1]}')
 							return f['height'], True
 				self.objects.append({'id': o_id, 'x': x, 'y': y, 'z': 0})
+				# print(f'Adding object {self.objects[-1]}')
 				return 0, True
 		return 0, False
 
@@ -962,15 +965,14 @@ if __name__ == '__main__':
 
 	rospy.init_node('random_map_test')
 	node = RandomMapServerNode(args)
-	# for r in node.rms.rooms:
-	# 	print(r)
-	node.rms.plot()
+	# node.rms.plot()
+
 	try:
 		rospy.spin()
 	except:
 		pass
-	# print(node.rms.rooms)
-	node.rms.plot()
+	
+	# node.rms.plot()
 	# node.rms.plot(use_ped_map = True)
 	# node.rms.plot(plot_peds = True)
 	# node.rms.plot(plot_spaces = True)

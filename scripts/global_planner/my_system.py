@@ -67,8 +67,9 @@ class System():
     furn_client = rospy.ServiceProxy('/get_furniture', GetFurniture)
     furn_response = furn_client()
     # print(furn_response)
-    self.forbidden_zones = [((room.x[0] - self.config.robot_radius, room.x[1] + self.config.robot_radius), (room.y[0] - self.config.robot_radius, room.y[1] + self.config.robot_radius)) for room in furn_response.furniture]
-    # print(self.forbidden_zones)
+    self.object_zones = [((room.x[0], room.x[1]), (room.y[0], room.y[1])) for room in furn_response.furniture]
+    self.forbidden_spawn_zones = [((room.x[0] - self.config.robot_radius, room.x[1] + self.config.robot_radius), (room.y[0] - self.config.robot_radius, room.y[1] + self.config.robot_radius)) for room in furn_response.furniture]
+    # print(self.forbidden_spawn_zones)
     
     rospy.wait_for_service('/get_objects')
     obj_client = rospy.ServiceProxy('/get_objects', GetObjects)
@@ -86,7 +87,7 @@ class System():
   def reset(self):
     print('Resetting...')
     self.now = self.config.start
-    self.tasks = self.task_config.generate(self.spawn_zones, self.forbidden_zones, self.objects)
+    self.tasks = self.task_config.generate(self.spawn_zones, self.forbidden_spawn_zones, self.objects, self.object_zones)
 
     # initial agent position
     # define absolutes
@@ -103,7 +104,7 @@ class System():
         for zone in self.spawn_zones:
             if x1 >= zone[0][0] and x1 <= zone[0][1] and y1 >= zone[1][0] and y1 <= zone[1][1]:
                 in_room = True
-                for fzone in self.forbidden_zones:
+                for fzone in self.forbidden_spawn_zones:
                     if x1 >= fzone[0][0] and x1 <= fzone[0][1] and y1 >= fzone[1][0] and y1 <= fzone[1][1]:
                         in_room = False
                         break

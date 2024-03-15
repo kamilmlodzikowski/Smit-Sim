@@ -491,7 +491,7 @@ class PickAndPlace(Task):
     def serialize(self):
       return f""
 
-def TransportGenerator(now, time_horizon, spawn_zones, forbidden_zones, objects):
+def TransportGenerator(now, time_horizon, spawn_zones, forbidden_zones, objects, object_zones):
     # define absolutes
     x_min = min([zone[0][0] for zone in spawn_zones])
     x_max = max([zone[0][1] for zone in spawn_zones])
@@ -547,7 +547,7 @@ def TransportGenerator(now, time_horizon, spawn_zones, forbidden_zones, objects)
         calltime = now + random.random() * time_horizon - timedelta(seconds = 5)
     return Transport(deadline, calltime, [x1, y1], [x2, y2], spd)
 
-def FallGenerator(now, time_horizon, spawn_zones, forbidden_zones, objects):
+def FallGenerator(now, time_horizon, spawn_zones, forbidden_zones, objects, object_zones):
     # define absolutes
     x_min = min([zone[0][0] for zone in spawn_zones])
     x_max = max([zone[0][1] for zone in spawn_zones])
@@ -582,7 +582,7 @@ def FallGenerator(now, time_horizon, spawn_zones, forbidden_zones, objects):
         calltime = now + random.random() * time_horizon - timedelta(seconds = 5)
     return Fall(deadline, calltime, [x1, y1], urg)
 
-def PickGenerator(now, time_horizon, spawn_zones, forbidden_zones, objects):
+def PickGenerator(now, time_horizon, spawn_zones, forbidden_zones, objects, object_zones):
     object_id = random.choice(objects)
     urg_min = 60
     urg_max = 300
@@ -593,19 +593,19 @@ def PickGenerator(now, time_horizon, spawn_zones, forbidden_zones, objects):
         calltime = now + random.random() * time_horizon - timedelta(seconds = 5)
     return Pick(deadline, calltime, duration, object_id, spawn_zones, forbidden_zones)
 
-def PlaceGenerator(now, time_horizon, spawn_zones, forbidden_zones, objects):
+def PlaceGenerator(now, time_horizon, spawn_zones, forbidden_zones, objects, object_zones):
     # define absolutes
-    x_min = min([zone[0][0] for zone in forbidden_zones])
-    x_max = max([zone[0][1] for zone in forbidden_zones])
-    y_min = min([zone[1][0] for zone in forbidden_zones])
-    y_max = max([zone[1][1] for zone in forbidden_zones])
+    x_min = min([zone[0][0] for zone in object_zones])
+    x_max = max([zone[0][1] for zone in object_zones])
+    y_min = min([zone[1][0] for zone in object_zones])
+    y_max = max([zone[1][1] for zone in object_zones])
     # initialize positions
     x1 = x_min + random.random() * (x_max - x_min)
     y1 = y_min + random.random() * (y_max - y_min)
     # regenerate until proper start positions are found
     while(True):
         in_room = False
-        for zone in forbidden_zones:
+        for zone in object_zones:
             if x1 >= zone[0][0] and x1 <= zone[0][1] and y1 >= zone[1][0] and y1 <= zone[1][1]:
                 in_room = True
                 break
@@ -625,11 +625,11 @@ def PlaceGenerator(now, time_horizon, spawn_zones, forbidden_zones, objects):
         calltime = now + random.random() * time_horizon - timedelta(seconds = 5)
     return Place(deadline, calltime, [x1, y1], duration, object_id, spawn_zones, forbidden_zones)
 
-def PickAndPlaceGenerator(now, time_horizon, spawn_zones, forbidden_zones, objects):
-    pick = PickGenerator(now, time_horizon, spawn_zones, forbidden_zones, objects)
-    place = PlaceGenerator(now, time_horizon, spawn_zones, forbidden_zones, objects)
+def PickAndPlaceGenerator(now, time_horizon, spawn_zones, forbidden_zones, objects, object_zones):
+    pick = PickGenerator(now, time_horizon, spawn_zones, forbidden_zones, objects, object_zones)
+    place = PlaceGenerator(now, time_horizon, spawn_zones, forbidden_zones, objects, object_zones)
     place.object_id = pick.object_id
-    transport = TransportGenerator(now, time_horizon, spawn_zones, forbidden_zones, objects)
+    transport = TransportGenerator(now, time_horizon, spawn_zones, forbidden_zones, objects, object_zones)
     transport.pos = pick.pos
     transport.goal = place.pos
     transport.updatePos()
@@ -655,7 +655,7 @@ class TaskConfig(object):
 
         # self.task_prob = task_prob
 
-    def generate(self, spawn_zones = [((1,9),(1,9))], forbidden_zones = [((0, 0), (0, 0))], objects = []):
+    def generate(self, spawn_zones = [((1,9),(1,9))], forbidden_zones = [((0, 0), (0, 0))], objects = [], object_zones = [((0, 0),(0, 0))]):
         Task.id_counter = 0
         Fall.uuid_counter = 0
         Transport.uuid_counter = 0
@@ -669,7 +669,7 @@ class TaskConfig(object):
         tasks = []
         for i,t in enumerate(self.task_desc):
           for i in range(self.count):
-            task = t(self.now, self.time_horizon, spawn_zones, forbidden_zones, objects)
+            task = t(self.now, self.time_horizon, spawn_zones, forbidden_zones, objects, object_zones)
             print(task.uuid)
             # print(task.pos)
             # print(task.goal)
@@ -698,7 +698,7 @@ class TaskConfig(object):
             random.seed(time.time())
             for i,t in enumerate(self.task_desc):
               for i in range(self.rcount):
-                task = t(self.now, self.time_horizon, spawn_zones)
+                task = t(self.now, self.time_horizon, spawn_zones, objects, object_zones)
                 print(task.uuid)
                 tasks.append(task)
 
