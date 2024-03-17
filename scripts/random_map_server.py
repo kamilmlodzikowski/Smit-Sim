@@ -16,16 +16,18 @@ from linear_path import LinearPath
 import rospy
 from std_msgs.msg import Float64MultiArray
 from nav_msgs.msg import OccupancyGrid
-from geometry_msgs.msg import Pose, Point, Quaternion
+from geometry_msgs.msg import Pose, Point, Quaternion, Vector3
 from smit_matlab_sim.srv import Step, AddPedestrian, AddPedestrianResponse, GetRoomsAndDoors, GetRoomsAndDoorsResponse, SetAreaPriority, FileOperation, RemoveObject, RemoveObjectResponse, AddObject, AddObjectResponse, GetFurniture, GetFurnitureResponse, GetObjects, GetObjectsResponse, GetObjectPose, GetObjectPoseResponse
 from smit_matlab_sim.msg import Room, Furniture, Object
 from std_srvs.srv import Empty
+from visualization_msgs.msg import MarkerArray, Marker
 
 class RandomMapServerNode(object):
 	"""docstring for RandomMapServerNode"""
 	def __init__(self, args):
 		self.rms = RandomMapServerWithPedestrians(args)
 		self.pub = rospy.Publisher('map', OccupancyGrid, queue_size=10)
+		self.pub_obj = rospy.Publisher('manipulation_objects', MarkerArray, queue_size=10)
 		self.srv_step = rospy.Service('perform_pedestrians_step', Step, self.perform_step)
 		self.srv_regenerate_map = rospy.Service('regenerate_map', Empty, self.regenerate_map)
 		self.srv_regenerate_ped = rospy.Service('regenerate_pedestrians', Empty, self.regenerate_pedestrians)
@@ -45,19 +47,19 @@ class RandomMapServerNode(object):
 		self.auto_step = args.auto_step
 		self.pub_on_step = args.publish_on_step
 
-		self.msg = OccupancyGrid()
-		self.msg.header.frame_id = "map"
-		self.msg.info.width = self.rms.w
-		self.msg.info.height = self.rms.h
-		self.msg.info.resolution = self.rms.res
-		self.msg.info.map_load_time = rospy.Time.now()
-		self.msg.info.origin.position.x = 0
-		self.msg.info.origin.position.y = 0
-		self.msg.info.origin.position.z = 0
-		self.msg.info.origin.orientation.x = 0
-		self.msg.info.origin.orientation.y = 0
-		self.msg.info.origin.orientation.z = 0
-		self.msg.info.origin.orientation.w = 1
+		self.map_msg = OccupancyGrid()
+		self.map_msg.header.frame_id = "map"
+		self.map_msg.info.width = self.rms.w
+		self.map_msg.info.height = self.rms.h
+		self.map_msg.info.resolution = self.rms.res
+		self.map_msg.info.map_load_time = rospy.Time.now()
+		self.map_msg.info.origin.position.x = 0
+		self.map_msg.info.origin.position.y = 0
+		self.map_msg.info.origin.position.z = 0
+		self.map_msg.info.origin.orientation.x = 0
+		self.map_msg.info.origin.orientation.y = 0
+		self.map_msg.info.origin.orientation.z = 0
+		self.map_msg.info.origin.orientation.w = 1
 
 		if self.publish:
 			self.timer = rospy.Timer(rospy.Duration(1.0/self.rate), self.publish_map)
@@ -79,9 +81,25 @@ class RandomMapServerNode(object):
 			return AddPedestrianResponse(False)
 
 	def publish_map(self, event = None):
-		self.msg.data = np.uint8(self.rms.get_pedmap().reshape(-1)*100)
-		self.msg.header.stamp = rospy.Time.now()
-		self.pub.publish(self.msg)
+		self.map_msg.data = np.uint8(self.rms.get_pedmap().reshape(-1)*100)
+		self.map_msg.header.stamp = rospy.Time.now()
+		self.pub.publish(self.map_msg)
+		obj_msg = MarkerArray()
+		for o in self.rms.objects:
+			o_msg = Marker()
+			o_msg.header.stamp = self.map_msg.header.stamp
+			o_msg.header.frame_id = "map"
+			o_msg.lifetime = rospy.Duration.from_sec(1)
+			o_msg.id = o['id']
+			o_msg.pose = Pose(Point(o['x']*self.rms.res, o['y']*self.rms.res, 0), Quaternion(0, 0, 0, 1))
+			o_msg.scale = Vector3(0.1, 0.1, 0.1)
+			o_msg.color.a = 0.8
+			o_msg.color.r = 0.0
+			o_msg.color.g = 0.0
+			o_msg.color.b = 1.0
+			o_msg.type = 2
+			obj_msg.markers.append(o_msg)
+		self.pub_obj.publish(obj_msg)
 		if (self.auto_step):
 			self.rms.step(1.0/self.rate)
 
@@ -124,10 +142,10 @@ class RandomMapServerNode(object):
 
 		self.rms.load_data_from_dict(config)
 
-		self.msg.info.width = self.rms.w
-		self.msg.info.height = self.rms.h
-		self.msg.info.resolution = self.rms.res
-		self.msg.info.map_load_time = rospy.Time.now()
+		self.map_msg.info.width = self.rms.w
+		self.map_msg.info.height = self.rms.h
+		self.map_msg.info.resolution = self.rms.res
+		self.map_msg.info.map_load_time = rospy.Time.now()
 
 		if self.publish:
 			del self.timer
@@ -137,7 +155,7 @@ class RandomMapServerNode(object):
 		return RemoveObjectResponse(self.rms.remove_object(req.id))
 
 	def add_object(self, req):
-		# print(f'Adding object service called, id {req.id}')
+		print(f'Adding object service called, id {req.id}')
 		height, success = self.rms.add_object(req.id, req.pose.position.x/self.rms.res, req.pose.position.y/self.rms.res)
 		return AddObjectResponse(height, success)
 
@@ -720,7 +738,7 @@ class RandomMapServerWithPedestrians(object):
 	def remove_object(self, o_id):
 		for i,o in enumerate(self.objects):
 			if o['id'] == o_id:
-				# print(f'Removing object {o}')
+				print(f'Removing object {o}')
 				self.objects.pop(i)
 				return True
 		return False
@@ -735,11 +753,12 @@ class RandomMapServerWithPedestrians(object):
 					if f['room'] == r['id']:
 						if x >= f['x'][0] and x <= f['x'][1] and y >= f['y'][0] and y <= f['y'][1]:
 							self.objects.append({'id': o_id, 'x': x, 'y': y, 'z': f['height']})
-							# print(f'Adding object {self.objects[-1]}')
+							print(f'Adding object {self.objects[-1]}')
 							return f['height'], True
 				self.objects.append({'id': o_id, 'x': x, 'y': y, 'z': 0})
-				# print(f'Adding object {self.objects[-1]}')
+				print(f'Adding object {self.objects[-1]}')
 				return 0, True
+		print('Failed to place object!')
 		return 0, False
 
 	def get_pedmap(self):
@@ -971,7 +990,7 @@ if __name__ == '__main__':
 		rospy.spin()
 	except:
 		pass
-	
+
 	# node.rms.plot()
 	# node.rms.plot(use_ped_map = True)
 	# node.rms.plot(plot_peds = True)

@@ -1,7 +1,7 @@
 import numpy as np
 import random
 import sys
-from linear_path_ROS_planner import ROSNavigation
+from smit_linear_path.linear_path_ROS_planner import ROSNavigation
 from datetime import datetime, timedelta
 import time
 from time import sleep

@@ -2,7 +2,7 @@ import numpy as np
 import rospy
 from navfn.srv import MakeNavPlan
 import geometry_msgs.msg
-from linear_path import LinearPath, Navigation
+from smit_linear_path.linear_path import LinearPath, Navigation
 
 class ROSNavigation(Navigation):
 

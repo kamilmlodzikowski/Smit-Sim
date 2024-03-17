@@ -5,11 +5,11 @@ import os
 from shutil import copyfile
 from datetime import datetime, timedelta, date, time
 import math as m
-sys.path.insert(0, '../')
+# sys.path.insert(0, '../')
 from my_tasks import Transport, Empty
-from linear_path_ROS_planner import ROSNavigation
-sys.path.insert(0, '../../../tasker/src/TaskER/')
-from RequestTable import RequestTable, ScheduleRules, ScheduleRule, TaskerReqest
+from smit_linear_path.linear_path_ROS_planner import ROSNavigation
+# sys.path.insert(0, '../../../tasker/src/TaskER/')
+from TaskER.RequestTable import RequestTable, ScheduleRules, ScheduleRule, TaskerReqest
 import rospy
 from smit_matlab_sim.srv import GetRoomsAndDoors, GetFurniture, GetObjects
 import tensorflow as tf
@@ -360,5 +360,9 @@ class System():
       self.update_jobs()
       self.save()
 
+    # try:
+    #   self.getTaskById(self.current).do_work(1000)
+    # except IndexError:
+    #   pass
     print(f'Scheduled: {len(self.out.scheduled)}, Rejected: {len(self.out.rejected)}')
     self.close()
