@@ -17,6 +17,7 @@ class Task:
         self.age = 0
         self.pos = np.array([0, 0])
         self.preemptive = True
+        self.estimated_duration = None
 
     def wait(self, dt):
         self.age = self.age + dt

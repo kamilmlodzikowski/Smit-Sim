@@ -6,7 +6,7 @@ from shutil import copyfile
 from datetime import datetime, timedelta, date, time
 import math as m
 # sys.path.insert(0, '../')
-from my_tasks import Transport, PickAndPlace
+from my_tasks import Transport, Empty
 from smit_linear_path.linear_path_ROS_planner import ROSNavigation
 # sys.path.insert(0, '../../../tasker/src/TaskER/')
 from TaskER.RequestTable import RequestTable, ScheduleRules, ScheduleRule, TaskerReqest
@@ -28,7 +28,7 @@ class SystemConfig(object):
     self.prefix = ""
     self.day = 1
     self.estimator_path = 'estimator_model/save_20'
-    # self.predictor_path = 'predictor_model/save_100'
+    self.predictor_path = 'predictor_model/save_100'
     self.use_estimator = True
 
 class System():
@@ -117,8 +117,8 @@ class System():
         y1 = y_min + random.random() * (y_max - y_min)
     self.pos = np.array([x1, y1])
 
-    self.current_job = None
-    self.previous_job = None
+    self.current = None
+    self.previous = None
 
     # create save files
     if self.config.save:
@@ -130,58 +130,94 @@ class System():
         os.makedirs('/'.join(self.fname.split('/')[:-1]))
       self.estimator_file_out = open(self.fname, "w")
 
-      # self.fname = 'predictor/timeseries/' + fname + '.csv'
-      # if not os.path.exists('/'.join(self.fname.split('/')[:-1])):
-      #   os.makedirs('/'.join(self.fname.split('/')[:-1]))
-      # self.predictor_file_out = open(self.fname, "w")
+      self.fname = 'predictor/timeseries/' + fname + '.csv'
+      if not os.path.exists('/'.join(self.fname.split('/')[:-1])):
+        os.makedirs('/'.join(self.fname.split('/')[:-1]))
+      self.predictor_file_out = open(self.fname, "w")
 
       self.next_save = self.now + self.config.time_slot
 
     # initialize tasker
-    # self.rt = RequestTable()
+    self.rt = RequestTable()
+    self.jobIDs = []
     self.jobs = []
-    # self.out = []
-    # self.profit = 0
+    self.out = []
+    self.profit = 0
     self.update_jobs()
 
-    # self.schedule = np.zeros(self.schedule_shape)
-    # self.predicted_schedule = np.zeros(self.schedule_shape)
-    # self.empty_tasks = []
-    # self.empty_jobs = []
+    self.schedule = np.zeros(self.schedule_shape)
+    self.predicted_schedule = np.zeros(self.schedule_shape)
+    self.empty_tasks = []
+    self.empty_jobs = []
 
-    # if self.config.save:
-    #   self.save_schedule()
+    if self.config.save:
+      self.save_schedule()
 
     print("Reset done")
 
   def update_jobs(self):
-    # add new jobs
-    new_added = False
     self.time_eval = (self.now - self.config.start).seconds*self.time_to_horizon
-    for task in self.tasks:
-      if not(task in self.jobs):
-        if task.calltime <= now:
-          if task.do_estimate():
-            self.jobs.append(tasks)
-            new_added = True
     # update existing job durations
-    if len(self.jobs) and ((self.previous_job != self.current_job and self.previous_job != None) or new_added):
-      for job in self.jobs:
-        job.updatePos()
-        if config.use_estimator:
-          job.estimated_duration = (timedelta(seconds = np.array(self.estimator(np.expand_dims(np.array([
+    updated_jobs = False
+    if len(self.jobs) > 0 and self.previous != self.current and self.previous != None:
+      updated_jobs = True
+      for i,job in enumerate(self.jobs):
+        t = self.getTaskById(job.id)
+        t.updatePos()
+        if self.config.use_estimator:
+          job.set_burst_time(timedelta(seconds = np.array(self.estimator(np.expand_dims(np.array([
                       self.time_eval,
                       self.config.day,
-                      (job.getDeadline() - self.config.start).seconds*self.time_to_horizon,
-                      job.pos[0],
-                      job.pos[1],
-                      job.goal[0] if isinstance(t, Transport) or isinstance(t, PickAndPlace) else job.pos[0],
-                      job.goal[1] if isinstance(t, Transport) or isinstance(t, PickAndPlace) else job.pos[1],
-                      self.navigator.plan(self.pos, job.pos).get_distance(),
-                      job.getPriority(),
+                      (t.getDeadline() - self.config.start).seconds*self.time_to_horizon,
+                      t.pos[0],
+                      t.pos[1],
+                      t.goal[0] if isinstance(t, Transport) else t.pos[0],
+                      t.goal[1] if isinstance(t, Transport) else t.pos[1],
+                      self.navigator.plan(self.pos, t.pos).get_distance(),
+                      t.getPriority(),
                     ]), axis = 0)))[0,0] * self.config.time_horizon.seconds))
         else:
-          job.estimated_duration = job.getBurst() + timedelta(seconds = self.navigator.plan(self.pos, t.pos).get_distance() / self.config.robot_speed)
+          burst = t.getBurst() + timedelta(seconds = self.navigator.plan(self.pos, t.pos).get_distance() / self.config.robot_speed)
+          job.set_burst_time(burst)
+        job.evaluate_rules()
+        self.rt.updateRecord(job)
+        self.save_estimation(t, job)
+    #generate new jobs
+    new_jobs = False
+    for t in self.tasks:
+      if t.getID() in self.jobIDs:
+        continue
+      elif t.calltime < self.now and t.do_estimate():
+        t.updatePos()
+        new_jobs = True
+        self.jobIDs.append(t.getID())
+        sr = ScheduleRules()
+        sr.addRule(ScheduleRule(rule_type='at', rule_value=t.getDeadline()))
+        job = TaskerReqest(ID=t.getID(),huid=t.getUUID(), plan_args='', req_time=self.now, shdl_rules=sr, priority=t.getPriority())
+        if self.config.use_estimator:
+          job.set_burst_time(timedelta(seconds = np.array(self.estimator(np.expand_dims(np.array([
+                            self.time_eval,
+                            self.config.day,
+                            (t.getDeadline() - self.config.start).seconds*self.time_to_horizon,
+                            t.pos[0],
+                            t.pos[1],
+                            t.goal[0] if isinstance(t, Transport) else t.pos[0],
+                            t.goal[1] if isinstance(t, Transport) else t.pos[1],
+                            self.navigator.plan(self.pos, t.pos).get_distance(),
+                            t.getPriority(),
+                          ]), axis = 0)))[0,0] * self.config.time_horizon.seconds))
+        else:
+          burst = t.getBurst() + timedelta(seconds = self.navigator.plan(self.pos, t.pos).get_distance() / self.config.robot_speed)
+          job.set_burst_time(burst)
+        job.evaluate_rules()
+        self.rt.addRecord(job)
+        self.jobs.append(job)
+        self.save_estimation(t, job)
+    # update tasker
+    if new_jobs or updated_jobs:
+      self.out, self.profit = self.rt.schedule_with_priority()
+    if len(self.jobs) == 0 and self.previous != self.current:
+      self.out, self.profit = self.rt.schedule_with_priority()
 
   def getTaskById(self, task_id):
     return [task for task in self.tasks if task.id == task_id][0]
@@ -190,53 +226,73 @@ class System():
     return [job for job in self.jobs if job.id == job_id][0]
 
   def removeJobById(self, job_id):
+    self.rt.removeRecord_by_id(self.current)
     for i,job in enumerate(self.jobs):
       if job.id == job_id:
-        self.jobs.pop(i)
         break
+    self.jobs.pop(i)
 
-  def execute_step(self, action):
+  def step(self):
+    # print(self.jobIDs)
     # select action
-    self.previous_job = self.current_job
-    self.current_job = action
+    self.previous = self.current
+    current_task = None
+    current_job = None
+    if len(self.jobs) > 0:
+      if self.current or self.current == 0:
+        current_task = self.getTaskById(self.current)
+        current_job = self.getJobById(self.current)
+        if not current_task.preemptive or current_job.deadline > self.now:
+          pass
+        else:
+          self.current = None
+          current_job = None
+      if self.current == None:
+        for job in self.out.scheduled:
+          if job.start <= self.now + self.config.dt and job.stop > self.now:
+            self.current = job.jobID
+            current_job = self.getJobById(self.current)
+            current_task = self.getTaskById(self.current)
+            print(f'Current: {self.current}')
+            break
 
     # perform action
     if not(current_job is None):
       time_left = self.config.dt.seconds
 
       # do the actual travel to the action spot if distanse from the agent is greater than threshold
-      if self.current_job.dist(self.pos) > 0.1:
-        path = self.navigator.plan(self.pos, current_job.pos)
+      if current_task.dist(self.pos) > 0.1:
+        path = self.navigator.plan(self.pos, current_task.pos)
         [self.pos, time_left] = path.step(self.config.robot_speed, time_left)
 
       # work on a task
       if time_left > 0:
-        current_job.do_work(time_left)
-        self.pos = current_job.pos
+        current_task.do_work(time_left)
+        self.pos = current_task.pos
 
       # if task is done remove it from TaskER and job list
-      if not current_job.do_estimate():
-        print('Worked on job ' + str(self.current_job.id) + ': ' + str(current_job.do_estimate()))
-        print('Job ' + str(self.current_job.id) + ' complete')
-        self.removeJobById(self.current_job.id)
-        self.current_job = None
+      if not current_task.do_estimate():
+        print('Worked on job ' + str(self.current) + ': ' + str(current_task.do_estimate()))
+        print('Job ' + str(self.current) + ' complete')
+        self.removeJobById(self.current)
+        self.current = None
       else:
-        print('Worked on job ' + str(self.current_job.id) + ': ' + str(current_job.id.do_estimate()))
+        print('Worked on job ' + str(self.current) + ': ' + str(current_task.do_estimate()))
 
     self.now = self.now + self.config.dt
 
-  # def generate_schedule(self):
-  #   self.schedule = np.zeros(self.schedule_shape)
-  #   for s in range(self.slot_count_horizon):
-  #     start = self.now + s*self.config.time_slot
-  #     stop = self.now + (s+1)*self.config.time_slot
-  #     for i,j in enumerate(self.jobs):
-  #       if j.start_time >= start and j.start_time < stop or j.deadline > start and j.deadline <= stop or j.start_time < start and j.deadline > stop:
-  #         self.schedule[s*3] += j.priority
-  #         self.schedule[2+s*3] += 1
-  #     for i,j in enumerate(self.out.scheduled):
-  #       if j.start >= start and j.start < stop or j.stop > start and j.stop <= stop or j.start < start and j.stop > stop:
-  #         self.schedule[1+s*3] += self.rt.get_request(j.jobID).priority
+  def generate_schedule(self):
+    self.schedule = np.zeros(self.schedule_shape)
+    for s in range(self.slot_count_horizon):
+      start = self.now + s*self.config.time_slot
+      stop = self.now + (s+1)*self.config.time_slot
+      for i,j in enumerate(self.jobs):
+        if j.start_time >= start and j.start_time < stop or j.deadline > start and j.deadline <= stop or j.start_time < start and j.deadline > stop:
+          self.schedule[s*3] += j.priority
+          self.schedule[2+s*3] += 1
+      for i,j in enumerate(self.out.scheduled):
+        if j.start >= start and j.start < stop or j.stop > start and j.stop <= stop or j.start < start and j.stop > stop:
+          self.schedule[1+s*3] += self.rt.get_request(j.jobID).priority
 
   # def predict_schedule(self):
   #   if len(self.empty_jobs):
@@ -281,17 +337,17 @@ class System():
           str(job.burst_time.seconds*self.time_to_horizon),
         ]) + '\n')
 
-  # def save_schedule(self):    
-  #   if self.config.save:
-  #     if len(self.jobs):
-  #       self.generate_schedule()
-  #     self.predictor_file_out.write(str((self.now - self.config.start).seconds*self.time_to_horizon) + ':' + str(self.config.day) + ':' + ':'.join([str(s) for s in self.schedule]) + '\n')
+  def save_schedule(self):    
+    if self.config.save:
+      if len(self.jobs):
+        self.generate_schedule()
+      self.predictor_file_out.write(str((self.now - self.config.start).seconds*self.time_to_horizon) + ':' + str(self.config.day) + ':' + ':'.join([str(s) for s in self.schedule]) + '\n')
 
   def save(self):
     if self.config.save:
       if self.now >= self.next_save:
         self.next_save += self.config.time_slot
-        # self.save_schedule()
+        self.save_schedule()
         for i,job in enumerate(self.jobs):
           t = self.tasks[int(self.jobIDs[i])]
           self.save_estimation(t, job)
@@ -304,4 +360,9 @@ class System():
       self.update_jobs()
       self.save()
 
+    # try:
+    #   self.getTaskById(self.current).do_work(1000)
+    # except IndexError:
+    #   pass
+    print(f'Scheduled: {len(self.out.scheduled)}, Rejected: {len(self.out.rejected)}')
     self.close()
