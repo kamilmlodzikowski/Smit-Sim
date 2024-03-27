@@ -18,6 +18,7 @@ class Task:
         self.pos = np.array([0, 0])
         self.preemptive = True
         self.estimated_duration = None
+        self.distance_from_robot = 0
 
     def wait(self, dt):
         self.age = self.age + dt

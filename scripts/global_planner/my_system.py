@@ -160,15 +160,16 @@ class System():
     self.time_eval = (self.now - self.config.start).seconds*self.time_to_horizon
     for task in self.tasks:
       if not(task in self.jobs):
-        if task.calltime <= now:
+        if task.calltime <= self.now:
           if task.do_estimate():
-            self.jobs.append(tasks)
+            self.jobs.append(task)
             new_added = True
     # update existing job durations
     if len(self.jobs) and ((self.previous_job != self.current_job and self.previous_job != None) or new_added):
       for job in self.jobs:
         job.updatePos()
-        if config.use_estimator:
+        job.distance_from_robot = self.navigator.plan(self.pos, job.pos).get_distance()
+        if self.config.use_estimator:
           job.estimated_duration = (timedelta(seconds = np.array(self.estimator(np.expand_dims(np.array([
                       self.time_eval,
                       self.config.day,
@@ -181,7 +182,7 @@ class System():
                       job.getPriority(),
                     ]), axis = 0)))[0,0] * self.config.time_horizon.seconds))
         else:
-          job.estimated_duration = job.getBurst() + timedelta(seconds = self.navigator.plan(self.pos, t.pos).get_distance() / self.config.robot_speed)
+          job.estimated_duration = job.getBurst() + timedelta(seconds = job.distance_from_robot / self.config.robot_speed)
 
   def getTaskById(self, task_id):
     return [task for task in self.tasks if task.id == task_id][0]
@@ -201,27 +202,27 @@ class System():
     self.current_job = action
 
     # perform action
-    if not(current_job is None):
+    if not(self.current_job is None):
       time_left = self.config.dt.seconds
 
       # do the actual travel to the action spot if distanse from the agent is greater than threshold
       if self.current_job.dist(self.pos) > 0.1:
-        path = self.navigator.plan(self.pos, current_job.pos)
+        path = self.navigator.plan(self.pos, self.current_job.pos)
         [self.pos, time_left] = path.step(self.config.robot_speed, time_left)
 
       # work on a task
       if time_left > 0:
-        current_job.do_work(time_left)
-        self.pos = current_job.pos
+        self.current_job.do_work(time_left)
+        self.pos = self.current_job.pos
 
       # if task is done remove it from TaskER and job list
-      if not current_job.do_estimate():
-        print('Worked on job ' + str(self.current_job.id) + ': ' + str(current_job.do_estimate()))
+      if not self.current_job.do_estimate():
+        print('Worked on job ' + str(self.current_job.id) + ': ' + str(self.current_job.do_estimate()))
         print('Job ' + str(self.current_job.id) + ' complete')
         self.removeJobById(self.current_job.id)
         self.current_job = None
       else:
-        print('Worked on job ' + str(self.current_job.id) + ': ' + str(current_job.id.do_estimate()))
+        print('Worked on job ' + str(self.current_job.id) + ': ' + str(self.current_job.do_estimate()))
 
     self.now = self.now + self.config.dt
 

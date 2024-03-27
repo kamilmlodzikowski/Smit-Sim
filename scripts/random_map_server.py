@@ -11,13 +11,13 @@ from datetime import datetime
 from enum import IntEnum
 import json
 from roboticstoolbox import PRMPlanner
-from linear_path import LinearPath
+from smit_linear_path.linear_path import LinearPath
 
 import rospy
 from std_msgs.msg import Float64MultiArray
 from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Pose, Point, Quaternion, Vector3
-from smit_matlab_sim.srv import Step, AddPedestrian, AddPedestrianResponse, GetRoomsAndDoors, GetRoomsAndDoorsResponse, SetAreaPriority, FileOperation, RemoveObject, RemoveObjectResponse, AddObject, AddObjectResponse, GetFurniture, GetFurnitureResponse, GetObjects, GetObjectsResponse, GetObjectPose, GetObjectPoseResponse
+from smit_matlab_sim.srv import Step, AddPedestrian, AddPedestrianResponse, GetRoomsAndDoors, GetRoomsAndDoorsResponse, SetAreaPriority, FileOperation, FileOperationResponse, RemoveObject, RemoveObjectResponse, AddObject, AddObjectResponse, GetFurniture, GetFurnitureResponse, GetObjects, GetObjectsResponse, GetObjectPose, GetObjectPoseResponse
 from smit_matlab_sim.msg import Room, Furniture, Object
 from std_srvs.srv import Empty
 from visualization_msgs.msg import MarkerArray, Marker
@@ -150,6 +150,8 @@ class RandomMapServerNode(object):
 		if self.publish:
 			del self.timer
 			self.timer = rospy.Timer(rospy.Duration(1.0/self.rate), self.publish_map)
+
+		return FileOperationResponse()
 
 	def remove_object(self, req):
 		return RemoveObjectResponse(self.rms.remove_object(req.id))

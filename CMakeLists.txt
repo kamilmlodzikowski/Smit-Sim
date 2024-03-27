@@ -178,6 +178,7 @@ include_directories(
 catkin_install_python(PROGRAMS
   scripts/send_maptobaselink_transform.py
   scripts/random_map_server.py
+  scripts/global_planner/test_planner.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
