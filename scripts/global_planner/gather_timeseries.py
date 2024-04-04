@@ -34,7 +34,7 @@ if __name__ == '__main__':
 		rospy.set_param('~agent_type', 'scheduler')
 	agent_type = rospy.get_param('~agent_type')
 
-	for i in range(1):
+	for i in range(7):
 		sc.day = i + 1
 		sc.prefix = 'base/base_' + str(sc.day) + "_"
 		sc.use_estimator = False
@@ -52,7 +52,7 @@ if __name__ == '__main__':
 			env.save()
 		env.close()
 
-		for j in range(1):
+		for j in range(50):
 			tc.rcount = 1
 			tc.d_var = 0.1
 			tc.b_var = 0.1
