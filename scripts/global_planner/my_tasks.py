@@ -19,6 +19,7 @@ class Task:
         self.preemptive = True
         self.estimated_duration = None
         self.distance_from_robot = 0
+        self.calltime = None
 
     def wait(self, dt):
         self.age = self.age + dt
@@ -69,6 +70,9 @@ class Task:
 
     def getDeathTime(self):
         raise NotImplementedError()
+
+    def setCalltime(self, new_calltime):
+        self.calltime = new_calltime
 
 class Empty(Task):
     uuid_counter = 0
@@ -442,6 +446,10 @@ class PickAndPlace(Task):
         return self.deadline
 
     def setDeadline(self, new_deadline):
+        for t in self.task_list:
+            if t.deadline == self.deadline:
+                t.setDeadline(new_deadline)
+                break
         self.deadline = new_deadline
 
     def getBurst(self):
@@ -449,8 +457,9 @@ class PickAndPlace(Task):
         return timedelta(seconds=self.duration)
 
     def setBurst(self, new_burst):
-        self.duration = new_burst.seconds
-    
+        self.task_list[0].setBurst(new_burst)
+        self.duration = sum([task.getBurst().seconds + task.getBurst().microseconds/1000000 for task in self.task_list])
+
     def dist(self, pos):
         return np.linalg.norm(pos - self.pos)
 
@@ -484,6 +493,13 @@ class PickAndPlace(Task):
 
     def getDeathTime(self):
         return 0
+
+    def setCalltime(self, new_calltime):
+        for t in self.task_list:
+            if t.calltime == self.calltime:
+                t.setCalltime(new_calltime)
+                break
+        self.calltime = new_calltime
 
     def __str__(self):
         return f'PnP | dur: {self.duration:.0f}'
@@ -659,8 +675,6 @@ class TaskConfig(object):
 
     def generate(self, spawn_zones = [((1,9),(1,9))], forbidden_zones = [((0, 0), (0, 0))], objects = [], object_zones = [((0, 0),(0, 0))]):
         Task.id_counter = 0
-        Fall.uuid_counter = 0
-        Transport.uuid_counter = 0
         if self.fix_random:
           random.seed(self.seed)
         else:
@@ -684,7 +698,7 @@ class TaskConfig(object):
                 calltime = self.now + self.time_horizon
                 while calltime > t.deadline - timedelta(seconds = 5):
                     calltime = self.now + random.random() * self.time_horizon - timedelta(seconds = 5)
-                t.calltime = calltime
+                t.setCalltime(calltime)
 
         if self.d_var:
             random.seed(time.time())
@@ -700,7 +714,7 @@ class TaskConfig(object):
             random.seed(time.time())
             for i,t in enumerate(self.task_desc):
               for i in range(self.rcount):
-                task = t(self.now, self.time_horizon, spawn_zones, objects, object_zones)
+                task = t(self.now, self.time_horizon, spawn_zones, forbidden_zones, objects, object_zones)
                 print(task.uuid)
                 tasks.append(task)
 

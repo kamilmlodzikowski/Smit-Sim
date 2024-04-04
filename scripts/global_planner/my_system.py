@@ -38,7 +38,7 @@ class System():
     self.tasks = []
     self.now = self.config.start
 
-    if self.config.use_estimator or self.config.save:
+    if self.config.use_estimator:
       self.estimator = get_estimator_model()
       self.estimator.load_weights(self.config.estimator_path)
 
@@ -81,8 +81,11 @@ class System():
 
   def close(self):
     if self.config.save:
-      self.estimator_file_out.close()
-      self.predictor_file_out.close()
+      try:
+        self.estimator_file_out.close()
+      except:
+        pass
+      # self.predictor_file_out.close()
 
   def reset(self):
     print('Resetting...')
@@ -125,17 +128,17 @@ class System():
       now = datetime.now() # current date and time
       fname = self.config.prefix + now.strftime(f"%Y%m%d_%H%M%S_%f")
 
-      self.fname = 'estimator/timeseries/' + fname + '.csv'
-      if not os.path.exists('/'.join(self.fname.split('/')[:-1])):
-        os.makedirs('/'.join(self.fname.split('/')[:-1]))
-      self.estimator_file_out = open(self.fname, "w")
+      fname = 'estimator/timeseries/' + fname + '.csv'
+      if not os.path.exists('/'.join(fname.split('/')[:-1])):
+        os.makedirs('/'.join(fname.split('/')[:-1]))
+      self.estimator_file_out = open(fname, "w")
 
       # self.fname = 'predictor/timeseries/' + fname + '.csv'
       # if not os.path.exists('/'.join(self.fname.split('/')[:-1])):
       #   os.makedirs('/'.join(self.fname.split('/')[:-1]))
       # self.predictor_file_out = open(self.fname, "w")
 
-      self.next_save = self.now + self.config.time_slot
+      # self.next_save = self.now + self.config.time_slot
 
     # initialize tasker
     # self.rt = RequestTable()
@@ -163,6 +166,7 @@ class System():
         if task.calltime <= self.now:
           if task.do_estimate():
             self.jobs.append(task)
+            print(f"Added task {task.uuid} to jobs.")
             new_added = True
     # update existing job durations
     if len(self.jobs) and ((self.previous_job != self.current_job and self.previous_job != None) or new_added):
@@ -267,20 +271,23 @@ class System():
   #   if len(self.empty_jobs):
   #     self.out, self.profit = self.rt.schedule_with_priority()
 
-  def save_estimation(self, task, job):
-    if self.config.save:
-      self.estimator_file_out.write(':'.join([
-          str((self.now - self.config.start).seconds*self.time_to_horizon),
-          str(self.config.day),
-          str((task.deadline - self.config.start).seconds*self.time_to_horizon),
-          str(task.pos[0]),
-          str(task.pos[1]),
-          str(task.goal[0] if isinstance(task, Transport) else task.pos[0]),
-          str(task.goal[1] if isinstance(task, Transport) else task.pos[1]),
-          str(self.navigator.plan(self.pos, task.pos).get_distance()),
-          str(job.priority),
-          str(job.burst_time.seconds*self.time_to_horizon),
-        ]) + '\n')
+  def save_estimation(self, task):
+    self.estimator_file_out.write(':'.join([
+        str((self.now - self.config.start).seconds*self.time_to_horizon),
+        str(self.config.day),
+        str((task.deadline - self.config.start).seconds*self.time_to_horizon),
+        str(task.pos[0]),
+        str(task.pos[1]),
+        # str(exec("try: print(str(task.goal[0]))\nexcept AttributeError: print(str(task.pos[0]))")),
+        # str(exec("try: print(str(task.goal[1]))\nexcept AttributeError: print(str(task.pos[1]))")),
+        str(task.goal[0] if hasattr(task, 'goal') else task.pos[0]),
+        str(task.goal[1] if hasattr(task, 'goal') else task.pos[1]),
+        # str(task.goal[0] if isinstance(task, Transport) or isinstance(task, PickAndPlace) else task.pos[0]),
+        # str(task.goal[1] if isinstance(task, Transport) or isinstance(task, PickAndPlace) else task.pos[1]),
+        str(task.distance_from_robot),
+        str(task.priority),
+        str(task.estimated_duration.seconds*self.time_to_horizon),
+      ]) + '\n')
 
   # def save_schedule(self):    
   #   if self.config.save:
@@ -290,19 +297,16 @@ class System():
 
   def save(self):
     if self.config.save:
-      if self.now >= self.next_save:
-        self.next_save += self.config.time_slot
-        # self.save_schedule()
-        for i,job in enumerate(self.jobs):
-          t = self.tasks[int(self.jobIDs[i])]
-          self.save_estimation(t, job)
+      # self.save_schedule()
+      for job in self.jobs:
+        self.save_estimation(job)
 
-  def run_env(self):
-    while(self.now < self.config.stop):
-      print("Stepping from " + str(self.now) + " to " + str(self.now + self.config.dt))
-      # self.predict_schedule()
-      self.step()
-      self.update_jobs()
-      self.save()
+  # def run_env(self):
+  #   while(self.now < self.config.stop):
+  #     print("Stepping from " + str(self.now) + " to " + str(self.now + self.config.dt))
+  #     # self.predict_schedule()
+  #     self.step()
+  #     self.update_jobs()
+  #     self.save()
 
-    self.close()
+  #   self.close()
