@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import gym
 from my_system import SystemConfig, System
-from my_tasks import TaskConfig, TransportGenerator, FallGenerator, Transport, Fall
+from my_tasks import TaskConfig, TransportGenerator, FallGenerator, PickAndPlaceGenerator, Transport, Fall, PickAndPlace
 from datetime import datetime, date, time
 from my_agents import DQNAgent, DQNConfig
 from my_eval_functions import DQNEval
@@ -14,6 +14,7 @@ import warnings
 from rl.callbacks import Callback
 import numpy as np
 import os
+from rl.policy import EpsGreedyQPolicy, LinearAnnealedPolicy
 
 class MyEpisodeLogger(Callback):
 	def __init__(self, filepath):
@@ -177,14 +178,16 @@ if __name__ == '__main__':
 	sc = SystemConfig()
 	sc.stop = datetime.combine(date.today(), time(12, 0))
 	sc.use_estimator = False
-	tc = TaskConfig([TransportGenerator, FallGenerator], 12, sc.start, sc.stop - sc.start, seed = -1)
+	tc = TaskConfig([TransportGenerator, FallGenerator, PickAndPlaceGenerator], 12, sc.start, sc.stop - sc.start, seed = -1)
 	system = System(tc, sc)
 
 	agent_config = DQNConfig()
+	agent_config.training_steps = 250000
+	agent_config.policy = LinearAnnealedPolicy(EpsGreedyQPolicy(), 'eps', 1.0, 0.1, 0.0, 250000)
 	agent_config.model_path = 'dqn_agent/' + datetime.now().strftime(f"%Y%m%d_%H%M%S_%f/")
 	os.makedirs(agent_config.model_path)
 	tasks_per_type = 5
-	agent = DQNAgent(agent_config, [Transport, Fall], tasks_per_type)
+	agent = DQNAgent(agent_config, [Transport, Fall, PickAndPlace], tasks_per_type)
 
 	eval_func = DQNEval()
 

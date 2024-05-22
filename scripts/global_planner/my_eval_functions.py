@@ -162,9 +162,9 @@ class StatisticEval(EvalFunction):
 	def calculate_results(self, tasks, current_job, now):
 		result = StatisticEvalResult()
 
-	    # przebyty dystans,
-	    self.full_travel_distance += np.linalg.norm(system.pos - self.last_robot_pos)
-	    result.full_travel_distance = self.full_travel_distance
+		# przebyty dystans,
+		self.full_travel_distance += np.linalg.norm(system.pos - self.last_robot_pos)
+		result.full_travel_distance = self.full_travel_distance
 
 		# wykonane poszczególne typy zadań
 		self.num_of_tasks_completed = [0 for _ in range(len(self.task_types))]
@@ -175,62 +175,62 @@ class StatisticEval(EvalFunction):
 						self.num_of_tasks_completed[i] += 1
 		result.num_of_tasks_completed = self.num_of_tasks_completed
 
-	    # czas wykonania poszczególnych zadań względem czasu żądania (dla zadań, które zostały już wykonane)
-	    for task, i in enumerate(tasks):
-	    	if not task.do_estimate() and self.task_completion_to_deadline[i] is None:
-	    		self.task_completion_to_deadline[i] = (now - task.deadline).seconds
-	    result.task_completion_to_deadline = self.task_completion_to_deadline
+		# czas wykonania poszczególnych zadań względem czasu żądania (dla zadań, które zostały już wykonane)
+		for task, i in enumerate(tasks):
+			if not task.do_estimate() and self.task_completion_to_deadline[i] is None:
+				self.task_completion_to_deadline[i] = (now - task.deadline).seconds
+		result.task_completion_to_deadline = self.task_completion_to_deadline
 
-	    # czas wykonania poszczególnych zadań upadku względem terminu (dla zadań, które zostały już wykonane)
-	    for task, i in enumerate(tasks):
-	    	if not task.do_estimate() and self.task_completion_to_deathtime[i] is None and isinstance(task.getDeathTime(), datetime.datetime):
-	    		self.task_completion_to_deathtime[i] = (now - task.getDeathTime()).seconds
-	    result.task_completion_to_deathtime = self.task_completion_to_deathtime
+		# czas wykonania poszczególnych zadań upadku względem terminu (dla zadań, które zostały już wykonane)
+		for task, i in enumerate(tasks):
+			if not task.do_estimate() and self.task_completion_to_deathtime[i] is None and isinstance(task.getDeathTime(), datetime.datetime):
+				self.task_completion_to_deathtime[i] = (now - task.getDeathTime()).seconds
+		result.task_completion_to_deathtime = self.task_completion_to_deathtime
 
-	    # liczbę przerwań każdego typu zadania
-	    if self.previous_job != self.current_job and self.previous_job.do_estimate():
+		# liczbę przerwań każdego typu zadania
+		if self.previous_job != self.current_job and self.previous_job.do_estimate():
 			for t, i in enumerate(self.task_types):
 				if isinstance(self.previous_job, t):
 					self.num_of_tasks_interrupted[i] += 1
-	    result.num_of_tasks_interrupted = self.num_of_tasks_interrupted
+		result.num_of_tasks_interrupted = self.num_of_tasks_interrupted
 
-	    # liczbę przerwań każdej instancji zadania
-	    if self.previous_job != self.current_job and self.previous_job.do_estimate():
-	    	for task, i in enumerate(tasks):
-	    		if task == self.previous_job:
-	    			self.task_interruptions[i] += 1
-	    result.task_interruptions = self.task_interruptions
+		# liczbę przerwań każdej instancji zadania
+		if self.previous_job != self.current_job and self.previous_job.do_estimate():
+			for task, i in enumerate(tasks):
+				if task == self.previous_job:
+					self.task_interruptions[i] += 1
+		result.task_interruptions = self.task_interruptions
 
-	    # Liczbę wyjść robota z okrągu o promieniu 2 m od miejsca upadku człowieka, kiedy robot wykonuje inne zadanie
-	    close_to_human = []
-	    for job in system.jobs:
-	    	if isinstance(job, Fall) and job != current_job and np.linalg.norm(system.pos - job.pos) < 2:
-	    		close_to_human.append(job)
-	    for job in self.previous_humans_close_to_robot:
-	    	if not (job in close_to_human) and job != current_job:
-	    		self.num_of_human_abandonment += 1
-	    result.num_of_human_abandonment = self.num_of_human_abandonment
+		# Liczbę wyjść robota z okrągu o promieniu 2 m od miejsca upadku człowieka, kiedy robot wykonuje inne zadanie
+		close_to_human = []
+		for job in system.jobs:
+			if isinstance(job, Fall) and job != current_job and np.linalg.norm(system.pos - job.pos) < 2:
+				close_to_human.append(job)
+		for job in self.previous_humans_close_to_robot:
+			if not (job in close_to_human) and job != current_job:
+				self.num_of_human_abandonment += 1
+		result.num_of_human_abandonment = self.num_of_human_abandonment
 
-	    # remember current state
-	    self.previous_humans_close_to_robot = close_to_human
-	    self.last_robot_pos = system.pos
-	    self.previous_job = self.current_job
+		# remember current state
+		self.previous_humans_close_to_robot = close_to_human
+		self.last_robot_pos = system.pos
+		self.previous_job = self.current_job
 
-	    # Wykonania wszystkich zadań, lub
+		# Wykonania wszystkich zadań, lub
 		result.terminate = True
 		for task in tasks:
 			if task.do_estimate():
 				result.terminate = False
 				break
 
-	    # Wpadnięciu w drgania, zdefiniowane jako trzecie przełączenie na to samo zadanie w czasie mniejszym niż 3 min.
-	    self.recent_jobs.append(current_job.uuid)
-	    self.recent_jobs.pop(0)
-	    if self.recent_jobs.count(self.recent_jobs[-1]) > 2:
-	    	result.terminate = True
-	    	return result
+		# Wpadnięciu w drgania, zdefiniowane jako trzecie przełączenie na to samo zadanie w czasie mniejszym niż 3 min.
+		self.recent_jobs.append(current_job.uuid)
+		self.recent_jobs.pop(0)
+		if self.recent_jobs.count(self.recent_jobs[-1]) > 2:
+			result.terminate = True
+			return result
 
-	    # Upłynięciu terminu któregoś zadania upadku
+		# Upłynięciu terminu któregoś zadania upadku
 		for task in tasks:
 			if not task.is_alive(now):
 				result.terminate = True
