@@ -221,12 +221,12 @@ class System():
 
       # if task is done remove it from TaskER and job list
       if not self.current_job.do_estimate():
-        print('Worked on job ' + str(self.current_job.id) + ': ' + str(self.current_job.do_estimate()))
-        print('Job ' + str(self.current_job.id) + ' complete')
+        print('Worked on job ' + str(self.current_job.uuid) + ': ' + str(self.current_job.do_estimate()))
+        print('Job ' + str(self.current_job.uuid) + ' complete')
         self.removeJobById(self.current_job.id)
         self.current_job = None
       else:
-        print('Worked on job ' + str(self.current_job.id) + ': ' + str(self.current_job.do_estimate()))
+        print('Worked on job ' + str(self.current_job.uuid) + ': ' + str(self.current_job.do_estimate()))
 
     self.now = self.now + self.config.dt
 

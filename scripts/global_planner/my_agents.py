@@ -1,6 +1,16 @@
 from TaskER.RequestTable import RequestTable, ScheduleRules, ScheduleRule, TaskerReqest
 import random
 
+import tensorflow as tf
+from keras.layers import Dense, Flatten
+import rl
+import rl.agents.dqn
+from rl.policy import EpsGreedyQPolicy, LinearAnnealedPolicy
+from rl.memory import SequentialMemory
+import jsonpickle
+import numpy as np
+import os
+
 class RequestTableAgentPlugin:
 
     def __init__(self):
@@ -78,7 +88,7 @@ class SchedulerAgent(DecAgent):
     def select_task(self, jobs, now, eval_result = None):
         if len(jobs) == 0:
             self.selected_task = None
-            return None
+            return self.selected_task
 
         if not(self.selected_task is None):
             if not self.selected_task.preemptive and self.selected_task in jobs:
@@ -103,7 +113,7 @@ class SchedulerAgent(DecAgent):
                         self.selected_task = job
                         return self.selected_task
                 self.selected_task = None
-                return None
+                return self.selected_task
 
 class SimpleAgent(DecAgent):
 
@@ -115,7 +125,7 @@ class SimpleAgent(DecAgent):
         # print(f'Received jobs: {[job.id for job in jobs]}')
         if len(jobs) == 0:
             self.selected_task = None
-            return None
+            return self.selected_task
 
         if not(self.selected_task is None):
             if (not self.selected_task.preemptive or random.random() <= self.hesitance) and self.selected_task in jobs:
@@ -140,7 +150,7 @@ class DistanceAgent(DecAgent):
     def select_task(self, jobs, now = None, eval_result = None):
         if len(jobs) == 0:
             self.selected_task = None
-            return None
+            return self.selected_task
 
         if not(self.selected_task is None):
             if not self.selected_task.preemptive and self.selected_task in jobs:
@@ -158,3 +168,98 @@ class DistanceAgent(DecAgent):
                 selected_score = score
 
         return self.selected_task
+
+
+class DQNConfig(object):
+
+  def __init__(self):
+    self.memory = SequentialMemory(limit=50000, window_length=1)
+    self.policy = LinearAnnealedPolicy(EpsGreedyQPolicy(), 'eps', 1.0, 0.1, 0.0, 50000)
+
+    self.learning_rate = 1e-2
+    self.training_steps = 50000
+    self.warmup_steps = 25000
+
+    self.target_model_update = 1e-2
+
+    self.model_path = ""
+
+class DQNAgent(DecAgent):
+
+    def __init__(self, config, task_types, tasks_per_type):
+        super(DQNAgent, self).__init__()
+        self.config = config
+        self.task_types = task_types
+        self.tasks_per_type = tasks_per_type
+
+        self.model = self.build_model()
+
+        self.agent = rl.agents.dqn.DQNAgent(self.model, memory = self.config.memory, policy = self.config.policy, 
+                   nb_actions = len(self.task_types) * self.tasks_per_type, nb_steps_warmup = self.config.warmup_steps,
+                   target_model_update = self.config.target_model_update)
+
+        self.agent.compile(tf.keras.optimizers.Adam(learning_rate=config.learning_rate), metrics=['mae'])
+
+        self.state = None
+        self.tasks_in_state = [None for _ in range(len(self.task_types) * self.tasks_per_type)]
+
+    def select_task(self, jobs, now = None, eval_result = None):
+        if len(jobs) == 0:
+            self.selected_task = None
+            return self.selected_task
+
+        if not(self.selected_task is None):
+            if not self.selected_task.preemptive and self.selected_task in jobs:
+                return self.selected_task
+
+        self.calculate_state(jobs)
+
+        est = state[:,:,0] != 0
+        if np.sum(est) == 1:
+            action = np.argmax(est.flatten())
+        else:
+            action = self.agent.forward(state)
+
+        self.selected_task = self.tasks_in_state[action]
+        return self.selected_task
+
+    def calculate_state(self, jobs):
+        jobs.sort(key = lambda job: job.getDeadline())
+        self.state = np.zeros((len(self.task_types), self.tasks_per_type, 3))
+        self.tasks_in_state = [None for _ in range(len(self.task_types) * self.tasks_per_type)]
+
+        for job in jobs:
+            type_id = 0
+            for i,c in enumerate(self.task_types):
+                if isinstance(job, c):
+                    type_id = i
+                    break
+
+            for i,line in enumerate(self.state[type_id]):
+                if not line.any():
+                    self.state[type_id, i] = [job.getBurst().seconds, 1 if job.preemptive else 0, job.distance_from_robot]
+                    self.tasks_in_state[type_id*self.tasks_per_type + i] = job
+                    # self.state[type_id, i] = [job.priority, 1 if job.preemptive else 0, job.distance_from_robot]
+                    break
+
+    def build_model(self):
+        model = tf.keras.Sequential()
+        model.add(Flatten(input_shape=(1,)+ (len(self.task_types), self.tasks_per_type, 3)))
+        model.add(Dense(80, activation='relu'))
+        model.add(Dense(len(self.task_types) * self.tasks_per_type, activation='linear'))
+        return model
+    
+    def save(self):
+        path = self.config.model_path
+        self.agent.save_weights(os.path.join(path, "weights"))
+        
+        with open(os.path.join(path, 'memory.json'), "w") as f:
+            f.write(jsonpickle.encode(self.agent.memory,  indent=4))
+
+    def load(self):
+        path = self.config.model_path
+        self.agent.load_weights(os.path.join(path, "weights"))
+        self.agent.memory = jsonpickle.decode(open(os.path.join(path, 'memory.json')).read())
+        self.agent.compile(tf.keras.optimizers.Adam(learning_rate = self.config.learning_rate), metrics=['mae'])
+
+

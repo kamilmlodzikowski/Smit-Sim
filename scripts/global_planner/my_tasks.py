@@ -152,7 +152,7 @@ class Transport(Task):
 
     def __str__(self):
         dst = self.do_estimate()
-        return f'D | dst: {dst:.2f} m | spd: {self.spd:.2f} m/s'
+        return f'{self.uuid} | dst: {dst:.2f} m | spd: {self.spd:.2f} m/s'
 
     __repr__ = __str__
     
@@ -216,7 +216,7 @@ class Fall(Task):
         return self.deadline + timedelta(minutes=15)
 
     def __str__(self):
-        return f'F | urg: {self.urgency:.0f}'
+        return f'{self.uuid} | urg: {self.urgency:.0f}'
 
     __repr__ = __str__
     
@@ -319,7 +319,7 @@ class Pick(Task):
         return 0
 
     def __str__(self):
-        return f'Pi | dur: {self.duration:.0f}'
+        return f'{self.uuid} | dur: {self.duration:.0f}'
 
     __repr__ = __str__
     
@@ -413,7 +413,7 @@ class Place(Task): #TODO
         return 0
 
     def __str__(self):
-        return f'Pl | dur: {self.duration:.0f}'
+        return f'{self.uuid} | dur: {self.duration:.0f}'
 
     __repr__ = __str__
     
@@ -502,7 +502,7 @@ class PickAndPlace(Task):
         self.calltime = new_calltime
 
     def __str__(self):
-        return f'PnP | dur: {self.duration:.0f}'
+        return f'{self.uuid} | dur: {self.duration:.0f}'
 
     __repr__ = __str__
     
