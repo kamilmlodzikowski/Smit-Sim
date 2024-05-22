@@ -169,7 +169,7 @@ class System():
             print(f"Added task {task.uuid} to jobs.")
             new_added = True
     # update existing job durations
-    if len(self.jobs) and ((self.previous_job != self.current_job and self.previous_job != None) or new_added):
+    if len(self.jobs) and ((self.previous_job != self.current_job and self.previous_job != None) or new_added or (not self.current_job.do_estimate())):
       for job in self.jobs:
         job.updatePos()
         job.distance_from_robot = self.navigator.plan(self.pos, job.pos).get_distance()
@@ -224,7 +224,7 @@ class System():
         print('Worked on job ' + str(self.current_job.uuid) + ': ' + str(self.current_job.do_estimate()))
         print('Job ' + str(self.current_job.uuid) + ' complete')
         self.removeJobById(self.current_job.id)
-        self.current_job = None
+        # self.current_job = None
       else:
         print('Worked on job ' + str(self.current_job.uuid) + ': ' + str(self.current_job.do_estimate()))
 

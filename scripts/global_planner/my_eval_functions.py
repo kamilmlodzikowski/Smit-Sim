@@ -1,3 +1,5 @@
+import datetime
+
 class EvalResult:
 
 	def __init__(self):
@@ -10,6 +12,11 @@ class DQNEvalResult(EvalResult):
 		self.reward = 0
 		self.completed = False
 		self.dead = False
+
+class StatisticEvalResult(EvalResult):
+	"""docstring for StatisticEvalResult"""
+	def __init__(self):
+		super(StatisticEvalResult, self).__init__()
 
 class EvalFunction:
 	"""docstring for EvalFunction"""
@@ -85,3 +92,106 @@ class DQNEval(EvalFunction):
 
 	def reset(self):
 		self.previous_action = None
+
+class StatisticEval(EvalFunction):
+	"""docstring for StatisticEval"""
+	def __init__(self, system = None, task_types = [], dt = 5, recent_dt = 180, save_results = False):
+		super(StatisticEval, self).__init__()
+
+		# adding system handle for better access
+		self.system = system
+		self.last_robot_pos = np.array([0, 0]) if self.system is None else system.pos
+
+		# recent job list for termination
+		self.dt = dt
+		self.recent_dt = recent_dt
+		self.recent_jobs = [None for _ in range(int(self.recent_dt/self.dt) + 1)]
+
+		# evaluation values
+		self.full_travel_distance = 0.0
+		self.task_types = task_types
+		self.num_of_tasks_completed = [0 for _ in range(len(self.task_types))]
+		self.task_completion_to_deadline = [] if self.system is None else [None for _ in range(len(self.system.tasks))]
+
+	def set_system(self, system):
+		self.system = system
+		self.last_robot_pos = self.system.pos
+
+	def set_dt(self, dt):
+		self.dt = dt
+		self.recent_jobs = [None for i in range(int(self.recent_dt/self.dt) + 1)]
+
+	def set_recent_dt(self, dt):
+		self.recent_dt = dt
+		self.recent_jobs = [None for i in range(int(self.recent_dt/self.dt) + 1)]
+
+	def set_task_types(self, task_types):
+		self.task_types = task_types
+		self.num_of_tasks_completed = [0 for _ in range(len(self.task_types))]
+
+	def reset(self):
+		self.recent_jobs = [None for i in range(int(self.recent_dt/self.dt) + 1)]
+		self.last_robot_pos = self.system.pos
+		self.full_travel_distance = 0.0
+		self.num_of_tasks_completed = [0 for _ in range(len(self.task_types))]
+
+	def calculate_results(self, tasks, current_job, now):
+		result = EvalResult()
+
+	    # przebyty dystans,
+	    self.full_travel_distance += np.linalg.norm(system.pos - self.last_robot_pos)
+	    self.last_robot_pos = system.pos
+
+		# wykonane poszczególne typy zadań
+		self.num_of_tasks_completed = [0 for _ in range(len(self.task_types))]
+		for task in tasks:
+			if not task.do_estimate():
+				for t, i in enumerate(self.task_types):
+					if isinstance(task, t):
+						self.num_of_tasks_completed[i] += 1
+
+	    # czas wykonania poszczególnych zadań względem czasu żądania (dla zadań, które zostały już wykonane)
+	    for task in tasks:
+	    	if not task.do_estimate():
+
+
+	    # Wykonania wszystkich zadań, lub
+		result.terminate = True
+		for task in tasks:
+			if task.do_estimate():
+				result.terminate = False
+				break
+
+	    # Wpadnięciu w drgania, zdefiniowane jako trzecie przełączenie na to samo zadanie w czasie mniejszym niż 3 min.
+	    self.recent_jobs.append(current_job.uuid)
+	    self.recent_jobs.pop(0)
+	    if self.recent_jobs.count(self.recent_jobs[-1]) > 2:
+	    	result.terminate = True
+	    	return result
+
+	    # Upłynięciu terminu któregoś zadania upadku
+		for task in tasks:
+			if not task.is_alive(now):
+				result.terminate = True
+				break
+
+		return result
+
+# W naszym przykładzie zastosujmy funkcję ewaluacji, która na bieżąco liczy:
+
+#     przebyty dystans,
+#     wykonane poszczególne typy zadań
+#     czas wykonania poszczególnych zadań względem czasu żądania (dla zadań, które zostały już wykonane)
+#     czas wykonania poszczególnych zadań upadku względem terminu (dla zadań, które zostały już wykonane)
+#     liczbę przerwań każdego typu zadania
+#     liczbę przerwań każdej instancji zadania
+#     Liczbę wyjść robota z okrągu o promieniu 2 m od miejsca upadku człowieka, kiedy robot wykonuje inne zadanie
+
+
+# Funkcja wywołuje terminate() w momencie:
+
+#     Wykonania wszystkich zadań, lub
+#     Upłynięciu terminu któregoś zadania upadku
+#     Wpadnięciu w drgania, zdefiniowane jako trzecie przełączenie na to samo zadanie w czasie mniejszym niż 3 min.
+
+
