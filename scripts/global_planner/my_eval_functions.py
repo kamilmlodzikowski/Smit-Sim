@@ -1,4 +1,6 @@
 import datetime
+import numpy as np
+from my_tasks import Fall
 
 class EvalResult:
 
@@ -17,6 +19,12 @@ class StatisticEvalResult(EvalResult):
 	"""docstring for StatisticEvalResult"""
 	def __init__(self):
 		super(StatisticEvalResult, self).__init__()
+		self.full_travel_distance = 0
+		self.num_of_tasks_completed = []
+		self.task_completion_to_deadline = []
+		self.task_completion_to_deathtime = []
+		self.num_of_tasks_interrupted = []
+		self.task_interruptions = []
 
 class EvalFunction:
 	"""docstring for EvalFunction"""
@@ -100,7 +108,10 @@ class StatisticEval(EvalFunction):
 
 		# adding system handle for better access
 		self.system = system
+		self.task_types = task_types
 		self.last_robot_pos = np.array([0, 0]) if self.system is None else system.pos
+		self.previous_job = None
+		self.previous_humans_close_to_robot = []
 
 		# recent job list for termination
 		self.dt = dt
@@ -109,13 +120,19 @@ class StatisticEval(EvalFunction):
 
 		# evaluation values
 		self.full_travel_distance = 0.0
-		self.task_types = task_types
 		self.num_of_tasks_completed = [0 for _ in range(len(self.task_types))]
 		self.task_completion_to_deadline = [] if self.system is None else [None for _ in range(len(self.system.tasks))]
+		self.task_completion_to_deathtime = [] if self.system is None else [None for _ in range(len(self.system.tasks))]
+		self.num_of_tasks_interrupted = [0 for _ in range(len(self.task_types))]
+		self.task_interruptions = [] if self.system is None else [0 for _ in range(len(self.system.tasks))]
+		self.num_of_human_abandonment = 0
 
 	def set_system(self, system):
 		self.system = system
 		self.last_robot_pos = self.system.pos
+		self.task_completion_to_deadline = [] if self.system is None else [None for _ in range(len(self.system.tasks))]
+		self.task_completion_to_deathtime = [] if self.system is None else [None for _ in range(len(self.system.tasks))]
+		self.task_interruptions = [] if self.system is None else [0 for _ in range(len(self.system.tasks))]
 
 	def set_dt(self, dt):
 		self.dt = dt
@@ -128,19 +145,26 @@ class StatisticEval(EvalFunction):
 	def set_task_types(self, task_types):
 		self.task_types = task_types
 		self.num_of_tasks_completed = [0 for _ in range(len(self.task_types))]
+		self.num_of_tasks_interrupted = [0 for _ in range(len(self.task_types))]
 
 	def reset(self):
 		self.recent_jobs = [None for i in range(int(self.recent_dt/self.dt) + 1)]
-		self.last_robot_pos = self.system.pos
+		self.last_robot_pos = np.array([0, 0]) if self.system is None else system.pos
+		self.previous_humans_close_to_robot = []
 		self.full_travel_distance = 0.0
 		self.num_of_tasks_completed = [0 for _ in range(len(self.task_types))]
+		self.task_completion_to_deadline = [] if self.system is None else [None for _ in range(len(self.system.tasks))]
+		self.task_completion_to_deathtime = [] if self.system is None else [None for _ in range(len(self.system.tasks))]
+		self.num_of_tasks_interrupted = [0 for _ in range(len(self.task_types))]
+		self.task_interruptions = [] if self.system is None else [0 for _ in range(len(self.system.tasks))]
+		self.num_of_human_abandonment = 0
 
 	def calculate_results(self, tasks, current_job, now):
-		result = EvalResult()
+		result = StatisticEvalResult()
 
 	    # przebyty dystans,
 	    self.full_travel_distance += np.linalg.norm(system.pos - self.last_robot_pos)
-	    self.last_robot_pos = system.pos
+	    result.full_travel_distance = self.full_travel_distance
 
 		# wykonane poszczególne typy zadań
 		self.num_of_tasks_completed = [0 for _ in range(len(self.task_types))]
@@ -149,11 +173,48 @@ class StatisticEval(EvalFunction):
 				for t, i in enumerate(self.task_types):
 					if isinstance(task, t):
 						self.num_of_tasks_completed[i] += 1
+		result.num_of_tasks_completed = self.num_of_tasks_completed
 
 	    # czas wykonania poszczególnych zadań względem czasu żądania (dla zadań, które zostały już wykonane)
-	    for task in tasks:
-	    	if not task.do_estimate():
+	    for task, i in enumerate(tasks):
+	    	if not task.do_estimate() and self.task_completion_to_deadline[i] is None:
+	    		self.task_completion_to_deadline[i] = (now - task.deadline).seconds
+	    result.task_completion_to_deadline = self.task_completion_to_deadline
 
+	    # czas wykonania poszczególnych zadań upadku względem terminu (dla zadań, które zostały już wykonane)
+	    for task, i in enumerate(tasks):
+	    	if not task.do_estimate() and self.task_completion_to_deathtime[i] is None and isinstance(task.getDeathTime(), datetime.datetime):
+	    		self.task_completion_to_deathtime[i] = (now - task.getDeathTime()).seconds
+	    result.task_completion_to_deathtime = self.task_completion_to_deathtime
+
+	    # liczbę przerwań każdego typu zadania
+	    if self.previous_job != self.current_job and self.previous_job.do_estimate():
+			for t, i in enumerate(self.task_types):
+				if isinstance(self.previous_job, t):
+					self.num_of_tasks_interrupted[i] += 1
+	    result.num_of_tasks_interrupted = self.num_of_tasks_interrupted
+
+	    # liczbę przerwań każdej instancji zadania
+	    if self.previous_job != self.current_job and self.previous_job.do_estimate():
+	    	for task, i in enumerate(tasks):
+	    		if task == self.previous_job:
+	    			self.task_interruptions[i] += 1
+	    result.task_interruptions = self.task_interruptions
+
+	    # Liczbę wyjść robota z okrągu o promieniu 2 m od miejsca upadku człowieka, kiedy robot wykonuje inne zadanie
+	    close_to_human = []
+	    for job in system.jobs:
+	    	if isinstance(job, Fall) and job != current_job and np.linalg.norm(system.pos - job.pos) < 2:
+	    		close_to_human.append(job)
+	    for job in self.previous_humans_close_to_robot:
+	    	if not (job in close_to_human) and job != current_job:
+	    		self.num_of_human_abandonment += 1
+	    result.num_of_human_abandonment = self.num_of_human_abandonment
+
+	    # remember current state
+	    self.previous_humans_close_to_robot = close_to_human
+	    self.last_robot_pos = system.pos
+	    self.previous_job = self.current_job
 
 	    # Wykonania wszystkich zadań, lub
 		result.terminate = True
