@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 from my_system import SystemConfig, System
-from my_tasks import TaskConfig, TransportGenerator, FallGenerator, PickAndPlaceGenerator
+from my_tasks import TaskConfig, TransportGenerator, FallGenerator, PickAndPlaceGenerator, Transport, Fall, PickAndPlace
 from datetime import datetime, date, time
 from my_agents import SchedulerAgent, SimpleAgent, DistanceAgent
 from smit_matlab_sim.srv import FileOperation, FileOperationRequest
+from my_eval_functions import StatisticEval
 import random
 import rospy
 import sys
@@ -25,7 +26,7 @@ if __name__ == '__main__':
 	env = System(tc, sc)
 
 	if not rospy.has_param('~agent_type'):
-		rospy.set_param('~agent_type', 'scheduler')
+		rospy.set_param('~agent_type', 'simple')
 	agent_type = rospy.get_param('~agent_type')
 	if agent_type == 'scheduler':
 		agent = SchedulerAgent()
@@ -37,11 +38,15 @@ if __name__ == '__main__':
 		print('Unknown agent type, running SchedulerAgent.')
 		agent = SchedulerAgent()
 
+	eval_fun = StatisticEval(system = env, task_types = [Transport, Fall, PickAndPlace])
+
 	while(env.now < sc.stop):
 		print("Stepping from " + str(env.now) + " to " + str(env.now + sc.dt))
 		action = agent.select_task(env.jobs, env.now)
 		env.execute_step(action)
 		env.update_jobs()
+		result = eval_fun.calculate_results(env.tasks, action, env.now)
 		env.save()
+	print(result)
 	env.close()
 
