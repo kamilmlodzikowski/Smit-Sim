@@ -2,7 +2,7 @@
 from my_system import SystemConfig, System
 from my_tasks import TaskConfig, TransportGenerator, FallGenerator, PickAndPlaceGenerator, Transport, Fall, PickAndPlace
 from datetime import datetime, date, time
-from my_agents import SchedulerAgent, SimpleAgent, DistanceAgent, DQNConfig, DQNAgent
+from my_agents import SchedulerAgent, SimpleAgent, DistanceAgent, DQNConfig, DQNAgent, SimpleAgent2
 from smit_matlab_sim.srv import FileOperation, FileOperationRequest
 from my_eval_functions import StatisticEval, StatisticEvalResult
 import random
@@ -32,6 +32,8 @@ if __name__ == '__main__':
 		agent = SchedulerAgent()
 	elif agent_type == 'simple':
 		agent = SimpleAgent(float(rospy.get_param('~hesitance')) if rospy.has_param('~hesitance') else 0.0)
+	elif agent_type == 'simple2':
+		agent = SimpleAgent2(float(rospy.get_param('~hesitance')) if rospy.has_param('~hesitance') else 0.0)
 	elif agent_type == 'distance':
 		agent = DistanceAgent(float(rospy.get_param('~ratio')) if rospy.has_param('~ratio') else 0.0)
 	elif agent_type == 'dqn':
@@ -48,7 +50,7 @@ if __name__ == '__main__':
 
 	if agent_type == 'scheduler':
 		save_file = f'statistic_eval/{agent_type}/{datetime.now().strftime(f"%Y%m%d_%H%M%S_%f.csv")}'
-	elif agent_type == 'simple':
+	elif agent_type == 'simple' or agent_type == 'simple2':
 		save_file = f'statistic_eval/{agent_type}_hesitance_{agent.hesitance}/{datetime.now().strftime(f"%Y%m%d_%H%M%S_%f.csv")}'
 	elif agent_type == 'distance':
 		save_file = f'statistic_eval/{agent_type}_ratio_{agent.ratio}/{datetime.now().strftime(f"%Y%m%d_%H%M%S_%f.csv")}'

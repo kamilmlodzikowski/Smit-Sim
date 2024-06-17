@@ -141,6 +141,32 @@ class SimpleAgent(DecAgent):
 
         return self.selected_task
 
+class SimpleAgent2(DecAgent):
+
+    def __init__(self, hesitance = 0.0):
+        super(SimpleAgent2, self).__init__()
+        self.hesitance = hesitance
+
+    def select_task(self, jobs, now = None, eval_result = None):
+        # print(f'Received jobs: {[job.id for job in jobs]}')
+        if len(jobs) == 0:
+            self.selected_task = None
+            return self.selected_task
+
+        if not(self.selected_task is None):
+            if (not self.selected_task.preemptive or random.random() <= self.hesitance) and self.selected_task in jobs:
+                # print(self.selected_task in jobs)
+                return self.selected_task
+
+        if self.selected_task is None or not (self.selected_task in jobs):
+            self.selected_task = jobs[0]
+
+        for job in jobs:
+            if job.estimated_duration < self.selected_task.estimated_duration:
+                self.selected_task = job
+
+        return self.selected_task
+
 class DistanceAgent(DecAgent):
 
     def __init__(self, ratio = 0.0):
