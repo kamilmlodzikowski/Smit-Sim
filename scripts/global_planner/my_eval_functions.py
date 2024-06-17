@@ -1,6 +1,8 @@
 import datetime
 import numpy as np
-from my_tasks import Fall
+from my_tasks import Fall, Task
+import os
+import csv
 
 class EvalResult:
 
@@ -42,8 +44,8 @@ class StatisticEvalResult(EvalResult):
 			f'Number of tasks completed per type\n\t{self.num_of_tasks_completed}',
 			f'Difference between task completion time and deadline\n\t{self.task_completion_to_deadline}',
 			f'Difference between task completion time and deathtime\n\t{self.task_completion_to_deathtime}',
-			f'Number of task task interruptions per task type\n\t{self.num_of_tasks_interrupted}',
-			f'Number of task task interruptions per task\n\t{self.task_interruptions}',
+			f'Number of task interruptions per task type\n\t{self.num_of_tasks_interrupted}',
+			f'Number of task interruptions per task\n\t{self.task_interruptions}',
 			f'Number of humans abandonned while doing different tasks\n\t{self.num_of_human_abandonment}',
 		]
 		return '\n'.join(s)
@@ -126,8 +128,11 @@ class DQNEval(EvalFunction):
 
 class StatisticEval(EvalFunction):
 	"""docstring for StatisticEval"""
-	def __init__(self, system = None, task_types = [], dt = 5, recent_dt = 180, save_results = False):
-		super(StatisticEval, self).__init__()
+	def __init__(self, system = None, task_types = [], dt = 5, recent_dt = 180, save_results = False, save_file = 'statistical_eval.csv'):
+		super(StatisticEval, self).__init__(save_results)
+
+		self.save_filename = save_file
+		self.save_file = None
 
 		# adding system handle for better access
 		self.system = system
@@ -150,6 +155,8 @@ class StatisticEval(EvalFunction):
 		self.task_interruptions = [] if self.system is None else [0 for _ in range(len(self.system.tasks))]
 		self.num_of_human_abandonment = 0
 
+		self.reset()
+
 	def set_system(self, system):
 		self.system = system
 		self.last_robot_pos = np.array([0, 0]) if self.system is None else self.system.pos
@@ -171,6 +178,7 @@ class StatisticEval(EvalFunction):
 		self.num_of_tasks_interrupted = [0 for _ in range(len(self.task_types))]
 
 	def reset(self):
+		self.previous_job = None
 		self.recent_jobs = [None for i in range(int(self.recent_dt/self.dt) + 1)]
 		self.last_robot_pos = np.array([0, 0]) if self.system is None else self.system.pos
 		self.previous_humans_close_to_robot = []
@@ -182,6 +190,29 @@ class StatisticEval(EvalFunction):
 		self.task_interruptions = [] if self.system is None else [0 for _ in range(len(self.system.tasks))]
 		self.num_of_human_abandonment = 0
 
+		if self.save:
+			print(self.save_filename)
+			if '/' in self.save_filename:
+				try:
+					os.makedirs('/'.join(self.save_filename.split('/')[:-1]))
+				except Exception as e:
+					print(e)
+					pass
+			with open(self.save_filename, 'a', newline='') as csvfile:
+				csvwriter = csv.writer(csvfile, delimiter=':')
+				csvwriter.writerow(['Full travel distance',
+					'Number of tasks completed per type',
+					'Diffetence between task completion time and deadline',
+					'Diffetence between task completion time and deathtime',
+					'Number of interruptions per task type',
+					'Number of interruptions per task',
+					'Number of times robot abandonned human',
+					'Current job',
+					'All tasks completed',
+					'Some tasks are dead',
+					'Agent fell into oscillation'
+					])
+
 	def calculate_results(self, tasks, current_job, now):
 		result = StatisticEvalResult()
 
@@ -189,26 +220,49 @@ class StatisticEval(EvalFunction):
 		self.full_travel_distance += np.linalg.norm(self.system.pos - self.last_robot_pos)
 		result.full_travel_distance = self.full_travel_distance
 
-		# wykonane poszczególne typy zadań
+		# # wykonane poszczególne typy zadań
+		# self.num_of_tasks_completed = [0 for _ in range(len(self.task_types))]
+		# for task in tasks:
+		# 	if not task.do_estimate():
+		# 		for i, t in enumerate(self.task_types):
+		# 			if isinstance(task, t):
+		# 				self.num_of_tasks_completed[i] += 1
+		# result.num_of_tasks_completed = self.num_of_tasks_completed
+
+		# # czas wykonania poszczególnych zadań względem czasu żądania (dla zadań, które zostały już wykonane)
+		# for i, task in enumerate(tasks):
+		# 	if not task.do_estimate() and self.task_completion_to_deadline[i] is None:
+		# 		self.task_completion_to_deadline[i] = (now - task.deadline).seconds
+		# result.task_completion_to_deadline = self.task_completion_to_deadline
+
+		# # czas wykonania poszczególnych zadań upadku względem terminu (dla zadań, które zostały już wykonane)
+		# for i, task in enumerate(tasks):
+		# 	if not task.do_estimate() and self.task_completion_to_deathtime[i] is None and isinstance(task.getDeathTime(), datetime.datetime):
+		# 		self.task_completion_to_deathtime[i] = (now - task.getDeathTime()).seconds
+		# result.task_completion_to_deathtime = self.task_completion_to_deathtime
+
 		self.num_of_tasks_completed = [0 for _ in range(len(self.task_types))]
-		for task in tasks:
+		for i, task in enumerate(tasks):
 			if not task.do_estimate():
-				for i, t in enumerate(self.task_types):
+		# wykonane poszczególne typy zadań
+				for j, t in enumerate(self.task_types):
 					if isinstance(task, t):
-						self.num_of_tasks_completed[i] += 1
-		result.num_of_tasks_completed = self.num_of_tasks_completed
-
+						self.num_of_tasks_completed[j] += 1
 		# czas wykonania poszczególnych zadań względem czasu żądania (dla zadań, które zostały już wykonane)
-		for i, task in enumerate(tasks):
-			if not task.do_estimate() and self.task_completion_to_deadline[i] is None:
-				self.task_completion_to_deadline[i] = (now - task.deadline).seconds
-		result.task_completion_to_deadline = self.task_completion_to_deadline
-
+				if self.task_completion_to_deadline[i] is None:
+					self.task_completion_to_deadline[i] = abs(now - task.deadline).seconds
 		# czas wykonania poszczególnych zadań upadku względem terminu (dla zadań, które zostały już wykonane)
-		for i, task in enumerate(tasks):
-			if not task.do_estimate() and self.task_completion_to_deathtime[i] is None and isinstance(task.getDeathTime(), datetime.datetime):
-				self.task_completion_to_deathtime[i] = (now - task.getDeathTime()).seconds
+				if self.task_completion_to_deathtime[i] is None and isinstance(task.getDeathTime(), datetime.datetime):
+					self.task_completion_to_deathtime[i] = abs(now - task.getDeathTime()).seconds
+		# liczbę przerwań każdej instancji zadania
+			if self.previous_job != current_job and (False if self.previous_job is None else self.previous_job.do_estimate()):
+				if task == self.previous_job:
+					self.task_interruptions[i] += 1
+		result.num_of_tasks_completed = self.num_of_tasks_completed
+		result.task_completion_to_deadline = self.task_completion_to_deadline
 		result.task_completion_to_deathtime = self.task_completion_to_deathtime
+		result.task_interruptions = self.task_interruptions
+
 
 		# liczbę przerwań każdego typu zadania
 		if self.previous_job != current_job and (False if self.previous_job is None else self.previous_job.do_estimate()):
@@ -217,12 +271,12 @@ class StatisticEval(EvalFunction):
 					self.num_of_tasks_interrupted[i] += 1
 		result.num_of_tasks_interrupted = self.num_of_tasks_interrupted
 
-		# liczbę przerwań każdej instancji zadania
-		if self.previous_job != current_job and (False if self.previous_job is None else self.previous_job.do_estimate()):
-			for i, task in enumerate(tasks):
-				if task == self.previous_job:
-					self.task_interruptions[i] += 1
-		result.task_interruptions = self.task_interruptions
+		# # liczbę przerwań każdej instancji zadania
+		# if self.previous_job != current_job and (False if self.previous_job is None else self.previous_job.do_estimate()):
+		# 	for i, task in enumerate(tasks):
+		# 		if task == self.previous_job:
+		# 			self.task_interruptions[i] += 1
+		# result.task_interruptions = self.task_interruptions
 
 		# Liczbę wyjść robota z okrągu o promieniu 2 m od miejsca upadku człowieka, kiedy robot wykonuje inne zadanie
 		close_to_human = []
@@ -250,10 +304,12 @@ class StatisticEval(EvalFunction):
 		# Wpadnięciu w drgania, zdefiniowane jako trzecie przełączenie na to samo zadanie w czasie mniejszym niż 3 min.
 		self.recent_jobs.append(None if current_job is None else current_job.uuid)
 		self.recent_jobs.pop(0)
-		if self.recent_jobs.count(self.recent_jobs[-1]) > 2:
-			result.terminate = True
-			result.oscillation = True
-			return result
+		if (not current_job is None) and self.recent_jobs.count(self.recent_jobs[-1]) > 2:
+			indexes = [i for i,x in enumerate(self.recent_jobs) if x == self.recent_jobs[-1]]
+			differences = [j-i for i, j in zip(indexes[:-1], indexes[1:])]
+			if sum(i > 1 for i in differences) > 2:
+				result.terminate = True
+				result.oscillation = True
 
 		# Upłynięciu terminu któregoś zadania upadku
 		for task in tasks:
@@ -262,11 +318,26 @@ class StatisticEval(EvalFunction):
 				result.dead = True
 				break
 
+		if self.save:
+			self.save_results(result)
 		return result
 
-	# TODO
-	def save(self):
-		pass
+	def save_results(self, result):
+		with open(self.save_filename, 'a', newline='') as csvfile:
+			csvwriter = csv.writer(csvfile, delimiter=';')
+			csvwriter.writerow([self.full_travel_distance,
+				self.num_of_tasks_completed,
+				self.task_completion_to_deadline,
+				self.task_completion_to_deathtime,
+				self.num_of_tasks_interrupted,
+				self.task_interruptions,
+				self.num_of_human_abandonment,
+				self.previous_job.uuid if isinstance(self.previous_job, Task) else 'None',
+				result.completed,
+				result.dead,
+				result.oscillation,
+				])
+		
 
 # W naszym przykładzie zastosujmy funkcję ewaluacji, która na bieżąco liczy:
 
