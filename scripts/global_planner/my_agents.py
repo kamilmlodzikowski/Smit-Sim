@@ -214,11 +214,11 @@ class DQNAgent(DecAgent):
 
         self.calculate_state(jobs)
 
-        est = state[:,:,0] != 0
+        est = self.state[:,:,0] != 0
         if np.sum(est) == 1:
             action = np.argmax(est.flatten())
         else:
-            action = self.agent.forward(state)
+            action = self.agent.forward(self.state)
 
         self.selected_task = self.tasks_in_state[action]
         return self.selected_task

@@ -2,7 +2,7 @@
 from my_system import SystemConfig, System
 from my_tasks import TaskConfig, TransportGenerator, FallGenerator, PickAndPlaceGenerator, Transport, Fall, PickAndPlace
 from datetime import datetime, date, time
-from my_agents import SchedulerAgent, SimpleAgent, DistanceAgent
+from my_agents import SchedulerAgent, SimpleAgent, DistanceAgent, DQNConfig, DQNAgent
 from smit_matlab_sim.srv import FileOperation, FileOperationRequest
 from my_eval_functions import StatisticEval, StatisticEvalResult
 import random
@@ -37,6 +37,7 @@ if __name__ == '__main__':
 	elif agent_type == 'dqn':
 		if not rospy.has_param('~agent_type'):
 			print('Pass path to DQN model through dqn_path ros parameter')
+		agent_config = DQNConfig()
 		agent_config.model_path = rospy.get_param('~dqn_path')
 		tasks_per_type = 5
 		agent = DQNAgent(agent_config, [Transport, Fall, PickAndPlace], tasks_per_type)
@@ -52,7 +53,7 @@ if __name__ == '__main__':
 	elif agent_type == 'distance':
 		save_file = f'statistic_eval/{agent_type}_ratio_{agent.ratio}/{datetime.now().strftime(f"%Y%m%d_%H%M%S_%f.csv")}'
 	elif agent_type == 'dqn':
-		save_file = f'statistic_eval/{agent_type}/{agent_config.model_path}/{datetime.now().strftime(f"%Y%m%d_%H%M%S_%f.csv")}'
+		save_file = f'statistic_eval/{agent_type}_{"_".join(agent_config.model_path.split("/"))}/{datetime.now().strftime(f"%Y%m%d_%H%M%S_%f.csv")}'
 
 	eval_fun = StatisticEval(system = env, task_types = [Transport, Fall, PickAndPlace], save_results = True, save_file = save_file)
 
