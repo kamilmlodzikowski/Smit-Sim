@@ -136,7 +136,7 @@ class SimpleAgent(DecAgent):
             self.selected_task = jobs[0]
 
         for job in jobs:
-            if job.estimated_duration < self.selected_task.estimated_duration:
+            if job.estimated_duration > self.selected_task.estimated_duration:
                 self.selected_task = job
 
         return self.selected_task
