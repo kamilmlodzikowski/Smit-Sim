@@ -87,7 +87,7 @@ class DQNEval(EvalFunction):
 	def calculate_results(self, tasks, current_job, now):
 		reward = 0
 		if current_job is None:
-			reward = self.penalty_nonexistent_job
+			reward = -self.penalty_nonexistent_job
 		else:
 			if current_job.do_estimate() <= 0:
 				reward = self.reward_job_complete
@@ -199,7 +199,7 @@ class StatisticEval(EvalFunction):
 					print(e)
 					pass
 			with open(self.save_filename, 'a', newline='') as csvfile:
-				csvwriter = csv.writer(csvfile, delimiter=':')
+				csvwriter = csv.writer(csvfile, delimiter=';')
 				csvwriter.writerow(['Full travel distance',
 					'Number of tasks completed per type',
 					'Diffetence between task completion time and deadline',

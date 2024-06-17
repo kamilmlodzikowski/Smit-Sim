@@ -53,7 +53,7 @@ if __name__ == '__main__':
 	elif agent_type == 'distance':
 		save_file = f'statistic_eval/{agent_type}_ratio_{agent.ratio}/{datetime.now().strftime(f"%Y%m%d_%H%M%S_%f.csv")}'
 	elif agent_type == 'dqn':
-		save_file = f'statistic_eval/{agent_type}_{"_".join(agent_config.model_path.split("/"))}/{datetime.now().strftime(f"%Y%m%d_%H%M%S_%f.csv")}'
+		save_file = f'statistic_eval/{agent_type}_{"_".join(agent_config.model_path.split("/")[1:])}/{datetime.now().strftime(f"%Y%m%d_%H%M%S_%f.csv")}'
 
 	eval_fun = StatisticEval(system = env, task_types = [Transport, Fall, PickAndPlace], save_results = True, save_file = save_file)
 
