@@ -19,11 +19,15 @@ if __name__ == '__main__':
 	load_map_config_client(FileOperationRequest('/'.join([rospack.get_path('smit_matlab_sim'), 'test_map'])))
 
 	sc = SystemConfig()
-	sc.day = -1
+	if not rospy.has_param('~day'):
+		sc.day = -1
+	else:
+		sc.day = int(rospy.get_param('~day'))
 	sc.stop = datetime.combine(date.today(), time(12, 0))
 	sc.use_estimator = False
 	tc = TaskConfig([TransportGenerator, FallGenerator, PickAndPlaceGenerator], 12, sc.start, sc.stop - sc.start, seed = sc.day)
 	env = System(tc, sc)
+	print(f'Scenario loaded with seed {sc.day}.')
 
 	if not rospy.has_param('~agent_type'):
 		rospy.set_param('~agent_type', 'simple')

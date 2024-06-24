@@ -101,7 +101,7 @@ class Transport(Task):
         super().__init__()
         self.uuid = 'transport_' + str(Transport.uuid_counter)
         Transport.uuid_counter+= 1
-        self.priority = 1
+        self.priority = random.choice([1, 2, 3])
         self.deadline = deadline
         self.calltime = calltime
         self.pos = np.array(pt1)
@@ -166,7 +166,7 @@ class Fall(Task):
         super().__init__()
         self.uuid = 'fall_' + str(Fall.uuid_counter)
         Fall.uuid_counter+= 1
-        self.priority = 2
+        self.priority = 4
         self.deadline = deadline
         self.calltime = calltime
         self.pos = np.array(pt)
@@ -229,7 +229,7 @@ class Pick(Task):
         super().__init__()
         self.uuid = 'pick_' + str(Pick.uuid_counter)
         Pick.uuid_counter+= 1
-        self.priority = 1
+        self.priority = 0
         self.deadline = deadline
         self.calltime = calltime
         self.pos = None
@@ -332,7 +332,7 @@ class Place(Task): #TODO
         super().__init__()
         self.uuid = 'place_' + str(Place.uuid_counter)
         Place.uuid_counter+= 1
-        self.priority = 1
+        self.priority = 0
         self.deadline = deadline
         self.calltime = calltime
         self.pos = None
