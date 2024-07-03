@@ -76,11 +76,11 @@ class DQNEval(EvalFunction):
 		super(DQNEval, self).__init__(save_results)
 		self.previous_action = None
 
-		self.reward_real_job = 1
+		self.reward_real_job = 5
 		self.reward_job_complete = 20
 		self.reward_all_complete = 100
 
-		self.penalty_nonexistent_job = 1
+		self.penalty_nonexistent_job = 5
 		self.penalty_change_job = 0.1
 		self.penalty_dead_job = 200
 
@@ -250,10 +250,10 @@ class StatisticEval(EvalFunction):
 						self.num_of_tasks_completed[j] += 1
 		# czas wykonania poszczególnych zadań względem czasu żądania (dla zadań, które zostały już wykonane)
 				if self.task_completion_to_deadline[i] is None:
-					self.task_completion_to_deadline[i] = abs(now - task.deadline).seconds
+					self.task_completion_to_deadline[i] = (1 if now >= task.deadline else -1)*abs(now - task.deadline).seconds
 		# czas wykonania poszczególnych zadań upadku względem terminu (dla zadań, które zostały już wykonane)
 				if self.task_completion_to_deathtime[i] is None and isinstance(task.getDeathTime(), datetime.datetime):
-					self.task_completion_to_deathtime[i] = abs(now - task.getDeathTime()).seconds
+					self.task_completion_to_deathtime[i] = (1 if now >= task.getDeathTime() else -1)*abs(now - task.getDeathTime()).seconds
 		# liczbę przerwań każdej instancji zadania
 			if self.previous_job != current_job and (False if self.previous_job is None else self.previous_job.do_estimate()):
 				if task == self.previous_job:
