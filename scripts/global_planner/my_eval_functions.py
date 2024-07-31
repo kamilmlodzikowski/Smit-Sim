@@ -76,11 +76,11 @@ class DQNEval(EvalFunction):
 		super(DQNEval, self).__init__(save_results)
 		self.previous_action = None
 
-		self.reward_real_job = 5
-		self.reward_job_complete = 20
+		self.reward_real_job = 20
+		self.reward_job_complete = 50
 		self.reward_all_complete = 100
 
-		self.penalty_nonexistent_job = 5
+		self.penalty_nonexistent_job = 20
 		self.penalty_change_job = 0.1
 		self.penalty_dead_job = 200
 
