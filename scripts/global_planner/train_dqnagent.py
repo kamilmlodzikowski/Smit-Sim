@@ -136,6 +136,7 @@ class DQNTrainingSystem(gym.Env):
 		self.load_map_config_client(FileOperationRequest('/'.join([self.rospack.get_path('smit_matlab_sim'), 'test_map'])))
 		self.system.reset()
 		self.agent.selected_task = None
+		self.eval_function.system = system
 		self.eval_function.reset()
 		self.selected_task = None
 		self.agent.calculate_state(self.system.jobs)
@@ -160,7 +161,7 @@ class DQNTrainingSystem(gym.Env):
 		self.system.execute_step(self.selected_task)
 		self.system.update_jobs()
 
-		result = self.eval_function.calculate_results(system.tasks, self.selected_task, system.now)
+		result = self.eval_function.calculate_results(self.selected_task, system.now)
 		reward = result.reward
 		done = result.terminate
 		status = "DEAD" if result.dead else ("DONE" if result.completed else ("TIME" if system.now >= system.config.stop else "WORK"))
@@ -189,7 +190,7 @@ if __name__ == '__main__':
 	tasks_per_type = 5
 	agent = DQNAgent(agent_config, [Transport, Fall, PickAndPlace], tasks_per_type)
 
-	eval_func = DQNEval()
+	eval_func = DQNEval(system)
 
 	gym = DQNTrainingSystem(system, agent, eval_func, tasks_per_type)
 

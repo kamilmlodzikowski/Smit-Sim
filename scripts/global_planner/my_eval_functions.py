@@ -72,22 +72,25 @@ class EvalFunction:
 
 class DQNEval(EvalFunction):
 	"""docstring for DQNEval"""
-	def __init__(self, save_results = False):
+	def __init__(self, system, save_results = False):
 		super(DQNEval, self).__init__(save_results)
 		self.previous_action = None
 
-		self.reward_real_job = 20
-		self.reward_job_complete = 50
-		self.reward_all_complete = 100
+		self.reward_real_job = 0.2
+		self.reward_job_complete = 0.5
+		self.reward_all_complete = 1
 
-		self.penalty_nonexistent_job = 20
-		self.penalty_change_job = 0.1
-		self.penalty_dead_job = 200
+		self.penalty_nonexistent_job = 0.5
+		self.penalty_change_job = 0.05
+		self.penalty_dead_job = -1
 
-	def calculate_results(self, tasks, current_job, now):
+		self.system = system
+
+	def calculate_results(self, current_job, now):
 		reward = 0
 		if current_job is None:
-			reward = -self.penalty_nonexistent_job
+			if len(self.system.jobs):
+				reward = -self.penalty_nonexistent_job
 		else:
 			if current_job.do_estimate() <= 0:
 				reward = self.reward_job_complete
@@ -97,12 +100,12 @@ class DQNEval(EvalFunction):
 		result = DQNEvalResult()
 		result.completed = True
 
-		for task in tasks:
+		for task in self.system.tasks:
 			if task.do_estimate():
 				result.completed = False
 				break
 
-		for task in tasks:
+		for task in self.system.tasks:
 			if not task.is_alive(now):
 				result.dead = True
 				result.terminate = True
@@ -116,8 +119,9 @@ class DQNEval(EvalFunction):
 			result.terminate = True
 			reward = self.reward_all_complete
 
-		if current_job != self.previous_action and not (self.previous_action is None):
-			reward -= self.penalty_change_job
+		elif current_job != self.previous_action and not (self.previous_action is None):
+			if self.previous_action.do_estimate():
+				reward -= self.penalty_change_job
 
 		result.reward = reward
 		self.previous_action = current_job
