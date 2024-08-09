@@ -271,7 +271,7 @@ class DQNAgent(DecAgent):
     def build_model(self):
         model = tf.keras.Sequential()
         model.add(Flatten(input_shape=(1,)+ (len(self.task_types), self.tasks_per_type, 3)))
-        model.add(Dense(80, activation='relu'))
+        model.add(Dense(200, activation='relu'))
         model.add(Dense(len(self.task_types) * self.tasks_per_type, activation='linear'))
         return model
     

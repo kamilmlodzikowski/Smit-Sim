@@ -161,7 +161,7 @@ class DQNTrainingSystem(gym.Env):
 		self.system.execute_step(self.selected_task)
 		self.system.update_jobs()
 
-		result = self.eval_function.calculate_results(self.selected_task, system.now)
+		result = self.eval_function.calculate_results(self.agent.tasks_in_state[action], system.now)
 		reward = result.reward
 		done = result.terminate
 		status = "DEAD" if result.dead else ("DONE" if result.completed else ("TIME" if system.now >= system.config.stop else "WORK"))
