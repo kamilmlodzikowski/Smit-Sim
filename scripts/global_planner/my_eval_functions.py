@@ -82,7 +82,7 @@ class DQNEval(EvalFunction):
 
 		self.penalty_nonexistent_job = 0.5
 		self.penalty_change_job = 0.05
-		self.penalty_dead_job = -1
+		self.penalty_dead_job = 1
 
 		self.system = system
 
