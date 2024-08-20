@@ -57,25 +57,13 @@ class System():
     self.navigator = ROSNavigation()
     
     rospy.wait_for_service('/get_rooms_and_doors')
-    doors_client = rospy.ServiceProxy('/get_rooms_and_doors', GetRoomsAndDoors)
-    doors_response = doors_client()
-    # print(doors_response)
-    self.spawn_zones = [((room.x[0] + self.config.robot_radius, room.x[1] - self.config.robot_radius), (room.y[0] + self.config.robot_radius, room.y[1] - self.config.robot_radius)) for room in doors_response.rooms]
-    # print(self.spawn_zones)
+    self.doors_client = rospy.ServiceProxy('/get_rooms_and_doors', GetRoomsAndDoors)
     
     rospy.wait_for_service('/get_furniture')
-    furn_client = rospy.ServiceProxy('/get_furniture', GetFurniture)
-    furn_response = furn_client()
-    # print(furn_response)
-    self.object_zones = [((room.x[0], room.x[1]), (room.y[0], room.y[1])) for room in furn_response.furniture]
-    self.forbidden_spawn_zones = [((room.x[0] - self.config.robot_radius, room.x[1] + self.config.robot_radius), (room.y[0] - self.config.robot_radius, room.y[1] + self.config.robot_radius)) for room in furn_response.furniture]
-    # print(self.forbidden_spawn_zones)
+    self.furn_client = rospy.ServiceProxy('/get_furniture', GetFurniture)
     
     rospy.wait_for_service('/get_objects')
-    obj_client = rospy.ServiceProxy('/get_objects', GetObjects)
-    obj_response = obj_client()
-    # print(obj_response)
-    self.objects = [o.id for o in obj_response.objects]
+    self.obj_client = rospy.ServiceProxy('/get_objects', GetObjects)
 
     self.reset()
 
@@ -89,6 +77,22 @@ class System():
 
   def reset(self):
     print('Resetting...')
+
+    doors_response = self.doors_client()
+    # print(doors_response)
+    self.spawn_zones = [((room.x[0] + self.config.robot_radius, room.x[1] - self.config.robot_radius), (room.y[0] + self.config.robot_radius, room.y[1] - self.config.robot_radius)) for room in doors_response.rooms]
+    # print(self.spawn_zones)
+
+    furn_response = self.furn_client()
+    # print(furn_response)
+    self.object_zones = [((room.x[0], room.x[1]), (room.y[0], room.y[1])) for room in furn_response.furniture]
+    self.forbidden_spawn_zones = [((room.x[0] - self.config.robot_radius, room.x[1] + self.config.robot_radius), (room.y[0] - self.config.robot_radius, room.y[1] + self.config.robot_radius)) for room in furn_response.furniture]
+    # print(self.forbidden_spawn_zones)
+
+    obj_response = self.obj_client()
+    # print(obj_response)
+    self.objects = [o.id for o in obj_response.objects]
+
     self.now = self.config.start
     self.tasks = self.task_config.generate(self.spawn_zones, self.forbidden_spawn_zones, self.objects, self.object_zones)
 
