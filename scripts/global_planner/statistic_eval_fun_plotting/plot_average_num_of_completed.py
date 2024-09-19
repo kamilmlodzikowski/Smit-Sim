@@ -41,7 +41,7 @@ def main():
 	        edgecolor ='grey', label ='pickandplace') 
 	 
 	# Adding Xticks 
-	plt.xlabel('agent type', fontweight ='bold', fontsize = 15) 
+	# plt.xlabel('agent type', fontweight ='bold', fontsize = 15) 
 	plt.ylabel('number of tasks completed', fontweight ='bold', fontsize = 15) 
 	plt.xticks([r + barWidth for r in range(len(h1))], 
 	        [f"{l.split('_')[0]}\n{'_'.join(l.split('_')[1:])}" for l in list(results.keys())])

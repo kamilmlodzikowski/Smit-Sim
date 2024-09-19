@@ -36,15 +36,19 @@ def survey(results, category_names):
 
 		r, g, b, _ = color
 		text_color = 'white' if r * g * b < 0.5 else 'darkgrey'
-		for y, (x, c) in enumerate(zip(xcenters, widths)):
-			ax.text(x, y, str(int(c)), ha='center', va='center',
-					color=text_color)
+		# for y, (x, c) in enumerate(zip(xcenters, widths)):
+		# 	ax.text(x, y, str(int(c)), ha='center', va='center',
+		# 			color=text_color)
+	# ax.legend(ncol=len(category_names), bbox_to_anchor=(0, 0),
+	# 		  loc='upper left', fontsize='large')
+	plt.subplots_adjust(right = 0.99)
 	ax.legend(ncol=len(category_names), bbox_to_anchor=(0, 0),
-			  loc='upper left', fontsize='small')
+			  loc='upper left')
 
 	return fig, ax
 
 def main():
+	plt.rcParams['font.size'] = 16
 	category_names = ['complete', 'dead', 'oscilation', 'time']
 	results = {}
 	path = sys.argv[1]

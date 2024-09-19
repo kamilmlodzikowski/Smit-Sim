@@ -47,15 +47,16 @@ def main():
 
 	colors = []
 
-	plt.subplot(2, 1, 1)
-	plt.ylabel('Distance')
-	plt.plot(x, y0)
-	plt.axvline(x = x[0])
-	plt.axvline(x = x[-1])
-	for i,y in enumerate(y1[:-1]):
-		if y != y1[i+1]:
-			plt.axvline(x = x[i+1])
-	plt.subplot(2, 1, 2)
+	plt.subplot(1, 1, 1)
+	# plt.subplot(2, 1, 1)
+	# plt.ylabel('Distance')
+	# plt.plot(x, y0)
+	# plt.axvline(x = x[0])
+	# plt.axvline(x = x[-1])
+	# for i,y in enumerate(y1[:-1]):
+	# 	if y != y1[i+1]:
+	# 		plt.axvline(x = x[i+1])
+	# plt.subplot(2, 1, 2)
 	plt.ylabel('UUID')
 	plt.axvline(x = x[0])
 	plt.axvline(x = x[-1])
@@ -71,8 +72,9 @@ def main():
 	for i,y in enumerate(y4[:-1]):
 		if y >= 0 and y4[i+1] == y:
 			plt.plot(x[i:i+2], [y, y], 'g', label = 'pickandplace')
-	plt.legend(bbox_to_anchor=(0, 0),
-              loc='upper left', ncol = 3)
+	plt.legend(bbox_to_anchor=(0, 1),
+              loc='lower left', ncol = 3)
+	plt.yticks(range(0, 12, 1))
 	plt.show()
 
 if __name__ == '__main__':
