@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import time
 from time import sleep
 import rospy
-from smit_matlab_sim.srv import GetObjectPose, RemoveObject, AddObject
+from smit_sim.srv import GetObjectPose, RemoveObject, AddObject
 from geometry_msgs.msg import Pose, Point, Quaternion
 
 class Task:

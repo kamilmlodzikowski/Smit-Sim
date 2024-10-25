@@ -1,11 +1,11 @@
 <launch>
 
-	<!-- <arg name="map" default="$(find smit_matlab_sim)/maps/simple/map.yaml"/> -->
+	<!-- <arg name="map" default="$(find smit_sim)/maps/simple/map.yaml"/> -->
 
 	<!-- <node name="map_server" pkg="map_server" type="map_server" args="$(arg map)"/> -->
 	<node name="planner" pkg="global_planner" type="planner">
-		<rosparam file="$(find smit_matlab_sim)/params/planner.yaml" command="load"/>
+		<rosparam file="$(find smit_sim)/params/planner.yaml" command="load"/>
 	</node>
-	<node name="tf2_broadcaster" pkg="smit_matlab_sim" type="send_maptobaselink_transform.py"/>
+	<node name="tf2_broadcaster" pkg="smit_sim" type="send_maptobaselink_transform.py"/>
 
 </launch> 

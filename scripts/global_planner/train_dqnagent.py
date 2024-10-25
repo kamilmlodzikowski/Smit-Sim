@@ -5,7 +5,7 @@ from my_tasks import TaskConfig, TransportGenerator, FallGenerator, PickAndPlace
 from datetime import datetime, date, time
 from my_agents import DQNAgent, DQNConfig
 from my_eval_functions import DQNEval
-from smit_matlab_sim.srv import FileOperation, FileOperationRequest
+from smit_sim.srv import FileOperation, FileOperationRequest
 import rospy
 import rospkg
 import timeit
@@ -15,6 +15,7 @@ from rl.callbacks import Callback
 import numpy as np
 import os
 from rl.policy import EpsGreedyQPolicy, LinearAnnealedPolicy
+from rl.memory import SequentialMemory
 
 class MyEpisodeLogger(Callback):
 	def __init__(self, filepath):
@@ -125,6 +126,7 @@ class DQNTrainingSystem(gym.Env):
 		self.agent = agent
 		self.eval_function = eval_function
 		self.selected_task = None
+		self.reset_count = 0
 
 	def render(self):
 		pass
@@ -133,13 +135,32 @@ class DQNTrainingSystem(gym.Env):
 		pass
 
 	def reset(self):
-		self.load_map_config_client(FileOperationRequest('/'.join([self.rospack.get_path('smit_matlab_sim'), 'test_map'])))
+		# self.reset_count += 1
+		# if self.reset_count > 800:
+		# 	self.system.config.start = datetime.combine(date.today(), time(8, 0))
+		# 	self.system.config.stop = datetime.combine(date.today(), time(12, 0))
+		# 	self.system.task_config.count = 12
+		# 	self.system.task_config.now = datetime.combine(date.today(), time(8, 0))
+		# elif self.reset_count <= 400:
+		# 	self.system.config.start = datetime.combine(date.today(), time(8, 0))
+		# 	self.system.config.stop = datetime.combine(date.today(), time(8, 30))
+		# 	self.system.task_config.count = 1
+		# 	self.system.task_config.now = datetime.combine(date.today(), time(8, 0))
+		# elif self.reset_count <= 800:
+		# 	self.system.config.start = datetime.combine(date.today(), time(8, 0))
+		# 	self.system.config.stop = datetime.combine(date.today(), time(9, 0))
+		# 	self.system.task_config.count = 3
+		# 	self.system.task_config.now = datetime.combine(date.today(), time(8, 0))
+		self.load_map_config_client(FileOperationRequest('/'.join([self.rospack.get_path('smit_sim'), 'test_map'])))
 		self.system.reset()
 		self.agent.selected_task = None
 		self.eval_function.system = system
 		self.eval_function.reset()
 		self.selected_task = None
 		self.agent.calculate_state(self.system.jobs)
+		while len(self.system.jobs) == 0:
+			self.system.execute_step(self.selected_task)
+			self.system.update_jobs()
 		return self.agent.state
 
 	def step(self, action):
@@ -184,11 +205,13 @@ if __name__ == '__main__':
 
 	agent_config = DQNConfig()
 	agent_config.training_steps = 5000000
-	agent_config.policy = LinearAnnealedPolicy(EpsGreedyQPolicy(), 'eps', 1.0, 0.1, 0.0, 5000000)
+	agent_config.policy = LinearAnnealedPolicy(EpsGreedyQPolicy(), 'eps', 1.0, 0.1, 0.0, 500000)
+	agent_config.memory = SequentialMemory(limit=500000, window_length=1)
 	agent_config.model_path = 'dqn_agent/' + datetime.now().strftime(f"%Y%m%d_%H%M%S_%f/")
 	os.makedirs(agent_config.model_path)
 	tasks_per_type = 5
 	agent = DQNAgent(agent_config, [Transport, Fall, PickAndPlace], tasks_per_type)
+	agent.trainig = True
 
 	eval_func = DQNEval(system)
 

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(smit_matlab_sim)
+project(smit_sim)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -119,7 +119,7 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-  LIBRARIES smit_matlab_sim
+  LIBRARIES smit_sim
   CATKIN_DEPENDS # move_base
     message_runtime
 #  DEPENDS system_lib
@@ -138,7 +138,7 @@ include_directories(
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/smit_matlab_sim.cpp
+#   src/${PROJECT_NAME}/smit_sim.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -149,7 +149,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/smit_matlab_sim_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/smit_sim_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -180,6 +180,7 @@ catkin_install_python(PROGRAMS
   scripts/random_map_server.py
   scripts/global_planner/test_planner.py
   scripts/global_planner/gather_timeseries.py
+  scripts/global_planner/statistic_eval_fun_plotting/plot_termination_statistics.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
@@ -216,7 +217,7 @@ catkin_install_python(PROGRAMS
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_smit_matlab_sim.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_smit_sim.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

@@ -223,6 +223,7 @@ class DQNAgent(DecAgent):
         self.agent = rl.agents.dqn.DQNAgent(self.model, memory = self.config.memory, policy = self.config.policy, 
                    nb_actions = len(self.task_types) * self.tasks_per_type, nb_steps_warmup = self.config.warmup_steps,
                    target_model_update = self.config.target_model_update)
+        self.agent.trainig = False
 
         self.agent.compile(tf.keras.optimizers.Adam(learning_rate=config.learning_rate), metrics=['mae'])
 

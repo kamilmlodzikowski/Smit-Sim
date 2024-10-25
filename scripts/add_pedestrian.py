@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import rospy
 from std_msgs.msg import Float64MultiArray, MultiArrayLayout, MultiArrayDimension
-from smit_matlab_sim.srv import AddPedestrian
+from smit_sim.srv import AddPedestrian
 
 if __name__ == '__main__':
 	rospy.wait_for_service('add_pedestrian')

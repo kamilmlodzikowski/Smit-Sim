@@ -17,8 +17,8 @@ import rospy
 from std_msgs.msg import Float64MultiArray
 from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Pose, Point, Quaternion, Vector3
-from smit_matlab_sim.srv import Step, AddPedestrian, AddPedestrianResponse, GetRoomsAndDoors, GetRoomsAndDoorsResponse, SetAreaPriority, FileOperation, FileOperationResponse, RemoveObject, RemoveObjectResponse, AddObject, AddObjectResponse, GetFurniture, GetFurnitureResponse, GetObjects, GetObjectsResponse, GetObjectPose, GetObjectPoseResponse
-from smit_matlab_sim.msg import Room, Furniture, Object
+from smit_sim.srv import Step, AddPedestrian, AddPedestrianResponse, GetRoomsAndDoors, GetRoomsAndDoorsResponse, SetAreaPriority, FileOperation, FileOperationResponse, RemoveObject, RemoveObjectResponse, AddObject, AddObjectResponse, GetFurniture, GetFurnitureResponse, GetObjects, GetObjectsResponse, GetObjectPose, GetObjectPoseResponse
+from smit_sim.msg import Room, Furniture, Object
 from std_srvs.srv import Empty
 from visualization_msgs.msg import MarkerArray, Marker
 
@@ -778,10 +778,25 @@ class RandomMapServerWithPedestrians(object):
 					pass
 		return np.maximum(m, self.map)
 
-	def plot(self, plot_spaces = False, plot_peds = False, use_ped_map = False, add_text = True):
-		pmap = self.map
-		if use_ped_map:
-			pmap = self.get_pedmap()
+	def get_only_pedmap(self):
+		m = np.zeros((self.h, self.w), dtype=np.bool)
+		if self.num_p > 0:
+			for p in self.p:
+				dist = p.points[0] - p.pos
+				angle = math.atan2(dist[1], dist[0])
+				try:
+					m[round(p.pos[1] + self.p_rad*math.sin(angle-math.pi/2))-self.foot_rad:round(p.pos[1] + self.p_rad*math.sin(angle-math.pi/2))+self.foot_rad+1,
+						round(p.pos[0] + self.p_rad*math.cos(angle-math.pi/2))-self.foot_rad:round(p.pos[0] + self.p_rad*math.cos(angle-math.pi/2))+1+self.foot_rad] |= self.foot_mask
+					m[round(p.pos[1] - self.p_rad*math.sin(angle-math.pi/2))-self.foot_rad:round(p.pos[1] - self.p_rad*math.sin(angle-math.pi/2))+self.foot_rad+1,
+						round(p.pos[0] - self.p_rad*math.cos(angle-math.pi/2))-self.foot_rad:round(p.pos[0] - self.p_rad*math.cos(angle-math.pi/2))+1+self.foot_rad] |= self.foot_mask
+				except ValueError:
+					pass
+		return m
+
+	def plot(self, plot_spaces = False, plot_peds = False, use_ped_map = False, add_text = True, add_probability = False):
+		# pmap = self.map
+		# if use_ped_map:
+		# 	pmap = self.get_only_pedmap()
 		rows, cols = np.shape(self.map)
 		# plt.figure(figsize = (2,2))
 		fig, ax = plt.subplots(figsize = (5,5))
@@ -800,13 +815,25 @@ class RandomMapServerWithPedestrians(object):
 		# 			x.append(col)
 		# 			y.append(row)
 		# ax.scatter(x, y, color = 'black', marker = 's', s = 1)
+		if add_probability:
+			rows, cols = np.shape(self.prob_map)
+			for row in range(rows):
+				for col in range(cols):
+					if self.prob_map[row, col]:
+						color = str(1-self.scaled_prob_map[row, col])
+						ax.add_patch(Rectangle((col, row), 1, 1, facecolor = [0, 0.5+float(color)*.5, 0]))
 		if self.num_p > 0 and plot_peds:
 			for i in range(self.num_p):
+				dist = self.p[i].points[0] - self.p[i].pos
+				angle = math.atan2(dist[1], dist[0])
+				ax.add_patch(Circle([self.p[i].pos[0] + self.p_rad*math.cos(angle-math.pi/2), self.p[i].pos[1] + self.p_rad*math.sin(angle-math.pi/2)], radius = self.foot_rad, facecolor = "red"))
+				ax.add_patch(Circle([self.p[i].pos[0] - self.p_rad*math.cos(angle-math.pi/2), self.p[i].pos[1] - self.p_rad*math.sin(angle-math.pi/2)], radius = self.foot_rad, facecolor = "red"))
+				if add_text:
+					ax.text(self.p_path[i].T[0][0], self.p_path[i].T[1][0], str(i), color = 'blue')
 				if self.p_beh[i] == PedestrianBehaviour.CIRCLE:
 					ax.plot(self.p_path[i].T[0], self.p_path[i].T[1], color = 'blue')
 					ax.plot(self.p[i].pos[0], self.p[i].pos[1], color = 'blue', marker = 'o', markersize = 1)
 					if add_text:
-						ax.text(self.p_path[i].T[0][0], self.p_path[i].T[1][0], str(i), color = 'blue')
 						ax.text(self.p_path[i].T[0][-1], self.p_path[i].T[1][-1], str(i), color = 'blue')
 		if self.furn_gen:
 			for r in self.furniture:
@@ -842,7 +869,7 @@ class RandomMapServerWithPedestrians(object):
 
 	def plot_probability_map(self):
 		rows, cols = np.shape(self.prob_map)
-		plt.figure(figsize = (2,2))
+		plt.figure(figsize = (5,5))
 		ax = plt.axes()
 		ax.set_facecolor("cyan")
 		data = {}
@@ -850,13 +877,15 @@ class RandomMapServerWithPedestrians(object):
 			for col in range(cols):
 				if self.prob_map[row, col]:
 					color = str(1-self.scaled_prob_map[row, col])
+					ax.add_patch(Rectangle((col, row), 1, 1, facecolor = [0, 0.5+float(color)*.5, 0]))
 					if color not in data.keys():
 						data[color] = [[],[]]
 					data[color][0].append(col)
 					data[color][1].append(row)
-		for color in data.keys():
-			plt.scatter(data[color][0], data[color][1], color = color, marker = 's', s = 3)
+		# for color in data.keys():
+			# plt.scatter(data[color][0], data[color][1], color = color, marker = 's', s = 3)
 		plt.grid(b=None)
+		plt.plot(0, 0, color = 'black')
 		plt.show()
 
 	def save_map_to_pgm(self, mapname, add_timestamp = False):
@@ -995,7 +1024,7 @@ if __name__ == '__main__':
 
 	# node.rms.plot()
 	# node.rms.plot(use_ped_map = True)
-	# node.rms.plot(plot_peds = True)
+	# node.rms.plot(plot_peds = True, use_ped_map = True, add_text = False, add_probability = True)
 	# node.rms.plot(plot_spaces = True)
 	# node.rms.plot(plot_spaces = False, add_text = False)
 	# node.rms.plot_probability_map()

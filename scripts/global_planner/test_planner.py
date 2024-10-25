@@ -3,7 +3,7 @@ from my_system import SystemConfig, System
 from my_tasks import TaskConfig, TransportGenerator, FallGenerator, PickAndPlaceGenerator, Transport, Fall, PickAndPlace
 from datetime import datetime, date, time
 from my_agents import SchedulerAgent, SimpleAgent, DistanceAgent, DQNConfig, DQNAgent, SimpleAgent2
-from smit_matlab_sim.srv import FileOperation, FileOperationRequest
+from smit_sim.srv import FileOperation, FileOperationRequest
 from my_eval_functions import StatisticEval, StatisticEvalResult
 import random
 import rospy
@@ -16,7 +16,7 @@ if __name__ == '__main__':
 	rospack = rospkg.RosPack()
 	load_map_config_client = rospy.ServiceProxy('/load_config', FileOperation)
 	rospy.wait_for_service('/load_config')
-	load_map_config_client(FileOperationRequest('/'.join([rospack.get_path('smit_matlab_sim'), 'test_map'])))
+	load_map_config_client(FileOperationRequest('/'.join([rospack.get_path('smit_sim'), 'test_map'])))
 
 	sc = SystemConfig()
 	if not rospy.has_param('~day'):

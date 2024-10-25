@@ -11,7 +11,7 @@ from smit_linear_path.linear_path_ROS_planner import ROSNavigation
 # sys.path.insert(0, '../../../tasker/src/TaskER/')
 from TaskER.RequestTable import RequestTable, ScheduleRules, ScheduleRule, TaskerReqest
 import rospy
-from smit_matlab_sim.srv import GetRoomsAndDoors, GetFurniture, GetObjects
+from smit_sim.srv import GetRoomsAndDoors, GetFurniture, GetObjects
 import tensorflow as tf
 from train_estimator import get_estimator_model
 

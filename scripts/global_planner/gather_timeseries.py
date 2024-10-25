@@ -3,7 +3,7 @@ from my_system import SystemConfig, System
 from my_tasks import TaskConfig, TransportGenerator, FallGenerator, PickAndPlaceGenerator
 from datetime import datetime, date, time
 from my_agents import SchedulerAgent, SimpleAgent, DistanceAgent
-from smit_matlab_sim.srv import FileOperation, FileOperationRequest
+from smit_sim.srv import FileOperation, FileOperationRequest
 import random
 import rospy
 import sys
@@ -40,7 +40,7 @@ if __name__ == '__main__':
 		sc.use_estimator = False
 		sc.save = True
 		tc = TaskConfig([TransportGenerator, FallGenerator, PickAndPlaceGenerator], 12, sc.start, sc.stop - sc.start, seed = sc.day)
-		load_map_config_client(FileOperationRequest('/'.join([rospack.get_path('smit_matlab_sim'), 'test_map'])))
+		load_map_config_client(FileOperationRequest('/'.join([rospack.get_path('smit_sim'), 'test_map'])))
 		env = System(tc, sc)
 		agent = getAgent(agent_type)
 
@@ -58,7 +58,7 @@ if __name__ == '__main__':
 			tc.b_var = 0.1
 			tc.random_call = False
 			sc.prefix = f'{int(100*tc.rcount/tc.count)}%_random_{int(100*tc.d_var)}%_dvar_{int(100*tc.b_var)}%_bvar_random_call_{tc.random_call}/{sc.day}_{j}_'
-			load_map_config_client(FileOperationRequest('/'.join([rospack.get_path('smit_matlab_sim'), 'test_map'])))
+			load_map_config_client(FileOperationRequest('/'.join([rospack.get_path('smit_sim'), 'test_map'])))
 			env.reset()
 			agent = getAgent(agent_type)
 
