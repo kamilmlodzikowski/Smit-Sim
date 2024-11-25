@@ -654,7 +654,7 @@ def PickAndPlaceGenerator(now, time_horizon, spawn_zones, forbidden_zones, objec
     return PickAndPlace([pick, place, transport])
 
 class TaskConfig(object):
-    def __init__(self, task_desc, count, now, time_horizon, seed = -1, random_task_count = 0, deadline_variation = 0, burst_variation = 0, randomize_call_time = False):
+    def __init__(self, task_desc, count, now, time_horizon, seed = -1, random_task_count = 0, deadline_variation = 0, burst_variation = 0, randomize_call_time = False, instant_call = False):
         self.types = len(task_desc)
         self.count = count
         self.rcount = random_task_count
@@ -670,6 +670,7 @@ class TaskConfig(object):
         self.b_var = burst_variation
         self.d_var = deadline_variation
         self.random_call = randomize_call_time
+        self.instant_call = instant_call
 
         # self.task_prob = task_prob
 
@@ -692,7 +693,10 @@ class TaskConfig(object):
             # sleep(1)
             tasks.append(task)
 
-        if self.random_call:
+        if self.instant_call:
+            for t in tasks:
+                t.setCalltime(self.now)
+        elif self.random_call:
             random.seed(time.time())
             for t in tasks:
                 calltime = self.now + self.time_horizon

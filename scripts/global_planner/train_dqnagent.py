@@ -198,9 +198,10 @@ class DQNTrainingSystem(gym.Env):
 if __name__ == '__main__':
 	rospy.wait_for_service('/load_config')
 	sc = SystemConfig()
-	sc.stop = datetime.combine(date.today(), time(12, 0))
+	sc.stop = datetime.combine(date.today(), time(10, 0))
 	sc.use_estimator = False
-	tc = TaskConfig([TransportGenerator, FallGenerator, PickAndPlaceGenerator], 12, sc.start, sc.stop - sc.start, seed = -1)
+	tc = TaskConfig([TransportGenerator, FallGenerator, PickAndPlaceGenerator], 5, sc.start, sc.stop - sc.start, seed = -1)
+	tc.instant_call = True
 	system = System(tc, sc)
 
 	agent_config = DQNConfig()
