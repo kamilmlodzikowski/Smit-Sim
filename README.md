@@ -9,6 +9,8 @@
 pip3 install tensorflow
 pip3 install keras-rl
 pip3 install gym
+pip3 install "ray[rllib]"
+pip3 install wandb
 ```
 - Install the [Robotics Toolbox for Python](https://github.com/petercorke/robotics-toolbox-python). It can be installed using pip.
 ```
@@ -117,4 +119,14 @@ The system utilizes ROS framework using Python3 and was tested on Ubuntu 18.04.
 ```
 source devel/setup.bash
 rosrun smit_matlab_sim train_dqnagent.py
+```
+
+## Training a PPO agent with RLlib
+The system utilizes ROS framework using Python3 and was tested on Ubuntu 18.04.
+
+1. Perform steps 1-3 from the **Running and utilizing random_map_server with local planner** - **Running** section above.
+2. In third console run train_ppo_rllib.py script (located in scripts/global_planner directory). This script uses Ray Tune for hyperparameter search and logs metrics to Weights & Biases.
+```
+source devel/setup.bash
+rosrun smit_matlab_sim train_ppo_rllib.py
 ```
