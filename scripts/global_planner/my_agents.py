@@ -266,13 +266,12 @@ class DQNAgent(DecAgent):
                 if not line.any():
                     self.state[type_id, i] = [job.getBurst().seconds, 1 if job.preemptive else 0, job.distance_from_robot]
                     self.tasks_in_state[type_id*self.tasks_per_type + i] = job
-                    # self.state[type_id, i] = [job.priority, 1 if job.preemptive else 0, job.distance_from_robot]
                     break
 
     def build_model(self):
         model = tf.keras.Sequential()
         model.add(Flatten(input_shape=(1,)+ (len(self.task_types), self.tasks_per_type, 3)))
-        model.add(Dense(200, activation='relu'))
+        model.add(Dense(80, activation='relu'))
         model.add(Dense(len(self.task_types) * self.tasks_per_type, activation='linear'))
         return model
     

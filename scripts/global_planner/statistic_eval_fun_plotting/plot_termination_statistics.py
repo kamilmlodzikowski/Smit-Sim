@@ -6,17 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def survey(results, category_names):
-	"""
-	Parameters
-	----------
-	results : dict
-		A mapping from question labels to a list of answers per category.
-		It is assumed all lists contain the same number of entries and that
-		it matches the length of *category_names*.
-	category_names : list of str
-		The category labels.
-	"""
-	labels = list(results.keys())
+	labels = ['\n-'.join(k.split('-')) for k in list(results.keys())]
 	data = np.array(list(results.values()))
 	data_cum = data.cumsum(axis=1)
 	category_colors = plt.get_cmap('RdYlGn')(
@@ -36,11 +26,6 @@ def survey(results, category_names):
 
 		r, g, b, _ = color
 		text_color = 'white' if r * g * b < 0.5 else 'darkgrey'
-		# for y, (x, c) in enumerate(zip(xcenters, widths)):
-		# 	ax.text(x, y, str(int(c)), ha='center', va='center',
-		# 			color=text_color)
-	# ax.legend(ncol=len(category_names), bbox_to_anchor=(0, 0),
-	# 		  loc='upper left', fontsize='large')
 	plt.subplots_adjust(right = 0.99)
 	ax.legend(ncol=len(category_names), bbox_to_anchor=(0, 0),
 			  loc='upper left')

@@ -17,7 +17,7 @@ import rospy
 from std_msgs.msg import Float64MultiArray
 from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Pose, Point, Quaternion, Vector3
-from smit_sim.srv import Step, AddPedestrian, AddPedestrianResponse, GetRoomsAndDoors, GetRoomsAndDoorsResponse, SetAreaPriority, FileOperation, FileOperationResponse, RemoveObject, RemoveObjectResponse, AddObject, AddObjectResponse, GetFurniture, GetFurnitureResponse, GetObjects, GetObjectsResponse, GetObjectPose, GetObjectPoseResponse
+from smit_sim.srv import Step, AddPedestrian, AddPedestrianResponse, GetRoomsAndDoors, GetRoomsAndDoorsResponse, SetAreaPriority, FileOperation, FileOperationResponse, RemoveObject, RemoveObjectResponse, AddObject, AddObjectResponse, GetFurniture, GetFurnitureResponse, GetObjects, GetObjectsResponse, GetObjectPose, GetObjectPoseResponse, StepResponse
 from smit_sim.msg import Room, Furniture, Object
 from std_srvs.srv import Empty
 from visualization_msgs.msg import MarkerArray, Marker
@@ -65,9 +65,11 @@ class RandomMapServerNode(object):
 			self.timer = rospy.Timer(rospy.Duration(1.0/self.rate), self.publish_map)
 
 	def perform_step(self, req):
+		# print(f'Stepping {req.time}')
 		self.rms.step(req.time)
 		if self.pub_on_step:
 			self.publish_map()
+		return StepResponse()
 
 	def add_pedestrian(self, req):
 		if not req.path.data:
@@ -214,7 +216,6 @@ class RandomMapServerWithPedestrians(object):
 
 		self.planner = PRMPlanner(self.map, distance = 'euclidean', inflate = self.p_rad + self.foot_rad, npoints = int((self.w*self.h)/100))
 		if self.num_p > 0:
-			# self.planner = DistanceTransformPlanner(self.map, distance = 'euclidean', inflate = self.p_rad + self.foot_rad)
 			self.p = [LinearPath([0, 0], [[0, 0]]) for _ in range(self.num_p)]
 			self.p_path = [[] for _ in range(self.num_p)]
 			self.p_sp = [0 for _ in range(self.num_p)]
@@ -310,8 +311,6 @@ class RandomMapServerWithPedestrians(object):
 			print("Pedestrian: " + str(i))
 			while True:
 				try:
-					# start = (random.randrange(0, self.h), random.randrange(0, self.w))
-					# goal = (random.randrange(0, self.h), random.randrange(0, self.w))
 					start = self.get_random_point()
 					goal = start
 					while goal == start:
@@ -330,9 +329,6 @@ class RandomMapServerWithPedestrians(object):
 					pass
 
 	def add_wall(self, hmin, hmax, wmin, wmax, depth = 1, top_d = None, bot_d = None, left_d = None, right_d = None):
-		# plot the current map state
-		# if depth > 1:
-			# self.plot()
 
 		# maximum depth reached
 		if depth > self.max_depth:
@@ -669,7 +665,6 @@ class RandomMapServerWithPedestrians(object):
 								goal = self.get_random_point()
 								self.p_path[i] = self.planner.query(start = start, goal = goal)
 								self.p[i] = LinearPath(start, self.p_path[i][1:])
-								# self.p_sp[i] = random.uniform(self.p_min_sp, self.p_max_sp)
 								break
 							except ValueError as e:
 								print(e)
@@ -687,12 +682,6 @@ class RandomMapServerWithPedestrians(object):
 					self.num_p -= 1
 
 	def add_pedestrian(self, speed, path, planned, behaviour):
-		# if self.num_p == 0:
-		# 	self.planner = PRMPlanner(self.map, distance = 'euclidean', inflate = self.p_rad + self.foot_rad, npoints = int((self.w*self.h)/100))
-		# print(speed)
-		# print(path)
-		# print(planned)
-		# print(behaviour)
 		if len(path) == 0:
 			while(True):
 				try:
@@ -794,11 +783,7 @@ class RandomMapServerWithPedestrians(object):
 		return m
 
 	def plot(self, plot_spaces = False, plot_peds = False, use_ped_map = False, add_text = True, add_probability = False):
-		# pmap = self.map
-		# if use_ped_map:
-		# 	pmap = self.get_only_pedmap()
 		rows, cols = np.shape(self.map)
-		# plt.figure(figsize = (2,2))
 		fig, ax = plt.subplots(figsize = (5,5))
 		x = []
 		y = []
@@ -809,12 +794,6 @@ class RandomMapServerWithPedestrians(object):
 			ax.add_patch(Rectangle((r['x'][0], r['y'][0]), r['x'][1] - r['x'][0], r['y'][1] - r['y'][0], facecolor = 'white'))
 		r =  self.ext_door
 		ax.add_patch(Rectangle((r['x'][0], r['y'][0]), r['x'][1] - r['x'][0], r['y'][1] - r['y'][0], facecolor = 'white'))
-		# for row in range(rows):
-		# 	for col in range(cols):
-		# 		if  pmap[row, col]:
-		# 			x.append(col)
-		# 			y.append(row)
-		# ax.scatter(x, y, color = 'black', marker = 's', s = 1)
 		if add_probability:
 			rows, cols = np.shape(self.prob_map)
 			for row in range(rows):
@@ -839,7 +818,6 @@ class RandomMapServerWithPedestrians(object):
 			for r in self.furniture:
 				ax.add_patch(Rectangle((r['x'][0], r['y'][0]), r['x'][1] - r['x'][0], r['y'][1] - r['y'][0], facecolor = 'black'))
 			for d in self.objects:
-				# ax.scatter(d["x"], d["y"], color = "blue")
 				ax.add_patch(Circle([d["x"], d["y"]], radius = 1, facecolor = "blue"))
 				if add_text:
 					ax.text(d["x"], d["y"] + 1, str(d["id"]), color = 'blue')
@@ -882,8 +860,6 @@ class RandomMapServerWithPedestrians(object):
 						data[color] = [[],[]]
 					data[color][0].append(col)
 					data[color][1].append(row)
-		# for color in data.keys():
-			# plt.scatter(data[color][0], data[color][1], color = color, marker = 's', s = 3)
 		plt.grid(b=None)
 		plt.plot(0, 0, color = 'black')
 		plt.show()
@@ -982,7 +958,7 @@ if __name__ == '__main__':
 	# probability map arguments
 	parser.add_argument("--room_probability", type = float, default = 10)
 	parser.add_argument("--door_probability", type = float, default = 1)
-	parser.add_argument("--entrance_probability", type = float, default = 10000)
+	parser.add_argument("--entrance_probability", type = float, default = 1000)
 
 	# pedestrian creation arguments
 	parser.add_argument("--num_of_pedestrians", type = int, default = 0)
@@ -990,7 +966,7 @@ if __name__ == '__main__':
 	parser.add_argument("--pedestrian_max_speed", type = float, default = 2)
 	parser.add_argument("--pedestrian_radius", type = float, default = 0.2)
 	parser.add_argument("--pedestrian_foot_radius", type = float, default = 0.1)
-	parser.add_argument("--pedestrian_behaviour", type = int, default = 1)
+	parser.add_argument("--pedestrian_behaviour", type = int, default = 4)
 
 	# furniture arguments
 	parser.add_argument("--generate_furniture", type = bool, default = True)
@@ -1004,7 +980,7 @@ if __name__ == '__main__':
 	parser.add_argument("--publish", type = bool, default = True)
 	parser.add_argument("--publish_rate", type = int, default = 100)
 	parser.add_argument("--auto_step", type = bool, default = False)
-	parser.add_argument("--publish_on_step", type = bool, default = False)
+	parser.add_argument("--publish_on_step", type = bool, default = True)
 
 	args = parser.parse_args()
 

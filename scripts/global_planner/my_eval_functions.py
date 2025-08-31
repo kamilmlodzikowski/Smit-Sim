@@ -224,27 +224,6 @@ class StatisticEval(EvalFunction):
 		self.full_travel_distance += np.linalg.norm(self.system.pos - self.last_robot_pos)
 		result.full_travel_distance = self.full_travel_distance
 
-		# # wykonane poszczególne typy zadań
-		# self.num_of_tasks_completed = [0 for _ in range(len(self.task_types))]
-		# for task in tasks:
-		# 	if not task.do_estimate():
-		# 		for i, t in enumerate(self.task_types):
-		# 			if isinstance(task, t):
-		# 				self.num_of_tasks_completed[i] += 1
-		# result.num_of_tasks_completed = self.num_of_tasks_completed
-
-		# # czas wykonania poszczególnych zadań względem czasu żądania (dla zadań, które zostały już wykonane)
-		# for i, task in enumerate(tasks):
-		# 	if not task.do_estimate() and self.task_completion_to_deadline[i] is None:
-		# 		self.task_completion_to_deadline[i] = (now - task.deadline).seconds
-		# result.task_completion_to_deadline = self.task_completion_to_deadline
-
-		# # czas wykonania poszczególnych zadań upadku względem terminu (dla zadań, które zostały już wykonane)
-		# for i, task in enumerate(tasks):
-		# 	if not task.do_estimate() and self.task_completion_to_deathtime[i] is None and isinstance(task.getDeathTime(), datetime.datetime):
-		# 		self.task_completion_to_deathtime[i] = (now - task.getDeathTime()).seconds
-		# result.task_completion_to_deathtime = self.task_completion_to_deathtime
-
 		self.num_of_tasks_completed = [0 for _ in range(len(self.task_types))]
 		for i, task in enumerate(tasks):
 			if not task.do_estimate():
@@ -274,13 +253,6 @@ class StatisticEval(EvalFunction):
 				if isinstance(self.previous_job, t):
 					self.num_of_tasks_interrupted[i] += 1
 		result.num_of_tasks_interrupted = self.num_of_tasks_interrupted
-
-		# # liczbę przerwań każdej instancji zadania
-		# if self.previous_job != current_job and (False if self.previous_job is None else self.previous_job.do_estimate()):
-		# 	for i, task in enumerate(tasks):
-		# 		if task == self.previous_job:
-		# 			self.task_interruptions[i] += 1
-		# result.task_interruptions = self.task_interruptions
 
 		# Liczbę wyjść robota z okrągu o promieniu 2 m od miejsca upadku człowieka, kiedy robot wykonuje inne zadanie
 		close_to_human = []
@@ -341,23 +313,3 @@ class StatisticEval(EvalFunction):
 				result.dead,
 				result.oscillation,
 				])
-		
-
-# W naszym przykładzie zastosujmy funkcję ewaluacji, która na bieżąco liczy:
-
-#     przebyty dystans,
-#     wykonane poszczególne typy zadań
-#     czas wykonania poszczególnych zadań względem czasu żądania (dla zadań, które zostały już wykonane)
-#     czas wykonania poszczególnych zadań upadku względem terminu (dla zadań, które zostały już wykonane)
-#     liczbę przerwań każdego typu zadania
-#     liczbę przerwań każdej instancji zadania
-#     Liczbę wyjść robota z okrągu o promieniu 2 m od miejsca upadku człowieka, kiedy robot wykonuje inne zadanie
-
-
-# Funkcja wywołuje terminate() w momencie:
-
-#     Wykonania wszystkich zadań, lub
-#     Upłynięciu terminu któregoś zadania upadku
-#     Wpadnięciu w drgania, zdefiniowane jako trzecie przełączenie na to samo zadanie w czasie mniejszym niż 3 min.
-
-

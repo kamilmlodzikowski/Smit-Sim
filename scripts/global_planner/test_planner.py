@@ -16,7 +16,7 @@ if __name__ == '__main__':
 	rospack = rospkg.RosPack()
 	load_map_config_client = rospy.ServiceProxy('/load_config', FileOperation)
 	rospy.wait_for_service('/load_config')
-	load_map_config_client(FileOperationRequest('/'.join([rospack.get_path('smit_sim'), 'test_map'])))
+	# load_map_config_client(FileOperationRequest('/'.join([rospack.get_path('smit_sim'), 'test_map'])))
 
 	sc = SystemConfig()
 	if not rospy.has_param('~day'):
@@ -41,8 +41,9 @@ if __name__ == '__main__':
 	elif agent_type == 'distance':
 		agent = DistanceAgent(float(rospy.get_param('~ratio')) if rospy.has_param('~ratio') else 0.0)
 	elif agent_type == 'dqn':
-		if not rospy.has_param('~agent_type'):
-			print('Pass path to DQN model through dqn_path ros parameter')
+		if not rospy.has_param('~dqn_path'):
+			env.close()
+			raise Exception('Pass path to DQN model through dqn_path ros parameter!')
 		agent_config = DQNConfig()
 		agent_config.model_path = rospy.get_param('~dqn_path')
 		tasks_per_type = 5
@@ -64,6 +65,7 @@ if __name__ == '__main__':
 	eval_fun = StatisticEval(system = env, task_types = [Transport, Fall, PickAndPlace], save_results = True, save_file = save_file)
 
 	result = StatisticEvalResult()
+
 
 	while(env.now < sc.stop and (not result.terminate)):
 		print("Stepping from " + str(env.now) + " to " + str(env.now + sc.dt))

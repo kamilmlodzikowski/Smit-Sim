@@ -36,11 +36,7 @@ def main(dirs):
 		else:
 			full_dataset = full_dataset.concatenate(dataset)
 
-	# print(len(list(full_dataset)))
 	full_dataset = full_dataset.shuffle(SHUFLE_SIZE, reshuffle_each_iteration = False)
-	# for item in full_dataset:
-	# 	print(item)
-	# 	break
 	filename = 'predictor/datasets/' + datetime.now().strftime(f"%Y%m%d_%H%M%S_%f_F{len(timeseries)}_W{WINDOW_SIZE}_S{SHUFLE_SIZE}")
 	experimental.save(full_dataset, filename)
 	with open(filename + '.txt', 'w') as write_file:
@@ -50,12 +46,6 @@ def main(dirs):
 		write_file.write('Timeseries:\n')
 		for t in timeseries:
 			write_file.write(f'{t}\n')
-
-
-	# new_dataset = experimental.load(filename)
-	# for item in new_dataset:
-	# 	print(item)
-	# 	break
 
 if __name__ == '__main__':
 	if len(sys.argv) < 2:

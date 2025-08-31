@@ -48,15 +48,6 @@ def main():
 	colors = []
 
 	plt.subplot(1, 1, 1)
-	# plt.subplot(2, 1, 1)
-	# plt.ylabel('Distance')
-	# plt.plot(x, y0)
-	# plt.axvline(x = x[0])
-	# plt.axvline(x = x[-1])
-	# for i,y in enumerate(y1[:-1]):
-	# 	if y != y1[i+1]:
-	# 		plt.axvline(x = x[i+1])
-	# plt.subplot(2, 1, 2)
 	plt.ylabel('UUID')
 	plt.axvline(x = x[0])
 	plt.axvline(x = x[-1])

@@ -196,6 +196,7 @@ class DQNTrainingSystem(gym.Env):
 
 
 if __name__ == '__main__':
+	rospy.init_node('smit_system')
 	rospy.wait_for_service('/load_config')
 	sc = SystemConfig()
 	sc.stop = datetime.combine(date.today(), time(10, 0))

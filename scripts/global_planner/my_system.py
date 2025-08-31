@@ -11,9 +11,11 @@ from smit_linear_path.linear_path_ROS_planner import ROSNavigation
 # sys.path.insert(0, '../../../tasker/src/TaskER/')
 from TaskER.RequestTable import RequestTable, ScheduleRules, ScheduleRule, TaskerReqest
 import rospy
-from smit_sim.srv import GetRoomsAndDoors, GetFurniture, GetObjects
+from smit_sim.srv import GetRoomsAndDoors, GetFurniture, GetObjects, Step, StepRequest
 import tensorflow as tf
 from train_estimator import get_estimator_model
+from geometry_msgs.msg import Pose, Point, Quaternion, Vector3
+from visualization_msgs.msg import Marker
 
 class SystemConfig(object):
   def __init__(self):
@@ -28,7 +30,6 @@ class SystemConfig(object):
     self.prefix = ""
     self.day = 1
     self.estimator_path = 'estimator_model/save_20'
-    # self.predictor_path = 'predictor_model/save_100'
     self.use_estimator = True
 
 class System():
@@ -41,12 +42,6 @@ class System():
     if self.config.use_estimator:
       self.estimator = get_estimator_model()
       self.estimator.load_weights(self.config.estimator_path)
-
-    # self.predictor = tf.keras.models.Sequential([
-    #   tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64)),
-    #   tf.keras.layers.Dense(36),
-    # ])
-    # self.predictor.load_weights(self.config.predictor_path)
     
     self.slot_count_horizon = int(self.config.time_horizon/self.config.time_slot)
     self.slot_count_day = int((self.config.stop - self.config.start)/self.config.time_slot)
@@ -65,6 +60,24 @@ class System():
     rospy.wait_for_service('/get_objects')
     self.obj_client = rospy.ServiceProxy('/get_objects', GetObjects)
 
+    rospy.wait_for_service('/perform_pedestrians_step')
+    self.env_step_client = rospy.ServiceProxy('/perform_pedestrians_step', Step)
+    self.env_step_req = StepRequest()
+    self.env_step_req.time = self.config.dt.seconds
+
+    self.robot_publisher = rospy.Publisher('robot', Marker, queue_size=10)
+    self.robot_msg = Marker()
+    self.robot_msg.header.stamp = rospy.Time.now()
+    self.robot_msg.header.frame_id = "map"
+    self.robot_msg.lifetime = rospy.Duration.from_sec(0)
+    self.robot_msg.id = 0
+    self.robot_msg.scale = Vector3(0.5, 0.5, 0.5)
+    self.robot_msg.color.a = 1.0
+    self.robot_msg.color.r = 1.0
+    self.robot_msg.color.g = 0.0
+    self.robot_msg.color.b = 0.0
+    self.robot_msg.type = 2
+
     self.reset()
 
   def close(self):
@@ -73,7 +86,6 @@ class System():
         self.estimator_file_out.close()
       except:
         pass
-      # self.predictor_file_out.close()
 
   def reset(self):
     print('Resetting...')
@@ -137,27 +149,9 @@ class System():
         os.makedirs('/'.join(fname.split('/')[:-1]))
       self.estimator_file_out = open(fname, "w")
 
-      # self.fname = 'predictor/timeseries/' + fname + '.csv'
-      # if not os.path.exists('/'.join(self.fname.split('/')[:-1])):
-      #   os.makedirs('/'.join(self.fname.split('/')[:-1]))
-      # self.predictor_file_out = open(self.fname, "w")
-
-      # self.next_save = self.now + self.config.time_slot
-
     # initialize tasker
-    # self.rt = RequestTable()
     self.jobs = []
-    # self.out = []
-    # self.profit = 0
     self.update_jobs()
-
-    # self.schedule = np.zeros(self.schedule_shape)
-    # self.predicted_schedule = np.zeros(self.schedule_shape)
-    # self.empty_tasks = []
-    # self.empty_jobs = []
-
-    # if self.config.save:
-    #   self.save_schedule()
 
     print("Reset done")
 
@@ -205,6 +199,8 @@ class System():
         break
 
   def execute_step(self, action):
+    self.env_step_client(self.env_step_req)
+
     # select action
     self.previous_job = self.current_job
     self.current_job = action
@@ -234,46 +230,8 @@ class System():
 
     self.now = self.now + self.config.dt
 
-  # def generate_schedule(self):
-  #   self.schedule = np.zeros(self.schedule_shape)
-  #   for s in range(self.slot_count_horizon):
-  #     start = self.now + s*self.config.time_slot
-  #     stop = self.now + (s+1)*self.config.time_slot
-  #     for i,j in enumerate(self.jobs):
-  #       if j.start_time >= start and j.start_time < stop or j.deadline > start and j.deadline <= stop or j.start_time < start and j.deadline > stop:
-  #         self.schedule[s*3] += j.priority
-  #         self.schedule[2+s*3] += 1
-  #     for i,j in enumerate(self.out.scheduled):
-  #       if j.start >= start and j.start < stop or j.stop > start and j.stop <= stop or j.start < start and j.stop > stop:
-  #         self.schedule[1+s*3] += self.rt.get_request(j.jobID).priority
-
-  # def predict_schedule(self):
-  #   if len(self.empty_jobs):
-  #     for j in self.empty_jobs:
-  #       rt.removeRecord_by_id(j.jobID)
-
-  #   self.empty_tasks = []
-  #   self.empty_jobs = []
-  #   self.predicted_schedule = np.array(self.predictor(np.expand_dims(np.expand_dims(np.concatenate((np.array([(self.now - self.config.start).seconds*self.time_to_horizon, self.config.day]), self.schedule)), axis = 0), axis = 0))[0])
-
-  #   for s in range(self.slot_count_horizon - 1):
-  #     task_diff = round(self.predicted_schedule[s*3] - self.schedule[(s+1)*3])
-  #     if task_diff > 0:
-  #       print(f'Adding {task_diff} empty_tasks')
-  #       task_priorities = round((self.predicted_schedule[s*3 + 2] - self.schedule[(s+1)*3 + 2])/task_diff)
-  #       for i in range(task_diff):
-  #         t = Empty(self.now + (s+1)*self.config.time_horizon, task_priorities)
-  #         self.empty_tasks.append(t)
-  #         sr = ScheduleRules()
-  #         sr.addRule(ScheduleRule(rule_type='at', rule_value=t.getDeadline()))
-  #         job = TaskerReqest(ID=t.getID(),huid=t.getUUID(), plan_args='', req_time=self.now, shdl_rules=sr, priority=t.getPriority())
-  #         job.set_burst_time(self.config.time_slot)
-  #         job.evaluate_rules()
-  #         self.rt.addRecord(job)
-  #         self.empty_jobs.append(job)
-
-  #   if len(self.empty_jobs):
-  #     self.out, self.profit = self.rt.schedule_with_priority()
+    self.robot_msg.pose = Pose(Point(self.pos[0], self.pos[1], 0), Quaternion(0, 0, 0, 1))
+    self.robot_publisher.publish(self.robot_msg)
 
   def save_estimation(self, task):
     self.estimator_file_out.write(':'.join([
@@ -282,35 +240,15 @@ class System():
         str((task.deadline - self.config.start).seconds*self.time_to_horizon),
         str(task.pos[0]),
         str(task.pos[1]),
-        # str(exec("try: print(str(task.goal[0]))\nexcept AttributeError: print(str(task.pos[0]))")),
-        # str(exec("try: print(str(task.goal[1]))\nexcept AttributeError: print(str(task.pos[1]))")),
         str(task.goal[0] if hasattr(task, 'goal') else task.pos[0]),
         str(task.goal[1] if hasattr(task, 'goal') else task.pos[1]),
-        # str(task.goal[0] if isinstance(task, Transport) or isinstance(task, PickAndPlace) else task.pos[0]),
-        # str(task.goal[1] if isinstance(task, Transport) or isinstance(task, PickAndPlace) else task.pos[1]),
         str(task.distance_from_robot),
         str(task.priority),
         str(task.estimated_duration.seconds*self.time_to_horizon),
       ]) + '\n')
-
-  # def save_schedule(self):    
-  #   if self.config.save:
-  #     if len(self.jobs):
-  #       self.generate_schedule()
-  #     self.predictor_file_out.write(str((self.now - self.config.start).seconds*self.time_to_horizon) + ':' + str(self.config.day) + ':' + ':'.join([str(s) for s in self.schedule]) + '\n')
 
   def save(self):
     if self.config.save:
       # self.save_schedule()
       for job in self.jobs:
         self.save_estimation(job)
-
-  # def run_env(self):
-  #   while(self.now < self.config.stop):
-  #     print("Stepping from " + str(self.now) + " to " + str(self.now + self.config.dt))
-  #     # self.predict_schedule()
-  #     self.step()
-  #     self.update_jobs()
-  #     self.save()
-
-  #   self.close()

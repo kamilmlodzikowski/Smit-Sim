@@ -238,7 +238,6 @@ class Pick(Task):
         self.object_id = object_id
         self.spawn_zones = spawn_zones
         self.forbidden_zones = forbidden_zones
-        # rospy.wait_for_service('/get_object_pose')
         self.obj_client = rospy.ServiceProxy('/get_object_pose', GetObjectPose)
         self.preemptive = False
         self.generate_position()
@@ -688,9 +687,6 @@ class TaskConfig(object):
           for i in range(self.count):
             task = t(self.now, self.time_horizon, spawn_zones, forbidden_zones, objects, object_zones)
             print(task.uuid)
-            # print(task.pos)
-            # print(task.goal)
-            # sleep(1)
             tasks.append(task)
 
         if self.instant_call:

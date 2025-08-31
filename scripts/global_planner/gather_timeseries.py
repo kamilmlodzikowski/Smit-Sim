@@ -69,22 +69,3 @@ if __name__ == '__main__':
 				env.update_jobs()
 				env.save()
 			env.close()
-
-
-	# for i in range(7):
-	# 	sc.day = i + 1
-	# 	sc.prefix = 'base/base_' + str(sc.day) + "_"
-	# 	sc.save = True
-	# 	sc.use_estimator = False
-	# 	tc = TaskConfig([TransportGenerator, FallGenerator], 60, sc.start, sc.stop - sc.start, seed = sc.day)
-	# 	env = System(tc, sc)
-	# 	env.run_env()
-
-	# 	for j in range(50):
-	# 		tc.rcount = 30
-	# 		tc.d_var = 0.1
-	# 		tc.b_var = 0.1
-	# 		tc.random_call = False
-	# 		sc.prefix = f'{int(100*tc.rcount/tc.count)}%_random_{int(100*tc.d_var)}%_dvar_{int(100*tc.b_var)}%_bvar_random_call_{tc.random_call}/{sc.day}_{j}_'
-	# 		env.reset()
-	# 		env.run_env()
