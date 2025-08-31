@@ -1,4 +1,4 @@
-# Smit Matlab Sim
+# Smit Sim
 
 ## Instalation
 
@@ -57,12 +57,12 @@ The system utilizes ROS framework using Python3 and was tested on Ubuntu 18.04.
 2. In first console (starting from ROS workspace) run the local planner. Doing this before running the map script also starts roscore.
 ```
 source devel/setup.bash
-roslaunch smit_matlab_sim tasks_execution.launch
+roslaunch smit_sim tasks_execution.launch
 ```
 3. In second console (starting from ROS workspace) run the map server. This script can be run with many different arguments that change the map's outcome. This are not ROS arguments, but are implemented using argparse library instead. See the bottom of the script's contents for the argument list.
 ```
 source devel/setup.bash
-rosrun smit_matlab_sim random_map_server.py
+rosrun smit_sim random_map_server.py
 ```
 4. (Optional) Load previously created map by sending its filename by a ROS service called /load_config. Service type is FileOperation (included in this package). You can do it with rqt or by console command (example below). Config file directory should be passed in regard to the random_map_server.py file. Sample config file is present in this package under the name 'test_map'.
 ```
@@ -81,7 +81,9 @@ To get a route planned according to used map you can call service /planner/make_
 
 ### Adding pedestrians
 
-You can use /add_pedestrian service of type AddPedestrian to add pedestrians to map. It has the following components:
+You can add pedestrians to map by passing appropriate argument (e.g. --num_of_pedestrians 3).
+
+Alternatively, you can use /add_pedestrian service of type AddPedestrian to add pedestrians to map. It has the following components:
 1. velocity - float64 - pedestrian velocity during move
 2. path - std_msgs/Float64MultiArray - list of points from start to goal, if empty generated randomly
 3. full_path - bool - informs if the path is fully planned or only consists of start and goal points
@@ -94,19 +96,19 @@ The system utilizes ROS framework using Python3 and was tested on Ubuntu 18.04.
 2. In third console run test_planner.py script (can be found in scripts/global_planner directory). Currently, this script always loads the 'test_map' map configuration found in this package.
 ```
 source devel/setup.bash
-rosrun smit_matlab_sim test_planner.py _agent_type:=distance _ratio:=1.0
+rosrun smit_sim test_planner.py _agent_type:=distance _ratio:=1.0
 ```
 The script can be configured using ROS parameters passed by console. For example passing a day parameter will determine the random seed for task generation. Example for day 1 below.
 ```
-rosrun smit_matlab_sim test_planner.py _day:=1
+rosrun smit_sim test_planner.py _day:=1
 ```
 The script uses the Simple agent by default. One can change the agent type using the parameters. Examples below. Most agent types also requires additional configuration parameter. 'ratio' and 'hesitance' should be a float number between 0 and 1, while 'dqn_path' should be a path to the network's directory. Examples are presented below.
 ```
-rosrun smit_matlab_sim test_planner.py _agent_type:=distance _ratio:=0.5
-rosrun smit_matlab_sim test_planner.py _agent_type:=simple _hesitance:=0.5
-rosrun smit_matlab_sim test_planner.py _agent_type:=simple2 _hesitance:=0.5
-rosrun smit_matlab_sim test_planner.py _agent_type:=scheduler
-rosrun smit_matlab_sim test_planner.py _agent_type:=dqn dqn_path:=<path_to_network>
+rosrun smit_sim test_planner.py _agent_type:=distance _ratio:=0.5
+rosrun smit_sim test_planner.py _agent_type:=simple _hesitance:=0.5
+rosrun smit_sim test_planner.py _agent_type:=simple2 _hesitance:=0.5
+rosrun smit_sim test_planner.py _agent_type:=scheduler
+rosrun smit_sim test_planner.py _agent_type:=dqn dqn_path:=<path_to_network>
 ```
 
 ## Training a DQNAgent
@@ -116,5 +118,5 @@ The system utilizes ROS framework using Python3 and was tested on Ubuntu 18.04.
 2. In third console run train_dqnagent.py script (can be found in scripts/global_planner directory). Currently, this script always loads the 'test_map' map configuration found in this package. This script trains the DQNAgent, whose code can be found found in scripts/global_planner/my_agents.py file. It uses DQNEval reward function from scripts/global_planner/my_eval_functions.py.
 ```
 source devel/setup.bash
-rosrun smit_matlab_sim train_dqnagent.py
+rosrun smit_sim train_dqnagent.py
 ```
