@@ -1,10 +1,8 @@
+from __future__ import absolute_import, division, print_function
+
 import numpy as np
-try:
-    import gymnasium as gym
-    from gymnasium import spaces
-except ImportError:  # Fall back to the classic Gym if Gymnasium is unavailable.
-    import gym
-    from gym import spaces
+import gym
+from gym import spaces
 
 from smit_linear_path.linear_path import LinearPath
 
@@ -14,7 +12,7 @@ class SmitSimEnv(gym.Env):
     metadata = {"render.modes": ["human"]}
 
     def __init__(self, start=(0.0, 0.0), goal=(1.0, 1.0), dt=0.1, max_speed=1.0):
-        super().__init__()
+        super(SmitSimEnv, self).__init__()
         self.start = np.array(start, dtype=np.float32)
         self.goal = np.array(goal, dtype=np.float32)
         self.dt = float(dt)
@@ -54,6 +52,8 @@ class SmitSimEnv(gym.Env):
     def render(self, mode="human"):
         if mode == "human":
             print(
-                f"pos={self.path.pos}, goal={self.goal}, remaining={self.path.get_distance()}"
+                "pos={}, goal={}, remaining={}".format(
+                    self.path.pos, self.goal, self.path.get_distance()
+                )
             )
         return None

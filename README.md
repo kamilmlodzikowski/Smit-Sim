@@ -127,8 +127,13 @@ The script `scripts/train_ppo.py` demonstrates how to train a PPO agent using Ra
 
 Install the Python dependencies and launch training:
 ```
+pip2 install -r requirements.txt
+python2 scripts/train_ppo.py
+```
+
+Install the Python dependencies and launch training:
+```
 pip install -r requirements.txt
 python scripts/train_ppo.py
 ```
-
 The training run will be logged to the `smit-sim` project on [Weights & Biases](https://wandb.ai/).
