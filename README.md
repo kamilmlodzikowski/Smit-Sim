@@ -120,3 +120,16 @@ The system utilizes ROS framework using Python3 and was tested on Ubuntu 18.04.
 source devel/setup.bash
 rosrun smit_sim train_dqnagent.py
 ```
+
+## Training a PPO Agent with RLlib
+A lightweight Gym environment wrapping the existing `LinearPath` system is available in `scripts/smit_sim_env.py`.
+The script `scripts/train_ppo.py` demonstrates how to train a PPO agent using Ray RLlib, Ray Tune and Weights & Biases.
+
+This example targets ROS1 systems and therefore requires a Python 2.7 environment.
+Install the Python dependencies and launch training:
+```
+pip2 install -r requirements.txt
+python2 scripts/train_ppo.py
+```
+
+The training run will be logged to the `smit-sim` project on [Weights & Biases](https://wandb.ai/).
