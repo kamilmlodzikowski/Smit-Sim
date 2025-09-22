@@ -113,3 +113,41 @@ The system utilizes ROS framework using Python3 and was tested on Ubuntu 18.04.
 source devel/setup.bash
 rosrun smit_sim train_dqnagent.py
 ```
+
+## Docker
+### Building Docker image
+
+```bash
+docker build -f Dockerfile -t smit-sim . --no-cache
+```
+
+### Running (with X11 display)
+
+```bash
+xhost +local:docker
+
+docker run -it --name SMIT-SIM \
+  --net=host \
+  -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 \
+  -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
+  smit-sim
+```
+
+### Usage
+You can connect new sessions to this conatiner with:
+
+```bash
+docker exec -it SMIT-SIM bash
+```
+
+You can stop the conatiner using:
+
+```bash
+docker stop SMIT-SIM
+```
+
+You can start stopped container with:
+
+```bash
+docker start SMIT-SIM
+```
