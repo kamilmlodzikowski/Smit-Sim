@@ -3,18 +3,11 @@
 ## Instalation
 
 1. Install appropriate libraries.
-- Install ROS melodic bo following instructions from their site. For native installation on Ubuntu 18 see [http://wiki.ros.org/melodic/Installation/Ubuntu](http://wiki.ros.org/melodic/Installation/Ubuntu).
-- Install AI libraries (tensorflow, keras-rl, gym).
+- Install full version of ROS melodic by following instructions from their site. For native installation on Ubuntu 18 see [http://wiki.ros.org/melodic/Installation/Ubuntu](http://wiki.ros.org/melodic/Installation/Ubuntu).
+- Install required python3 libraries using pip (we recommend using python version 3.7.5).
 ```
-pip3 install tensorflow
-pip3 install keras-rl
-pip3 install gym
+pip3 install -r requirements.txt
 ```
-- Install the [Robotics Toolbox for Python](https://github.com/petercorke/robotics-toolbox-python). It can be installed using pip.
-```
-pip3 install roboticstoolbox-python
-```
-As this library links to the others created by the same developer, if any exceptions are thrown during execution of random_map_server.py script (see **Running** section), the offending pip package should be removed and the same package should be installed directly from the [sources](https://github.com/petercorke) to get the newest version.
 
 2. Create workspace.
 ```
