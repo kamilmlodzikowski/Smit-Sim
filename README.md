@@ -115,6 +115,8 @@ rosrun smit_sim train_dqnagent.py
 ```
 
 ## Docker
+For easy use and a reproducible setup, we provide a Docker image that bundles ROS Melodic, Python 3.7, and all required dependencies. It supports GUI tools (RViz, rqt, Gazebo) via X11 and uses host networking for ROS out of the box. Build and run with the commands below.
+
 ### Building Docker image
 
 ```bash
@@ -132,6 +134,9 @@ docker run -it --name SMIT-SIM \
   -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
   smit-sim
 ```
+
+You can add `--gpus all` for NVIDIA acceleration.
+
 
 ### Usage
 You can connect new sessions to this conatiner with:
