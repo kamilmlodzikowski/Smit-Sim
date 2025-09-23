@@ -113,3 +113,46 @@ The system utilizes ROS framework using Python3 and was tested on Ubuntu 18.04.
 source devel/setup.bash
 rosrun smit_sim train_dqnagent.py
 ```
+
+## Docker
+For easy use and a reproducible setup, we provide a Docker image that bundles ROS Melodic, Python 3.7, and all required dependencies. It supports GUI tools (RViz, rqt, Gazebo) via X11 and uses host networking for ROS out of the box. Build and run with the commands below.
+
+### Building Docker image
+
+```bash
+docker build -f Dockerfile -t smit-sim . --no-cache
+```
+
+### Running (with X11 display)
+
+```bash
+xhost +local:docker
+
+docker run -it --name SMIT-SIM \
+  --net=host \
+  -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 \
+  -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
+  smit-sim
+```
+
+You can add `--gpus all` for NVIDIA acceleration.
+
+
+### Usage
+You can connect new sessions to this conatiner with:
+
+```bash
+docker exec -it SMIT-SIM bash
+```
+
+You can stop the conatiner using:
+
+```bash
+docker stop SMIT-SIM
+```
+
+You can start stopped container with:
+
+```bash
+docker start SMIT-SIM
+```
